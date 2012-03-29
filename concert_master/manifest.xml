@@ -1,0 +1,17 @@
+<package>
+  <description brief="Core components for the concert master">
+
+     The ros master and assistant applications necessary for running the concert.
+     Mostly this is just launch files.
+
+  </description>
+  <author>Daniel Stonier</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://ros.org/wiki/concert_master</url>
+  <depend package="rospy"/>
+  <depend package="zeroconf_comms"/>
+  <depend package="rocon_conductor"/>
+</package>
+
+

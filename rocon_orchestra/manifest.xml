@@ -1,0 +1,20 @@
+<package>
+  <description brief="concert orchestration">
+
+     orchestration, whatever that will be :)
+
+  </description>
+  <author>Daniel Stonier</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://ros.org/wiki/rocon_orchestra</url>
+  <depend package="roslib"/>
+  <depend package="rospy"/>
+  <depend package="concert_comms"/>
+  <!-- Listed in rocon_orchestra/rosdep.ymal -->
+  <rosdep name="pydot"/>
+  <!-- Listed in ros/rosdep.ymal -->
+  <rosdep name="graphviz"/>
+</package>
+
+

@@ -1,0 +1,29 @@
+<!--
+  The concert with default settings.
+  
+  If you want to add custom settings, simply add somthing similar to:
+   
+  <rosparam ns="concert/master" param="name">Concert Test Master</rosparam>
+  <rosparam ns="concert/master" param="domain">local</rosparam>
+  
+  OR
+  
+  <rosparam ns="concert/master" file="$(find concert_master)/resources/yaml/concert_master.yaml" command="load"/>
+ -->
+<launch>
+  <group ns="concert">
+    <group ns="master">
+      <node pkg="zeroconf_avahi" type="zeroconf" name="zeroconf" output="screen"/>
+      <node pkg="concert_master" type="master.py" name="startup" output="screen">
+      </node>
+    </group>
+    <node pkg="rocon_conductor" type="conductor.py" name="conductor" output="screen">
+      <remap from="add_listener" to="master/add_listener"/>
+      <remap from="add_service" to="master/add_service"/>
+      <remap from="new_connections" to="master/new_connections"/>
+      <remap from="lost_connections" to="master/lost_connections"/>
+      <remap from="list_discovered_services" to="master/list_discovered_services"/>
+      <remap from="list_published_services" to="master/list_published_services"/>
+    </node>
+  </group>
+</launch>

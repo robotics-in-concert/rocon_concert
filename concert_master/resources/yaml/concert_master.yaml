@@ -1,0 +1,12 @@
+##############################################################################
+# Concert
+##############################################################################
+#
+# Example concert master settings file.
+#
+# Zeroconf information - service type is always "_concert-master._tcp" and port
+# the same as the ros master port.
+
+name: "Concert Master"
+domain: "local"
+
