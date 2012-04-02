@@ -111,7 +111,7 @@ void QNode::run() {
 //		++count;
 //	}
 	std::cout << "Ros shutdown, proceeding to close the gui." << std::endl;
-	emit rosShutdown(); // used to signal the gui for a shutdown (useful to roslaunch)
+	Q_EMIT rosShutdown(); // used to signal the gui for a shutdown (useful to roslaunch)
 }
 
 
@@ -184,7 +184,7 @@ void QNode::subscribeConcertClients(const concert_comms::ConcertClientsConstPtr 
      */
     getClientAppsData(concert->clients[i].unique_name);
 	}
-    emit concertClientsUpdate();
+    Q_EMIT concertClientsUpdate();
 	mutex_.unlock();
 
   /*
@@ -195,7 +195,7 @@ void QNode::subscribeConcertClients(const concert_comms::ConcertClientsConstPtr 
   QStringList model_header;
   model_header << "Installable apps" << "Installed apps";
   client_apps_model_.setHorizontalHeaderLabels( model_header );
-  emit clientAppListRetrieved( &client_apps_model_ );
+  Q_EMIT clientAppListRetrieved( &client_apps_model_ );
   mutex_.unlock();
   /*
    * Clear app details view
@@ -208,7 +208,7 @@ void QNode::subscribeConcertClients(const concert_comms::ConcertClientsConstPtr 
   model_header.clear();
   model_header << "Name" << "Version" << "Description";
   app_details_model_.setVerticalHeaderLabels( model_header );
-  emit appDetailsRetrieved( &app_details_model_ );
+  Q_EMIT appDetailsRetrieved( &app_details_model_ );
   mutex_.unlock();
 }
 
@@ -342,7 +342,7 @@ void QNode::retrieveClientAppList( const QModelIndex &index )
 //  ROS_INFO_STREAM("client_apps_model_ size: rows = " << client_apps_model_.rowCount() << ", columns = "
 //    << client_apps_model_.columnCount());
 
-  emit clientAppListRetrieved(&client_apps_model_);
+  Q_EMIT clientAppListRetrieved(&client_apps_model_);
 }
 
 
@@ -387,7 +387,7 @@ void QNode::retrieveAppDetails( const QModelIndex &index )
   app_details_model_.setHorizontalHeaderLabels( model_hor_header );
   app_details_model_.setVerticalHeaderLabels( model_ver_header );
   mutex_.unlock();
-  emit appDetailsRetrieved(&app_details_model_);
+  Q_EMIT appDetailsRetrieved(&app_details_model_);
 }
 
 
@@ -553,7 +553,7 @@ void QNode::checkSolution(const QModelIndex &index) {
     ROS_INFO_STREAM("QOrchestra: All device configurations for the selected solution are available.");
     ROS_INFO_STREAM("QOrchestra: You can start the solution now.");
     solution_device_configurations_ = requested_device_configurations;
-    emit solutionRequirementsMet();
+    Q_EMIT solutionRequirementsMet();
   }
   else if ( missing_devices.size() == 0 )
   {
@@ -579,7 +579,7 @@ void QNode::checkSolution(const QModelIndex &index) {
     }
 
     ROS_INFO_STREAM("QOrchestra: Proceeding with asking for permission to install missing apps.");
-    emit installMissingAppsRequest( missing_apps_on_devices );
+    Q_EMIT installMissingAppsRequest( missing_apps_on_devices );
   }
   else
   {
@@ -634,7 +634,7 @@ void QNode::installMissingApps( const QStandardItem* missing_apps_on_devices )
         subscribeConcertClients(concert_clients_ptr_);
         ros::Duration(2.0).sleep(); // wait some time to let the qorchestra refresh the apps lists of the client
         // TODO: improve this!
-        emit missingAppsInstalled(check_solution_index_);
+        Q_EMIT missingAppsInstalled(check_solution_index_);
     }
     else
     {

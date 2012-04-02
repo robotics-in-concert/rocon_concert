@@ -41,7 +41,7 @@ public:
 	void closeEvent(QCloseEvent *event); // Overloaded function
 	void showNoMasterMessage();
 
-public slots:
+public Q_SLOTS:
 	/******************************************
 	** Auto-connections (connectSlotsByName())
 	*******************************************/
@@ -68,7 +68,7 @@ public slots:
 	void installMissingAppsBox( const QStandardItem* );
 	void enableStartSolution();
 
-signals:
+Q_SIGNALS:
 	void tableViewConcertClientsClicked( const QModelIndex &index );
 	void tableViewClientAppsClicked( const QModelIndex &index );
 	//void tableViewSolutionsClicked( const QModelIndex &index );

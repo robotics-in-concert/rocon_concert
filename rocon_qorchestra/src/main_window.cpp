@@ -204,7 +204,7 @@ void MainWindow::on_checkbox_use_environment_stateChanged(int state)
 void MainWindow::on_table_view_concert_clients_clicked(const QModelIndex &index)
 {
 //  std::cout << "Index clicked: " << index.row() << "," << index.column() << std::endl;
-  emit tableViewConcertClientsClicked( index );
+  Q_EMIT tableViewConcertClientsClicked( index );
 }
 
 
@@ -212,28 +212,28 @@ void MainWindow::on_table_view_client_apps_clicked(const QModelIndex &index)
 {
   std::cout << "Index clicked: " << index.row() << "," << index.column() << std::endl;
   client_app_list_index_ = index;
-  emit tableViewClientAppsClicked( index );
+  Q_EMIT tableViewClientAppsClicked( index );
 }
 
 
 
 void MainWindow::on_button_update_concert_clients_clicked()
 {
-  emit buttonUpdateConcertClientsClicked();
+  Q_EMIT buttonUpdateConcertClientsClicked();
 }
 
 
 void MainWindow::on_button_install_app_clicked()
 {
   if ( client_app_list_index_.column() == 0 )
-    emit buttonInstallAppClicked( client_app_list_index_ );
+    Q_EMIT buttonInstallAppClicked( client_app_list_index_ );
   else
     ROS_WARN("QOrchestra: uhm, installing an installed app does not make a lot of sense!");
 }
 
 void MainWindow::on_button_uninstall_app_clicked() {
     if ( client_app_list_index_.column() == 1 ) {
-        emit buttonUninstallAppClicked( client_app_list_index_ );
+        Q_EMIT buttonUninstallAppClicked( client_app_list_index_ );
     } else {
 	    ROS_WARN("QOrchestra: hm, uninstalling a not installed app does not make a lot of sense!");
     }
@@ -335,7 +335,7 @@ void MainWindow::installMissingAppsBox( const QStandardItem* missing_apps_on_dev
   if ( msg_box.exec() == QMessageBox::Ok )
   {
     std::cout << "Confirmation to install missing apps given." << std::endl;
-    emit installMissingAppsConfirmed(missing_apps_on_devices);
+    Q_EMIT installMissingAppsConfirmed(missing_apps_on_devices);
   }
 }
 

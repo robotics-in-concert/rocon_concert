@@ -56,7 +56,7 @@ bool Implementations::fetch() {
 			parent->appendRow(header_item);
 			header_item->appendColumn(implementation_list);
 			mutex_.unlock();
-			emit sigImplementationsFetched();
+			Q_EMIT sigImplementationsFetched();
 			return true;
 		} else {
 		  ROS_WARN_STREAM("QOrchestra: service call to load implementation was not successful.");

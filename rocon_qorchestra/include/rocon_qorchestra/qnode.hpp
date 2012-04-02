@@ -56,7 +56,7 @@ class QNode : public QThread
 	**********************/
     Implementations implementations;
 
-  public slots:
+  public Q_SLOTS:
     void retrieveClientAppList( const QModelIndex &index );
     void retrieveAppDetails( const QModelIndex &index );
     void installApp( const QModelIndex &index );
@@ -65,7 +65,7 @@ class QNode : public QThread
     void startSolution() { triggerSolution(true); }
     void stopSolution() { triggerSolution(false); }
 
-  signals:
+  Q_SIGNALS:
     void rosShutdown();
     void concertClientsUpdate();
     void clientAppListRetrieved( QStandardItemModel* );

@@ -40,7 +40,7 @@ public:
 	void viewLinkGraph();
 	QStandardItemModel* model() { return &model_; }
 
-signals:
+Q_SIGNALS:
 	void sigImplementationsFetched();
 
 private:
