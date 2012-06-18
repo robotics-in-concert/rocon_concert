@@ -5,14 +5,14 @@ import rospy
 import time
 import urlparse
 
-from roslib.xmlrpc import XmlRpcHandler
 
 from rospy.core import global_name, is_topic
 from rospy.impl.validators import non_empty, ParameterInvalid
 
 from rospy.impl.masterslave import apivalidate
 
-from roslib.xmlrpc import XmlRpcNode
+from rosgraph.xmlrpc import XmlRpcHandler
+from rosgraph.xmlrpc import XmlRpcNode
 import roslib.names
 import threading
 
