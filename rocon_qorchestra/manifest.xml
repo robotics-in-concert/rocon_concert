@@ -10,7 +10,7 @@
   <url>http://ros.org/wiki/rocon_qorchestra</url>
 
 
-  <rosdep name="qt4"/>
+  <rosdep name="libqt4-dev"/>
   <rosdep name="kgraphviewer"/>
   <!-- rosbuild1 -->
   <depend package="qt_build"/>
