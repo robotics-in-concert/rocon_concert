@@ -11,6 +11,7 @@ from rospy.impl.validators import non_empty, ParameterInvalid
 
 from rospy.impl.masterslave import apivalidate
 
+import rosgraph
 from rosgraph.xmlrpc import XmlRpcHandler
 from rosgraph.xmlrpc import XmlRpcNode
 import roslib.names
@@ -99,7 +100,7 @@ class RemoteManager(object):
         ns = roslib.names.get_ros_namespace()
         anon_name = roslib.names.anonymous_name('master_sync')
 
-        self.master = rosgraph.masterapi.Master(roslib.names.ns_join(ns, anon_name), master_uri=self.master_uri)
+        self.master = rosgraph.Master(roslib.names.ns_join(ns, anon_name), master_uri=self.master_uri)
 
         self.cb = cb
 
@@ -146,7 +147,7 @@ class RemoteManager(object):
 
         # These registrations need to be anonymous so the master doesn't kill us if there is a duplicate name
         anon_name = roslib.names.anonymous_name('master_sync')
-        master = rosgraph.masterapi.Master(anon_name, master_uri=self.master_uri)
+        master = rosgraph.Master(anon_name, master_uri=self.master_uri)
 
         rospy.loginfo("Registering (%s,%s) on master %s"%(topic,uri,master.master_uri))
 
@@ -243,7 +244,7 @@ class MasterSync(object):
         self.thread = None
             
         # Get master URIs
-        local_master = roslib.rosenv.get_master_uri()
+        local_master = rosgraph.get_master_uri()
 
         m = rosgraph.masterapi.Master(rospy.get_name(), master_uri=foreign_master)
         r = rospy.Rate(1)
