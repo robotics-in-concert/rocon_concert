@@ -1,4 +1,0 @@
-pydot:
-  ubuntu: python-pydot
-kgraphviewer:
-  ubuntu: kgraphviewer

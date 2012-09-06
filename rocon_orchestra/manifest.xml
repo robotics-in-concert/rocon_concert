@@ -11,9 +11,7 @@
   <depend package="roslib"/>
   <depend package="rospy"/>
   <depend package="concert_comms"/>
-  <!-- Listed in rocon_orchestra/rosdep.ymal -->
-  <rosdep name="pydot"/>
-  <!-- Listed in ros/rosdep.ymal -->
+  <rosdep name="python-pydot"/>
   <rosdep name="graphviz"/>
 </package>
 
