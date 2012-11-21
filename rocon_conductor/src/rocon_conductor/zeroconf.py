@@ -14,9 +14,9 @@ import rospy
 
 # Rocon imports
 import zeroconf_avahi
-import zeroconf_comms
-from zeroconf_comms.msg import *
-from zeroconf_comms.srv import AddListener
+import zeroconf_msgs
+from zeroconf_msgs.msg import *
+from zeroconf_msgs.srv import AddListener
 
 ##############################################################################
 # Functions
@@ -29,7 +29,7 @@ def listen_for_app_managers():
     try:
         rospy.wait_for_service('add_listener', 30.0)
         add_listener=rospy.ServiceProxy('add_listener', AddListener)
-        request = zeroconf_comms.srv.AddListenerRequest()
+        request = zeroconf_msgs.srv.AddListenerRequest()
         request.service_type = '_app-manager._tcp'
         response = add_listener(request)
         if response.result == False:
@@ -53,8 +53,8 @@ def concert_master_name():
     try:
         try_count = 0
         while (try_count != 10):
-            service_info = rospy.ServiceProxy('list_published_services', zeroconf_comms.srv.ListPublishedServices)
-            request = zeroconf_comms.srv.ListPublishedServicesRequest()
+            service_info = rospy.ServiceProxy('list_published_services', zeroconf_msgs.srv.ListPublishedServices)
+            request = zeroconf_msgs.srv.ListPublishedServicesRequest()
             request.service_type = "_concert-master._tcp"
             response = service_info(request)
             if len(response.services) > 0:
@@ -82,8 +82,8 @@ def discover_concert_clients():
         
     concert_clients = []
     try:
-        discover_clients = rospy.ServiceProxy('list_discovered_services', zeroconf_comms.srv.ListDiscoveredServices)
-        request = zeroconf_comms.srv.ListDiscoveredServicesRequest()
+        discover_clients = rospy.ServiceProxy('list_discovered_services', zeroconf_msgs.srv.ListDiscoveredServices)
+        request = zeroconf_msgs.srv.ListDiscoveredServicesRequest()
         request.service_type = "_app-manager._tcp"
         response = discover_clients(request)
         # Ignore ipv6 clients

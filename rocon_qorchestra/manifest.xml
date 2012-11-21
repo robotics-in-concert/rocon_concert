@@ -15,13 +15,13 @@
   <!-- rosbuild1 -->
   <depend package="qt_build"/>
   <depend package="roscpp"/>
-  <depend package="concert_comms"/>
+  <depend package="concert_msgs"/>
   <depend package="willow_app_manager"/>
  
   <rosbuild2>
     <depend package="qt_build"/>
     <depend package="roscpp"/>
-    <depend package="concert_comms"/>
+    <depend package="concert_msgs"/>
     <depend package="willow_app_manager"/>
   </rosbuild2>
   

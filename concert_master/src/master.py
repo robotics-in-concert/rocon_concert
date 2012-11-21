@@ -15,8 +15,8 @@ import xmlrpclib
 import roslib; roslib.load_manifest('concert_master')
 import rosgraph
 import rospy
-import zeroconf_comms
-from zeroconf_comms.srv import AddService
+import zeroconf_msgs
+from zeroconf_msgs.srv import AddService
 
 ##############################################################################
 # Functions
@@ -68,7 +68,7 @@ def parse_http_host_and_port(url):
 '''
 def main():
     rospy.init_node('concert_master', log_level=rospy.DEBUG)
-    request = zeroconf_comms.srv.AddServiceRequest()
+    request = zeroconf_msgs.srv.AddServiceRequest()
     request.service.name = rospy.get_param("name","Concert Master")
     request.service.type = "_concert-master._tcp"
     request.service.domain = rospy.get_param("domain","local")
@@ -77,7 +77,7 @@ def main():
     # Make sure the zeroconf is up and running first
     try:
         rospy.wait_for_service('add_service', 30.0)
-        advertise_concert_master = rospy.ServiceProxy('add_service', zeroconf_comms.srv.AddService)
+        advertise_concert_master = rospy.ServiceProxy('add_service', zeroconf_msgs.srv.AddService)
         response = advertise_concert_master(request)
         if response.result:
             rospy.loginfo("Concert Master: advertising zeroconf information [%s][%s][%s]"%(request.service.name, request.service.domain, request.service.port))

@@ -10,7 +10,7 @@
   <review status="experimental" notes=""/>
   <url>http://ros.org/wiki/concert_master</url>
   <depend package="rospy"/>
-  <depend package="zeroconf_comms"/>
+  <depend package="zeroconf_msgs"/>
   <depend package="rocon_conductor"/>
 </package>
 
