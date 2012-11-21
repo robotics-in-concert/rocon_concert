@@ -16,7 +16,7 @@ import sys
 import roslib; roslib.load_manifest('rocon_orchestra')
 import rospy
 
-from concert_comms.msg import ConcertClients
+from concert_msgs.msg import ConcertClients
 
 # Local imports
 from .implementation import Implementation

@@ -21,7 +21,7 @@
 #include <QThread>
 #include <QMutex>
 #include <QStandardItemModel>
-#include <concert_comms/ConcertClients.h>
+#include <concert_msgs/ConcertClients.h>
 #include "implementations.hpp"
 
 /*****************************************************************************
@@ -79,7 +79,7 @@ class QNode : public QThread
     ** Ros Comms
     **********************/
     void establishRosComms();
-    void subscribeConcertClients(const concert_comms::ConcertClientsConstPtr concert);
+    void subscribeConcertClients(const concert_msgs::ConcertClientsConstPtr concert);
     QStandardItem* createConcertClientDataElement(const std::string &str,
                                                   const Qt::Alignment &alignment = Qt::AlignHCenter);
     QStandardItem* createConcertClientAppsDataElement(const std::string &str,
@@ -109,7 +109,7 @@ class QNode : public QThread
     QMutex mutex_;
     QStringList solution_device_configurations_;
 
-    concert_comms::ConcertClientsConstPtr concert_clients_ptr_;
+    concert_msgs::ConcertClientsConstPtr concert_clients_ptr_;
     QModelIndex current_client_index_, check_solution_index_;
     unsigned int current_highlighted_app_;
     QList<QStandardItem*> client_installable_apps_list_, client_installed_apps_list_;

@@ -14,6 +14,6 @@
   <depend package="roslib"/>
   <depend package="rospy"/>
   <depend package="zeroconf_avahi"/>
-  <depend package="zeroconf_comms"/>
-  <depend package="concert_comms"/>
+  <depend package="zeroconf_msgs"/>
+  <depend package="concert_msgs"/>
 </package>

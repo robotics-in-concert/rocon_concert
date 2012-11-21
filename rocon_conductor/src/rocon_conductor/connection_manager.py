@@ -19,10 +19,10 @@ import rospy
 
 # Rocon imports
 import zeroconf_avahi
-import concert_comms
-from zeroconf_comms.msg import *
-from zeroconf_comms.srv import *
-from concert_comms.msg import *
+import concert_msgs
+from zeroconf_msgs.msg import *
+from zeroconf_msgs.srv import *
+from concert_msgs.msg import *
 
 # Local imports
 import zeroconf
@@ -54,7 +54,7 @@ class ConcertClient():
       
       @param master zconf_info : zero-configuration to store.
       
-      @var zconf_info : the zero-configuration for this client [zeroconf_comms.msg.DiscoveredService]
+      @var zconf_info : the zero-configuration for this client [zeroconf_msgs.msg.DiscoveredService]
       @var connected  : connection status
       @var app_manager_uri : address and port number of the app manager's xmlrpc handshaking server.
     '''
@@ -66,7 +66,7 @@ class ConcertClient():
         # Description variables
         self.zconf_info = None
         # System triple
-        self.platform_info = concert_comms.msg.PlatformInfo() 
+        self.platform_info = concert_msgs.msg.PlatformInfo() 
         self.app_manager_uri = None
 
         # Status variables
@@ -102,8 +102,8 @@ class ConcertClient():
                 raise ConcertClientError("unexpected error contacting the client's xmlrpc server [%s]"%zconf_info.name)
         
     def to_msg_format(self):
-        client = concert_comms.msg.ConcertClient()
-        client.zeroconf = self.zconf_info if (self.zconf_info is not None) else zeroconf_comms.msg.DiscoveredService() 
+        client = concert_msgs.msg.ConcertClient()
+        client.zeroconf = self.zconf_info if (self.zconf_info is not None) else zeroconf_msgs.msg.DiscoveredService() 
         client.platform = platform_id_to_string(self.platform_info.platform) 
         client.system = system_id_to_string(self.platform_info.system) 
         client.robot = self.platform_info.robot if (self.platform_info.robot is not None) else "unknown" 
@@ -150,7 +150,7 @@ class ConcertClient():
 #            return
 #        self.platform_info_subscriber = rospy.Subscriber( 
 #                        roslib.names.make_global_ns(roslib.names.ns_join(unique_name,"platform_info")), 
-#                        concert_comms.msg.PlatformInfo,
+#                        concert_msgs.msg.PlatformInfo,
 #                        self.retrieve_platform_information_callback) 
 #
 #    def retrieve_platform_information_callback(self, data):
@@ -219,9 +219,9 @@ class Connections(threading.Thread):
         self._auto_invite_clients = rospy.get_param("auto_invite_clients", True)
 
         # Ros comms
-        self.concert_clients_publisher = rospy.Publisher("concert_clients", concert_comms.msg.ConcertClients, latch=True)
-        rospy.Subscriber("new_connections",zeroconf_comms.msg.DiscoveredService,self.new_connection_cb)
-        rospy.Subscriber("lost_connections",zeroconf_comms.msg.DiscoveredService,self.lost_connection_cb)
+        self.concert_clients_publisher = rospy.Publisher("concert_clients", concert_msgs.msg.ConcertClients, latch=True)
+        rospy.Subscriber("new_connections",zeroconf_msgs.msg.DiscoveredService,self.new_connection_cb)
+        rospy.Subscriber("lost_connections",zeroconf_msgs.msg.DiscoveredService,self.lost_connection_cb)
         
         for zconf_client in zeroconf.discover_concert_clients():
             try:
@@ -361,7 +361,7 @@ class Connections(threading.Thread):
             latched publisher, so subscribers will always have the latest
             without the need to poll a service.
         '''
-        discovered_concert = concert_comms.msg.ConcertClients()
+        discovered_concert = concert_msgs.msg.ConcertClients()
         for client in self.concert_clients:
             discovered_concert.clients.append(client.to_msg_format())
         self.concert_clients_publisher.publish(discovered_concert)

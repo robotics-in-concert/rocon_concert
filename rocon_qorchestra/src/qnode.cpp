@@ -121,8 +121,8 @@ void QNode::run() {
 /**
  * Catches the concert client list as it gets published.
  *
- * concert_comms/ConcertClient:
- *  zeroconf_comms/DiscoveredService zeroconf
+ * concert_msgs/ConcertClient:
+ *  zeroconf_msgs/DiscoveredService zeroconf
  *	string platform
  *	string system
  *	string suggested_name
@@ -132,7 +132,7 @@ void QNode::run() {
  *	bool is_connected
  *	time last_connection_timestamp
  */
-void QNode::subscribeConcertClients(const concert_comms::ConcertClientsConstPtr concert)
+void QNode::subscribeConcertClients(const concert_msgs::ConcertClientsConstPtr concert)
 {
   concert_clients_ptr_ = concert;// store pointer for update
 	for ( unsigned int i = 0; i < concert->clients.size(); ++i )

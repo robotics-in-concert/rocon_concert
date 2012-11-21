@@ -10,7 +10,7 @@
 
 #include <QTextStream>
 #include <ros/ros.h>
-#include <concert_comms/Implementation.h>
+#include <concert_msgs/Implementation.h>
 #include "../include/rocon_qorchestra/implementations.hpp"
 
 /*****************************************************************************
@@ -38,9 +38,9 @@ Implementations::~Implementations() {
  */
 bool Implementations::fetch() {
     ros::NodeHandle nh;
-    ros::ServiceClient retreive_implementations_client = nh.serviceClient<concert_comms::Implementation>("implementation");
+    ros::ServiceClient retreive_implementations_client = nh.serviceClient<concert_msgs::Implementation>("implementation");
     if ( retreive_implementations_client.waitForExistence( ros::Duration(5.0)) ) {
-		concert_comms::Implementation implementation;
+		concert_msgs::Implementation implementation;
 		ROS_INFO_STREAM("QOrchestra: requesting implementations.");
 		if( retreive_implementations_client.call(implementation) ) {
 		    ROS_INFO_STREAM("QOrchestra: service call to load implementation was successful.");

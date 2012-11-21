@@ -10,7 +10,7 @@
   <url>http://ros.org/wiki/rocon_orchestra</url>
   <depend package="roslib"/>
   <depend package="rospy"/>
-  <depend package="concert_comms"/>
+  <depend package="concert_msgs"/>
   <rosdep name="python-pydot"/>
   <rosdep name="graphviz"/>
 </package>
