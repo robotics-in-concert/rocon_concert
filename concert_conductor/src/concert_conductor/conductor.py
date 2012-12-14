@@ -129,7 +129,6 @@ class Conductor(object):
                     if new_client in self.invited_clients:
                         self.invite(self.mastername, [new_client], True)
                 except Exception as e:
-                    traceback.print_exc(file=sys.stdout)
                     self._bad_clients.append(new_client)
                     rospy.loginfo("Conductor : failed to establish client[" + str(new_client) + "] : " + str(e))
 

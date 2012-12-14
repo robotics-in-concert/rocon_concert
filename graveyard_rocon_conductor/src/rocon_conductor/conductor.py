@@ -8,10 +8,10 @@ Created on 08/08/2011
 ##############################################################################
 
 import sys
-import xmlrpclib
 
 # Ros imports
-import roslib; roslib.load_manifest('rocon_conductor')
+import roslib
+roslib.load_manifest('rocon_conductor')
 import rospy
 
 # Local imports
@@ -22,6 +22,7 @@ from .zeroconf import listen_for_app_managers
 # Main
 ##############################################################################
 
+
 def main():
     rospy.init_node('conductor', log_level=rospy.DEBUG)
     rospy.sleep(1.0)
@@ -30,6 +31,6 @@ def main():
     connections = Connections()
     connections.spin()
     return 0
-        
+
 if __name__ == '__main__':
     sys.exit(main())

@@ -54,7 +54,6 @@ class ClientInfo(object):
             for key, service in self.service_info.items():
                 self._rawdata[key] = service()
         except Exception as unused_e:
-            print str(unused_e)
             raise Exception("Error in read_info")
 
         self.data = concert_msgs.ConcertClient()

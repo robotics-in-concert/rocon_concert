@@ -33,32 +33,31 @@ from .utilities import system_id_to_string
 # Class
 ##############################################################################
 
+
 class ConcertClientError(Exception):
     '''
        Input value should be a string
     '''
     def __init__(self, value):
-        self.value = value;
-        
+        self.value = value
+
     def __str__(self):
         return self.value
-    
-'''
-  Stores details about each concert client.
-'''
-class ConcertClient():
+
+
+class ConcertClient(object):
     '''
       Initialises the client with zeroconf information and a few extra
       details from xmlrpc handshaking. These clients are actually created and info stored,
       even if they do not actually connect to the concert. I may have to revert on this decision later.
-      
+
       @param master zconf_info : zero-configuration to store.
-      
+
       @var zconf_info : the zero-configuration for this client [zeroconf_msgs.msg.DiscoveredService]
       @var connected  : connection status
       @var app_manager_uri : address and port number of the app manager's xmlrpc handshaking server.
     '''
-    def __init__(self, unique_name_generator, zconf_info = None):
+    def __init__(self, unique_name_generator, zconf_info=None):
         '''
           Can be initialised via zeroconf identification, or we get a connection out of the blue,
           in which case we have no zeroconf information.
