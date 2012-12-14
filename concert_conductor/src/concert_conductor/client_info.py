@@ -20,11 +20,11 @@ import concert_msgs.srv as concert_srvs
 
 class ClientInfo(object):
 
-    def __init__(self, clientname, param):
+    def __init__(self, client_name, param):
 
         self.data = concert_msgs.ConcertClient()
         self._rawdata = {}
-        self.name = clientname
+        self.name = client_name
         self.param = param
 
         self.platform_info = None
@@ -35,11 +35,12 @@ class ClientInfo(object):
         self.invitation = rospy.ServiceProxy(str(self.name + '/' + param['invitation'][0]), param['invitation'][1])
 
         self.service_info = {}
+        rospy.logdebug("Conductor: retrieving client information [%s]" % client_name)
         for k in param['info'].keys():
             key = param['info'][k][0]
             type = param['info'][k][1]
             self.service_info[k] = rospy.ServiceProxy(str(self.name + '/' + key), type)
-            print "Waiting for : " + str(k)
+            rospy.logdebug("Conductor:   waiting for : %s" % str(k))
             try:
                 self.service_info[k].wait_for_service()
             except rospy.ServiceException, e:
