@@ -30,7 +30,7 @@ class Conductor(object):
 
     def __init__(self):
         self.srv = {}
-        self.srv['clientlist'] = rospy.Service('~list_clients', concert_srvs.ClientList, self.processClientList)
+        self.srv['concert_clients'] = rospy.Service('~concert_clients', concert_srvs.ClientList, self.processClientList)
         self.srv['invite'] = rospy.Service('~invite', concert_srvs.Invite, self.processInvite)
         self.srv['set_auto_invite'] = rospy.Service('~set_auto_invite', concert_srvs.SetAutoInvite, self.processAutoInvite)
 
