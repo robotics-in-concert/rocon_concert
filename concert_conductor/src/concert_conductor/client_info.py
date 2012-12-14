@@ -23,7 +23,7 @@ class ClientInfo(object):
     def __init__(self, clientname, param):
 
         self.data = concert_msgs.ConcertClient()
-        self.rawdata = {}
+        self._rawdata = {}
         self.name = clientname
         self.param = param
 
@@ -47,17 +47,21 @@ class ClientInfo(object):
         self.read_info()
 
     def read_info(self):
+        '''
+          Reads from a concert client's flipped platform_info, status, list_apps topics.
+        '''
         try:
             for key, service in self.service_info.items():
-                self.rawdata[key] = service()
+                self._rawdata[key] = service()
         except Exception as unused_e:
+            print str(unused_e)
             raise Exception("Error in read_info")
 
         self.data = concert_msgs.ConcertClient()
         self.data.name = self.name
-        self.data.platform_info = str(self.rawdata['platform_info'].platform)
-        self.data.status = self.rawdata['status'].status
-        self.data.apps = self.rawdata['list_apps'].apps
+        self.data.platform_info = str(self._rawdata['platform_info'].platform)
+        self.data.status = self._rawdata['status'].status
+        self.data.apps = self._rawdata['list_apps'].apps
 
     def get_client(self):
         self.read_info()

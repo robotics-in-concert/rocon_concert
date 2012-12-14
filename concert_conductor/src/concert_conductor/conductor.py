@@ -7,6 +7,8 @@
 # Imports
 ##############################################################################
 
+import sys
+import traceback
 import roslib
 roslib.load_manifest('concert_conductor')
 import rospy
@@ -33,6 +35,7 @@ class Conductor(object):
         self.srv['set_auto_invite'] = rospy.Service('~set_auto_invite', concert_srvs.SetAutoInvite, self.processAutoInvite)
 
         self.parse_params()
+        self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
 
     def parse_params(self):
         param = {}
@@ -52,17 +55,22 @@ class Conductor(object):
 
         self.param = param
 
-    def get_clients(self):
+    def _get_clients(self):
+        '''
+          Return the list of clients found on network. This
+          currently just checks the local system for any topic
+          ending with 'invitation'...which should be representative of a
+          concert client.
+        '''
         suffix = self.param['invitation'][0]
         services = rosservice.get_service_list()
-        clients = [s[:-(len(suffix) + 1)] for s in services if s.endswith(suffix)]
+        visible_clients = [s[:-(len(suffix) + 1)] for s in services if s.endswith(suffix)]
+        return visible_clients
 
-        return clients
-
-    def maintain_clientlist(self, new_clients):
+    def _maintain_clientlist(self, new_clients):
         for name in self.clients.keys():
             if not name in new_clients:
-                rospy.loginfo("Conductor : client Left : " + name)
+                rospy.loginfo("Conductor : client left : " + name)
                 del self.clients[name]
 
     def processClientList(self, req):
@@ -98,28 +106,32 @@ class Conductor(object):
         return True
 
     def spin(self):
+        '''
+          Maintains the clientele list.
+        '''
         while not rospy.is_shutdown():
             # Get all services and collect
-            clients = self.get_clients()
+            clients = self._get_clients()
 #            self.log(str(clients))
 
-            # remove gone client
-            self.maintain_clientlist(clients)
+            # remove clients that have left
+            self._maintain_clientlist(clients)
 
             # filter existing client from new client list
-            new_clients = [c for c in clients if c not in self.clients]
+            new_clients = [c for c in clients if (c not in self.clients) and (c not in self._bad_clients)]
 
             # Create new clients info instance
             for new_client in new_clients:
                 try:
-                    rospy.loginfo("Conductor : Client Join : " + new_client)
-                    cinfo = ClientInfo(new_client, self.param)
-                    self.clients[new_client] = cinfo
+                    rospy.loginfo("Conductor : new client found : " + new_client)
+                    self.clients[new_client] = ClientInfo(new_client, self.param)
 
                     if new_client in self.invited_clients:
                         self.invite(self.mastername, [new_client], True)
                 except Exception as e:
-                    rospy.loginfo("Conductor : Failed to establish client[" + str(new_client) + "] : " + str(e))
+                    traceback.print_exc(file=sys.stdout)
+                    self._bad_clients.append(new_client)
+                    rospy.loginfo("Conductor : failed to establish client[" + str(new_client) + "] : " + str(e))
 
             if self.param['config']['auto_invite']:
                 client_list = [client for client in self.clients if (client not in self.invited_clients) or (client in self.invited_clients and self.invited_clients[client] == False)]
