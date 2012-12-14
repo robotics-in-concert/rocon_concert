@@ -14,6 +14,7 @@ roslib.load_manifest('concert_conductor')
 import rospy
 import rosservice
 import appmanager_msgs.srv as appmanager_srvs
+import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import gateway_msgs.srv as gateway_srvs
 from .client_info import ClientInfo
@@ -25,15 +26,124 @@ from .client_info import ClientInfo
 
 class Conductor(object):
 
-    clients = {}
-    invited_clients = {}
-    mastername = None
-
     def __init__(self):
+        ##################################
+        # Pubs, Subs and Services
+        ##################################
+        self.publishers = {}
+        self.publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients, latch=True)
         self.srv = {}
-        self.srv['concert_clients'] = rospy.Service('~concert_clients', concert_srvs.ClientList, self.processClientList)
+        #self.srv['concert_clients'] = rospy.Service('~concert_clients', concert_srvs.ClientList, self.processClientList)
         self.srv['invite'] = rospy.Service('~invite', concert_srvs.Invite, self.processInvite)
 
+        ##################################
+        # Variables
+        ##################################
+        self._concert_clients = {}  # List of concert_clients, both visible and out of range
+        self._invited_clients = {}  # Clients that have previously been invited, but disappeared
+        self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
+        self._concert_name = None
+        self._watcher_period = 1.0  # Period for the watcher thread (i.e. update rate)
+
+        ##################################
+        # Initialisation
+        ##################################
+        self._get_concert_name()
+        self._setup_ros_parameters()
+
+    def processClientList(self, req):
+        out = [self._concert_clients[cinfo].get_client() for cinfo in self._concert_clients]
+        return concert_srvs.ClientListResponse(out)
+
+    def processInvite(self, req):
+        mastername = req.mastername
+        resp = self.invite(mastername, req.clientnames, req.ok_flag)
+        return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
+
+    def invite(self, mastername, clientnames, ok_flag):
+        try:
+            for name in clientnames:
+                if not name.startswith('/'):
+                    name = '/' + name
+                unused_resp = self._concert_clients[name].invite(mastername, ok_flag)
+                rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
+                self._invited_clients[name] = ok_flag
+        except Exception as e:
+            rospy.logerr("Conductor : %s" % str(e))
+            return False
+        return True
+
+    def spin(self):
+        '''
+          Maintains the clientele list.
+        '''
+        while not rospy.is_shutdown():
+            visible_clients = self._get_visible_clients()
+            self._prune_client_list(visible_clients)
+            new_clients = [c for c in visible_clients if (c not in self._concert_clients) and (c not in self._bad_clients)]
+
+            # Create new clients info instance
+            for new_client in new_clients:
+                try:
+                    rospy.loginfo("Conductor : new client found : " + new_client)
+                    self._concert_clients[new_client] = ClientInfo(new_client, self.param)
+
+                    # re-invitation of clients that disappeared and came back
+                    if new_client in self._invited_clients:
+                        self.invite(self._concert_name, [new_client], True)
+                except Exception as e:
+                    self._bad_clients.append(new_client)
+                    rospy.loginfo("Conductor : failed to establish client [" + str(new_client) + "] : " + str(e))
+
+            if self.param['config']['auto_invite']:
+                client_list = [client for client in self._concert_clients
+                                     if (client not in self._invited_clients)
+                                     or (client in self._invited_clients and self._invited_clients[client] == False)]
+                self.invite(self._concert_name, client_list, True)
+            self._publish_discovered_concert_clients()
+            rospy.sleep(self._watcher_period)
+
+    ###########################################################################
+    # Helpers
+    ###########################################################################
+
+    def _get_visible_clients(self):
+        '''
+          Return the list of clients currently visible on network. This
+          currently just checks the local system for any topic
+          ending with 'invitation'...which should be representative of a
+          concert client.
+        '''
+        suffix = self.param['invitation'][0]
+        services = rosservice.get_service_list()
+        visible_clients = [s[:-(len(suffix) + 1)] for s in services if s.endswith(suffix)]
+        return visible_clients
+
+    def _prune_client_list(self, new_clients):
+        '''
+          Remove from the current client list any whose topics and services have disappeared.
+        '''
+        for name in self._concert_clients.keys():
+            if not name in new_clients:
+                rospy.loginfo("Conductor : client left : " + name)
+                del self._concert_clients[name]
+
+    def _publish_discovered_concert_clients(self):
+        '''
+            Provide a list of currently discovered clients. This goes onto a
+            latched publisher, so subscribers will always have the latest
+            without the need to poll a service.
+        '''
+        discovered_concert = concert_msgs.ConcertClients()
+        for unused_client, client_info in self._concert_clients.iteritems():
+            discovered_concert.clients.append(client_info.to_msg_format())
+        self.publishers["concert_clients"].publish(discovered_concert)
+
+    ###########################################################################
+    # Private Initialisation
+    ###########################################################################
+
+    def _get_concert_name(self):
         # Get concert name (i.e. gateway name)
         gateway_info_service = rospy.ServiceProxy("~gateway_info", gateway_srvs.GatewayInfo)
         gateway_info_service.wait_for_service()
@@ -43,15 +153,12 @@ class Conductor(object):
             gateway_info = gateway_info_service(gateway_srvs.GatewayInfoRequest())
             gateway_is_connected = gateway_info.connected
             if gateway_info.connected == True:
-                self.concert_name = gateway_info.name
+                self._concert_name = gateway_info.name
             else:
                 rospy.loginfo("Conductor : no hub yet available, spinning...")
             rospy.sleep(1.0)
 
-        self.parse_params()
-        self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
-
-    def parse_params(self):
+    def _setup_ros_parameters(self):
         param = {}
         param['config'] = {}
         param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
@@ -68,77 +175,3 @@ class Conductor(object):
         param['execution']['srv']['stop_app'] = (rospy.get_param('~stop_app', 'stop_app'), appmanager_srvs.StopApp)
 
         self.param = param
-
-    def _get_clients(self):
-        '''
-          Return the list of clients found on network. This
-          currently just checks the local system for any topic
-          ending with 'invitation'...which should be representative of a
-          concert client.
-        '''
-        suffix = self.param['invitation'][0]
-        services = rosservice.get_service_list()
-        visible_clients = [s[:-(len(suffix) + 1)] for s in services if s.endswith(suffix)]
-        return visible_clients
-
-    def _maintain_clientlist(self, new_clients):
-        for name in self.clients.keys():
-            if not name in new_clients:
-                rospy.loginfo("Conductor : client left : " + name)
-                del self.clients[name]
-
-    def processClientList(self, req):
-        out = [self.clients[cinfo].get_client() for cinfo in self.clients]
-        return concert_srvs.ClientListResponse(out)
-
-    def processInvite(self, req):
-        mastername = req.mastername
-        resp = self.invite(mastername, req.clientnames, req.ok_flag)
-        return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
-
-    def invite(self, mastername, clientnames, ok_flag):
-        try:
-            for name in clientnames:
-                if not name.startswith('/'):
-                    name = '/' + name
-                unused_resp = self.clients[name].invite(mastername, ok_flag)
-                rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
-                self.invited_clients[name] = ok_flag
-        except Exception as e:
-            rospy.logerr("Conductor : %s" % str(e))
-            return False
-        return True
-
-    def spin(self):
-        '''
-          Maintains the clientele list.
-        '''
-        while not rospy.is_shutdown():
-            # Get all services and collect
-            clients = self._get_clients()
-#            self.log(str(clients))
-
-            # remove clients that have left
-            self._maintain_clientlist(clients)
-
-            # filter existing client from new client list
-            new_clients = [c for c in clients if (c not in self.clients) and (c not in self._bad_clients)]
-
-            # Create new clients info instance
-            for new_client in new_clients:
-                try:
-                    rospy.loginfo("Conductor : new client found : " + new_client)
-                    self.clients[new_client] = ClientInfo(new_client, self.param)
-
-                    # re-invitation of clients that disappeared and came back
-                    if new_client in self.invited_clients:
-                        self.invite(self.concert_name, [new_client], True)
-                except Exception as e:
-                    self._bad_clients.append(new_client)
-                    rospy.loginfo("Conductor : failed to establish client[" + str(new_client) + "] : " + str(e))
-
-            if self.param['config']['auto_invite']:
-                client_list = [client for client in self.clients if (client not in self.invited_clients) or (client in self.invited_clients and self.invited_clients[client] == False)]
-                self.invite(self.concert_name, client_list, True)
-
-            rospy.sleep(1.0)

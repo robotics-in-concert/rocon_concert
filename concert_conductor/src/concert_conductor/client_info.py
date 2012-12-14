@@ -45,9 +45,13 @@ class ClientInfo(object):
                 self.service_info[k].wait_for_service()
             except rospy.ServiceException, e:
                 raise e
-        self.read_info()
+        self._update()
 
-    def read_info(self):
+    def to_msg_format(self):
+        self._update()
+        return self.data
+
+    def _update(self):
         '''
           Reads from a concert client's flipped platform_info, status, list_apps topics.
         '''
@@ -55,20 +59,20 @@ class ClientInfo(object):
             for key, service in self.service_info.items():
                 self._rawdata[key] = service()
         except Exception as unused_e:
-            raise Exception("Error in read_info")
+            raise Exception("Conductor : error in read_info")
 
         self.data = concert_msgs.ConcertClient()
-        self.data.name = self.name
-        self.data.platform_info = str(self._rawdata['platform_info'].platform)
+        #self.data.name = self.name
+        platform_info = self._rawdata['platform_info'].platform_info
+        self.data.name = platform_info.name
+        self.data.platform = platform_info.platform
+        self.data.system = platform_info.system
+        self.data.robot = platform_info.robot
         self.data.status = self._rawdata['status'].status
-        self.data.apps = self._rawdata['list_apps'].apps
-
-    def get_client(self):
-        self.read_info()
-        return self.data
+        self.data.last_connection_timestamp = rospy.Time.now()
 
     def invite(self, name, ok_flag):
-        print "Calling the service with name %s"%name
+        print "Calling the service with name %s" % name
         req = concert_srvs.InvitationRequest(name, ok_flag)
         resp = self.invitation(req)
 
