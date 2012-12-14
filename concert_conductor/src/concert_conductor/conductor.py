@@ -15,6 +15,7 @@ import rospy
 import rosservice
 import appmanager_msgs.srv as appmanager_srvs
 import concert_msgs.srv as concert_srvs
+import gateway_msgs.srv as gateway_srvs
 from .client_info import ClientInfo
 
 ##############################################################################
@@ -32,7 +33,20 @@ class Conductor(object):
         self.srv = {}
         self.srv['concert_clients'] = rospy.Service('~concert_clients', concert_srvs.ClientList, self.processClientList)
         self.srv['invite'] = rospy.Service('~invite', concert_srvs.Invite, self.processInvite)
-        self.srv['set_auto_invite'] = rospy.Service('~set_auto_invite', concert_srvs.SetAutoInvite, self.processAutoInvite)
+
+        # Get concert name (i.e. gateway name)
+        gateway_info_service = rospy.ServiceProxy("~gateway_info", gateway_srvs.GatewayInfo)
+        gateway_info_service.wait_for_service()
+        gateway_is_connected = False
+
+        while not rospy.is_shutdown() and not gateway_is_connected:
+            gateway_info = gateway_info_service(gateway_srvs.GatewayInfoRequest())
+            gateway_is_connected = gateway_info.connected
+            if gateway_info.connected == True:
+                self.concert_name = gateway_info.name
+            else:
+                rospy.loginfo("Conductor : no hub yet available, spinning...")
+            rospy.sleep(1.0)
 
         self.parse_params()
         self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
@@ -75,21 +89,12 @@ class Conductor(object):
 
     def processClientList(self, req):
         out = [self.clients[cinfo].get_client() for cinfo in self.clients]
-
         return concert_srvs.ClientListResponse(out)
 
     def processInvite(self, req):
         mastername = req.mastername
-
         resp = self.invite(mastername, req.clientnames, req.ok_flag)
-
         return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
-
-    def processAutoInvite(self, req):
-        rospy.loginfo("Conductor : Auto Invitation : " + str(req.is_auto))
-        self.mastername = req.mastername
-        self.param['config']['auto_invite'] = req.is_auto
-        return concert_srvs.SetAutoInviteResponse(True)
 
     def invite(self, mastername, clientnames, ok_flag):
         try:
@@ -97,12 +102,11 @@ class Conductor(object):
                 if not name.startswith('/'):
                     name = '/' + name
                 unused_resp = self.clients[name].invite(mastername, ok_flag)
-                rospy.loginfo("Conductor : Success to invite[" + str(ok_flag) + "] : " + str(name))
+                rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
                 self.invited_clients[name] = ok_flag
         except Exception as e:
             rospy.logerr("Conductor : %s" % str(e))
             return False
-
         return True
 
     def spin(self):
@@ -126,14 +130,15 @@ class Conductor(object):
                     rospy.loginfo("Conductor : new client found : " + new_client)
                     self.clients[new_client] = ClientInfo(new_client, self.param)
 
+                    # re-invitation of clients that disappeared and came back
                     if new_client in self.invited_clients:
-                        self.invite(self.mastername, [new_client], True)
+                        self.invite(self.concert_name, [new_client], True)
                 except Exception as e:
                     self._bad_clients.append(new_client)
                     rospy.loginfo("Conductor : failed to establish client[" + str(new_client) + "] : " + str(e))
 
             if self.param['config']['auto_invite']:
                 client_list = [client for client in self.clients if (client not in self.invited_clients) or (client in self.invited_clients and self.invited_clients[client] == False)]
-                self.invite(self.mastername, client_list, True)
+                self.invite(self.concert_name, client_list, True)
 
             rospy.sleep(1.0)

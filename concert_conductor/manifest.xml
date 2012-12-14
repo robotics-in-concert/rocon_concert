@@ -12,6 +12,7 @@
   <depend package="appmanager_msgs"/>
   <depend package="concert_msgs"/>
   <depend package="std_msgs"/>
+  <depend package="gateway_msgs"/>
 
 </package>
 

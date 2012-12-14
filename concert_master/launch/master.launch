@@ -17,6 +17,7 @@
     <param name="hub_whitelist" value="[$(arg concert_name)]"/>
   </node>
   <node pkg="concert_conductor" type="conductor.py" name="conductor" output="screen">
+    <remap from="conductor/gateway_info" to="gateway/gateway_info"/>
     <rosparam command="load" file="$(find concert_conductor)/param/default.yaml"/>
   </node>
 </launch>

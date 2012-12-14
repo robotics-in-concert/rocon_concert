@@ -29,9 +29,9 @@ class ClientInfo(object):
 
         self.platform_info = None
         self.service_info = {}
-        self.service_exec = {}
+        self.service_exec = {}  # Services to execute, e.g. start_app, stop_app
 
-        #### Setup Invitation Service
+        #### Setup Invitation                        name, type
         self.invitation = rospy.ServiceProxy(str(self.name + '/' + param['invitation'][0]), param['invitation'][1])
 
         self.service_info = {}
@@ -68,8 +68,8 @@ class ClientInfo(object):
         return self.data
 
     def invite(self, name, ok_flag):
+        print "Calling the service with name %s"%name
         req = concert_srvs.InvitationRequest(name, ok_flag)
-
         resp = self.invitation(req)
 
         if resp.success == True:
