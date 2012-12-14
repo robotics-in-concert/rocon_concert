@@ -13,6 +13,7 @@
   </node>
   <node pkg="concert_master" type="concert_master.py" name="concert_master" output="screen">
     <remap from="concert_master/gateway_info" to="gateway/gateway_info"/>
+    <param name="hub_whitelist" value="[$(arg concert_name)]"/>
   </node>
   <node pkg="concert_conductor" type="conductor.py" name="conductor" output="screen">
     <rosparam command="load" file="$(find concert_conductor)/param/default.yaml"/>
