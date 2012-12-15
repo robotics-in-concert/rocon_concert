@@ -7,8 +7,6 @@
 # Imports
 ##############################################################################
 
-import sys
-import traceback
 import roslib
 roslib.load_manifest('concert_conductor')
 import rospy
@@ -31,10 +29,9 @@ class Conductor(object):
         # Pubs, Subs and Services
         ##################################
         self.publishers = {}
-        self.publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients, latch=True)
-        self.srv = {}
-        #self.srv['concert_clients'] = rospy.Service('~concert_clients', concert_srvs.ClientList, self.processClientList)
-        self.srv['invite'] = rospy.Service('~invite', concert_srvs.Invite, self.processInvite)
+        self.publishers["list_concert_clients"] = rospy.Publisher("~list_concert_clients", concert_msgs.ConcertClients, latch=True)
+        self.services = {}
+        self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
 
         ##################################
         # Variables
@@ -50,15 +47,7 @@ class Conductor(object):
         ##################################
         self._get_concert_name()
         self._setup_ros_parameters()
-
-    def processClientList(self, req):
-        out = [self._concert_clients[cinfo].get_client() for cinfo in self._concert_clients]
-        return concert_srvs.ClientListResponse(out)
-
-    def processInvite(self, req):
-        mastername = req.mastername
-        resp = self.invite(mastername, req.clientnames, req.ok_flag)
-        return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
+        self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
 
     def invite(self, mastername, clientnames, ok_flag):
         try:
@@ -79,7 +68,8 @@ class Conductor(object):
         '''
         while not rospy.is_shutdown():
             visible_clients = self._get_visible_clients()
-            self._prune_client_list(visible_clients)
+            number_of_pruned_clients = self._prune_client_list(visible_clients)
+            number_of_new_clients = 0
             new_clients = [c for c in visible_clients if (c not in self._concert_clients) and (c not in self._bad_clients)]
 
             # Create new clients info instance
@@ -87,6 +77,7 @@ class Conductor(object):
                 try:
                     rospy.loginfo("Conductor : new client found [%s]" % new_client)
                     self._concert_clients[new_client] = ClientInfo(new_client, self.param)
+                    number_of_new_clients += 1
 
                     # re-invitation of clients that disappeared and came back
                     if new_client in self._invited_clients:
@@ -100,8 +91,21 @@ class Conductor(object):
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
                 self.invite(self._concert_name, client_list, True)
-            self._publish_discovered_concert_clients()
+            if number_of_pruned_clients != 0 or number_of_new_clients != 0:
+                self._publish_discovered_concert_clients()
             rospy.sleep(self._watcher_period)
+
+    ###########################################################################
+    # Ros Callbacks
+    ###########################################################################
+
+    def _process_invitation_request(self, req):
+        '''
+          Handles service requests from the concert master to invite a set of concert clients.
+        '''
+        mastername = req.mastername
+        resp = self.invite(mastername, req.clientnames, req.ok_flag)
+        return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
 
     ###########################################################################
     # Helpers
@@ -122,11 +126,17 @@ class Conductor(object):
     def _prune_client_list(self, new_clients):
         '''
           Remove from the current client list any whose topics and services have disappeared.
+
+          @return number of pruned clients
+          @rtype int
         '''
+        number_of_pruned_clients = 0
         for name in self._concert_clients.keys():
             if not name in new_clients:
+                number_of_pruned_clients += 1
                 rospy.loginfo("Conductor : client left : " + name)
                 del self._concert_clients[name]
+        return number_of_pruned_clients
 
     def _publish_discovered_concert_clients(self):
         '''
@@ -142,7 +152,7 @@ class Conductor(object):
                 # service was broken, quietly do not add it
                 # (it will be deleted from client list next pass)
                 pass
-        self.publishers["concert_clients"].publish(discovered_concert)
+        self.publishers["list_concert_clients"].publish(discovered_concert)
 
     ###########################################################################
     # Private Initialisation
