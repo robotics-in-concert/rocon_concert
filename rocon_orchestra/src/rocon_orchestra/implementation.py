@@ -7,13 +7,13 @@ Created on 22/11/2011
 # Imports
 ##############################################################################
 
-# Ros imports
-import roslib; roslib.load_manifest('rocon_orchestra')
+import roslib
+roslib.load_manifest('rocon_orchestra')
 import rospy
 
-#from concert_msgs.srv import import *
-import concert_msgs
-#from concert_msgs import srv
+import concert_msgs.msg as concert_msgs
+import concert_msgs.srv as concert_srvs
+
 
 from concert_msgs.srv import Implementation
 from concert_msgs.srv import ImplementationResponse
@@ -21,6 +21,7 @@ from concert_msgs.srv import ImplementationResponse
 ##############################################################################
 # Classes
 ##############################################################################
+
 
 class Implementation:
     '''
@@ -31,11 +32,11 @@ class Implementation:
         self.name = rospy.get_param("~name", "Implementation 42")
         self.nodes = rospy.get_param("~nodes", [])
         self.link_graph = rospy.get_param("~link_graph", "")
-        self.device_configuration_server = rospy.Service('implementation', concert_msgs.srv.Implementation, self.serve_implementation_details)
+        self.device_configuration_server = rospy.Service('~implementation', concert_srvs.Implementation, self.serve_implementation_details)
         rospy.loginfo("Orchestration: initialised the implementation server.")
 
-    def serve_implementation_details(self,req):
-        response = concert_msgs.srv.ImplementationResponse()
+    def serve_implementation_details(self, req):
+        response = concert_srvs.ImplementationResponse()
         response.name = self.name
         response.nodes = self.nodes
         response.link_graph = self.link_graph
