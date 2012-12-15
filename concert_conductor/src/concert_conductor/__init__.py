@@ -8,3 +8,4 @@
 ##############################################################################
 
 from .conductor import Conductor
+from .concert_client import ConcertClientException

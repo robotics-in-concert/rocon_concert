@@ -17,7 +17,7 @@ import appmanager_msgs.srv as appmanager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import gateway_msgs.srv as gateway_srvs
-from .client_info import ClientInfo
+from .concert_client import ClientInfo, ConcertClientException
 
 ##############################################################################
 # Conductor
@@ -85,7 +85,7 @@ class Conductor(object):
             # Create new clients info instance
             for new_client in new_clients:
                 try:
-                    rospy.loginfo("Conductor : new client found : " + new_client)
+                    rospy.loginfo("Conductor : new client found [%s]" % new_client)
                     self._concert_clients[new_client] = ClientInfo(new_client, self.param)
 
                     # re-invitation of clients that disappeared and came back
@@ -93,7 +93,7 @@ class Conductor(object):
                         self.invite(self._concert_name, [new_client], True)
                 except Exception as e:
                     self._bad_clients.append(new_client)
-                    rospy.loginfo("Conductor : failed to establish client [" + str(new_client) + "] : " + str(e))
+                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(new_client), str(e)))
 
             if self.param['config']['auto_invite']:
                 client_list = [client for client in self._concert_clients
@@ -136,7 +136,12 @@ class Conductor(object):
         '''
         discovered_concert = concert_msgs.ConcertClients()
         for unused_client, client_info in self._concert_clients.iteritems():
-            discovered_concert.clients.append(client_info.to_msg_format())
+            try:
+                discovered_concert.clients.append(client_info.to_msg_format())
+            except ConcertClientException:
+                # service was broken, quietly do not add it
+                # (it will be deleted from client list next pass)
+                pass
         self.publishers["concert_clients"].publish(discovered_concert)
 
     ###########################################################################
