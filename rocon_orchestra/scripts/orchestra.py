@@ -6,4 +6,7 @@ import rocon_orchestra
 
 
 if __name__ == '__main__':
-    rocon_orchestra.orchestration.main()
+    rospy.init_node('orchestration')  # , log_level=rospy.DEBUG)
+    orchestration = rocon_orchestra.Orchestration()
+    rospy.spin()
+    return 0

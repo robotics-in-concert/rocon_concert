@@ -14,10 +14,6 @@ import rospy
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
-
-from concert_msgs.srv import Implementation
-from concert_msgs.srv import ImplementationResponse
-
 ##############################################################################
 # Classes
 ##############################################################################
@@ -29,15 +25,29 @@ class Implementation:
     '''
     def __init__(self):
         # This will need some modification if we go to multiple solutions on file.
-        self.name = rospy.get_param("~name", "Implementation 42")
-        self.nodes = rospy.get_param("~nodes", [])
-        self.link_graph = rospy.get_param("~link_graph", "")
-        self.device_configuration_server = rospy.Service('~implementation', concert_srvs.Implementation, self.serve_implementation_details)
-        rospy.loginfo("Orchestration: initialised the implementation server.")
+        self._name = rospy.get_param("~name", "Implementation 42")
+        self._nodes = rospy.get_param("~nodes", [])
+        self._topics = rospy.get_param("~topics", [])
+        self._actions = rospy.get_param("~actions", [])
+        self._edges = rospy.get_param("~edges", [])
+        self._dot_graph = rospy.get_param("~dot_graph", "")
+        self._implementation_server = rospy.Service('~implementation', concert_srvs.Implementation, self.serve_implementation_details)
+        rospy.loginfo("Orchestration : initialised the implementation server.")
 
     def serve_implementation_details(self, req):
-        response = concert_srvs.ImplementationResponse()
-        response.name = self.name
-        response.nodes = self.nodes
-        response.link_graph = self.link_graph
-        return response
+        '''
+          Might be easier just serving up the whole implementation file and saving that
+          in a string here.
+        '''
+        implementation = concert_srvs.ImplementationResponse()
+        implementation.name = self._name
+        for node in self._nodes:
+            implementation.link_graph.nodes.append(concert_msgs.LinkNode(node['id'], node['tuple']))
+        for topic in self._topics:
+            implementation.link_graph.topics.append(concert_msgs.LinkConnection(topic['id'], topic['name'], topic['type']))
+        for action in self._actions:
+            implementation.link_graph.actions.append(concert_msgs.LinkConnection(action['id'], action['name'], action['type']))
+        for edge in self._edges:
+            implementation.link_graph.edges.append(concert_msgs.LinkEdge(edge['start'], edge['finish']))
+        implementation.dot_graph = self._dot_graph
+        return implementation
