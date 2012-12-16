@@ -26,7 +26,7 @@ class Implementation:
     def __init__(self):
         # This will need some modification if we go to multiple solutions on file.
         self._name = rospy.get_param("~name", "Implementation 42")
-        self._nodes = rospy.get_param("~nodes", [])
+        self.nodes = rospy.get_param("~nodes", [])
         self._topics = rospy.get_param("~topics", [])
         self._actions = rospy.get_param("~actions", [])
         self._edges = rospy.get_param("~edges", [])
@@ -41,7 +41,7 @@ class Implementation:
         '''
         implementation = concert_srvs.ImplementationResponse()
         implementation.name = self._name
-        for node in self._nodes:
+        for node in self.nodes:
             implementation.link_graph.nodes.append(concert_msgs.LinkNode(node['id'], node['tuple']))
         for topic in self._topics:
             implementation.link_graph.topics.append(concert_msgs.LinkConnection(topic['id'], topic['name'], topic['type']))
