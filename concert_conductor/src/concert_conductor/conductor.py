@@ -91,8 +91,11 @@ class Conductor(object):
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
                 self.invite(self._concert_name, client_list, True)
-            if number_of_pruned_clients != 0 or number_of_new_clients != 0:
-                self._publish_discovered_concert_clients()
+            # Latch this later so it only publishes updates
+            # Leaving it as continually publishing so it goes to web apps for now (inefficient).
+            self._publish_discovered_concert_clients()
+            #if number_of_pruned_clients != 0 or number_of_new_clients != 0:
+            #    self._publish_discovered_concert_clients()
             rospy.sleep(self._watcher_period)
 
     ###########################################################################
