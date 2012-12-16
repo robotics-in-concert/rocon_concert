@@ -29,7 +29,10 @@ class Conductor(object):
         # Pubs, Subs and Services
         ##################################
         self.publishers = {}
-        self.publishers["list_concert_clients"] = rospy.Publisher("~list_concert_clients", concert_msgs.ConcertClients, latch=True)
+        # private spammy list_concert_clients publisher - used by web applications since they can't yet handle latched
+        self.publishers["spammy_list_concert_clients"] = rospy.Publisher("~list_concert_clients", concert_msgs.ConcertClients)
+        # efficient latched publisher, put in the public concert namespace.
+        self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
 
@@ -91,11 +94,11 @@ class Conductor(object):
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
                 self.invite(self._concert_name, client_list, True)
-            # Latch this later so it only publishes updates
-            # Leaving it as continually publishing so it goes to web apps for now (inefficient).
-            self._publish_discovered_concert_clients()
-            #if number_of_pruned_clients != 0 or number_of_new_clients != 0:
-            #    self._publish_discovered_concert_clients()
+            # Continually publish so it goes to web apps for now (inefficient).
+            self._publish_discovered_concert_clients(self.publishers["spammy_list_concert_clients"])
+            # Long term solution
+            if number_of_pruned_clients != 0 or number_of_new_clients != 0:
+                self._publish_discovered_concert_clients()
             rospy.sleep(self._watcher_period)
 
     ###########################################################################
@@ -141,7 +144,7 @@ class Conductor(object):
                 del self._concert_clients[name]
         return number_of_pruned_clients
 
-    def _publish_discovered_concert_clients(self):
+    def _publish_discovered_concert_clients(self, list_concert_clients_publisher=None):
         '''
             Provide a list of currently discovered clients. This goes onto a
             latched publisher, so subscribers will always have the latest
@@ -155,7 +158,9 @@ class Conductor(object):
                 # service was broken, quietly do not add it
                 # (it will be deleted from client list next pass)
                 pass
-        self.publishers["list_concert_clients"].publish(discovered_concert)
+        if not list_concert_clients_publisher:
+            list_concert_clients_publisher = self.publishers["list_concert_clients"]  # default
+        list_concert_clients_publisher.publish(discovered_concert)
 
     ###########################################################################
     # Private Initialisation
