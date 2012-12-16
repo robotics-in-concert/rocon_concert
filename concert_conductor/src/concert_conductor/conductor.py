@@ -15,7 +15,7 @@ import appmanager_msgs.srv as appmanager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import gateway_msgs.srv as gateway_srvs
-from .concert_client import ClientInfo, ConcertClientException
+from .concert_client import ConcertClient, ConcertClientException
 
 ##############################################################################
 # Conductor
@@ -76,7 +76,7 @@ class Conductor(object):
             for new_client in new_clients:
                 try:
                     rospy.loginfo("Conductor : new client found [%s]" % new_client)
-                    self._concert_clients[new_client] = ClientInfo(new_client, self.param)
+                    self._concert_clients[new_client] = ConcertClient(new_client, self.param)
                     number_of_new_clients += 1
 
                     # re-invitation of clients that disappeared and came back

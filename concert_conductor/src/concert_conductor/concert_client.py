@@ -27,7 +27,7 @@ class ConcertClientException(Exception):
 ##############################################################################
 
 
-class ClientInfo(object):
+class ConcertClient(object):
 
     def __init__(self, client_name, param):
         '''
@@ -102,6 +102,7 @@ class ClientInfo(object):
         self.data.robot = platform_info.robot
         self.data.status = self._rawdata['status'].status
         self.data.last_connection_timestamp = rospy.Time.now()
+        self.data.apps = self._rawdata['list_apps'].apps
 
     def invite(self, name, ok_flag):
         req = concert_srvs.InvitationRequest(name, ok_flag)
