@@ -36,6 +36,7 @@ class Conductor(object):
         self.services = {}
         self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
         self.services['start_solution'] = rospy.Service('start_solution', concert_srvs.StartSolution, self._process_start_solution)
+        #self.services['stop_solution'] = rospy.Service('stop_solution', concert_srvs.StopSolution, self._process_stop_solution)
 
         ##################################
         # Variables

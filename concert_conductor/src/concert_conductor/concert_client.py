@@ -129,6 +129,7 @@ class ConcertClient(object):
           @param remappings : list of (from,to) pairs
           @type list of tuples
         '''
+        self.service_execution['start_app'].wait_for_service()
         req = appmanager_srvs.StartAppRequest()
         req.name = app_name
         req.remappings = []
