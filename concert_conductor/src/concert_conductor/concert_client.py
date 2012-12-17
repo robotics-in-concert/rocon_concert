@@ -10,6 +10,8 @@
 import roslib
 roslib.load_manifest('concert_conductor')
 import rospy
+import appmanager_msgs.msg as appmanager_msgs
+import appmanager_msgs.srv as appmanager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -44,7 +46,7 @@ class ConcertClient(object):
 
         self.platform_info = None
         self.service_info = {}
-        self.service_exec = {}  # Services to execute, e.g. start_app, stop_app
+        self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
 
         #### Setup Invitation                        name, type
         self.invitation = rospy.ServiceProxy(str(self.name + '/' + param['invitation'][0]), param['invitation'][1])
@@ -60,6 +62,12 @@ class ConcertClient(object):
                 self.service_info[k].wait_for_service()
             except rospy.ServiceException, e:
                 raise e
+        # Don't wait for these - not up till invited
+        for k in param['execution']['srv'].keys():
+            key = param['execution']['srv'][k][0]
+            service_type = param['execution']['srv'][k][1]
+            self.service_execution[k] = rospy.ServiceProxy(str(self.name + '/' + key), service_type)
+
         try:
             self._update()
         except ConcertClientException:
@@ -113,6 +121,20 @@ class ConcertClient(object):
             self.set_channel()
         else:
             raise Exception(str("Invitation Failed : " + self.name))
+
+    def start_app(self, app_name, remappings):
+        '''
+          @param app_name : string unique identifier for the app
+          @type string
+          @param remappings : list of (from,to) pairs
+          @type list of tuples
+        '''
+        req = appmanager_srvs.StartAppRequest()
+        req.name = app_name
+        req.remappings = []
+        for remapping in remappings:
+            req.remappings.append(appmanager_msgs.Remapping(remapping[0], remapping[1]))
+        unused_resp = self.service_execution['start_app'](req)
 
     def set_channel(self):
         param = self.param
