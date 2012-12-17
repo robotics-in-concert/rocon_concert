@@ -1,10 +1,8 @@
-#!/bin/env python
-
-'''
-The orchestrator.
-
-@author: Daniel Stonier
-'''
+#!/usr/bin/env python
+#
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_orchestration/rocon_orchestra/LICENSE
+#
 ##############################################################################
 # Imports
 ##############################################################################
@@ -13,6 +11,8 @@ import copy
 import roslib
 roslib.load_manifest('rocon_orchestra')
 import rospy
+import appmanager_msgs.msg as appmanager_msgs
+import appmanager_msgs.srv as appmanager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -20,7 +20,7 @@ import concert_msgs.srv as concert_srvs
 from .implementation import Implementation
 
 ##############################################################################
-# Callbacks
+# Orchestration
 ##############################################################################
 
 
@@ -31,8 +31,11 @@ class Orchestration(object):
         self._solution_running = False
         self._concert_clients = []
         rospy.Subscriber("list_concert_clients", concert_msgs.ConcertClients, self._callback_concert_clients)
-        rospy.wait_for_service('start_solution')
-        self._start_solution = rospy.ServiceProxy('start_solution', concert_srvs.StartSolution)
+
+        self._services = {}
+        # later disassemble these to start_apps/stop_apps (plural) to the conductor
+        self._services['stop_solution'] = rospy.Service('stop_solution', concert_srvs.StopSolution, self._process_stop_solution)
+        self._services['start_solution'] = rospy.Service('start_solution', concert_srvs.StartSolution, self._process_start_solution)
 
     def _callback_concert_clients(self, concert):
         '''
@@ -50,13 +53,7 @@ class Orchestration(object):
             if node_client_matches:
                 self._implementation.rebuild(node_client_matches)
                 self._implementation.publish()
-                try:
-                    req = concert_srvs.StartSolutionRequest()
-                    req.implementation = self._implementation.to_msg()
-                    unused_resp = self._start_solution(req)
-                    self._solution_running = True
-                except rospy.ServiceException, e:
-                    rospy.logwarn("Orchestration : service call failed [%s]" % e)
+                rospy.loginfo("Orchestration : solution is ready to run")
 
     def _implementation_ready(self):
         '''
@@ -112,3 +109,72 @@ class Orchestration(object):
             if app_name == client_app.name:
                 return True
         return False
+
+    ##########################################################################
+    # Ros Callbacks
+    ##########################################################################
+    # These should be moved to the conductor under the guise of
+    # 'start apps', 'stop apps' (plural).
+
+    def _process_start_solution(self, req):
+        # Put in checks to see if a solution is already running
+        response = concert_srvs.StartSolutionResponse()
+        if self._solution_running:
+            response.success = False
+            response.message = "chincha? the solution is already running..."
+            return response
+        implementation = self._implementation.to_msg()
+        response.success = True
+        link_graph = implementation.link_graph
+        rospy.loginfo("Orchestra : starting solution [%s]" % implementation.name)
+        for node in link_graph.nodes:
+            concert_client_name = node.id
+            app_name = node.tuple.split('.')[3]
+            remappings = []
+            rospy.loginfo("            node: %s" % concert_client_name)
+            rospy.loginfo("              app: %s" % app_name)
+            rospy.loginfo("              remaps")
+            for edge in link_graph.edges:
+                if edge.start == concert_client_name or edge.finish == concert_client_name:
+                    rospy.loginfo("                %s->%s" % (edge.remap_from, edge.remap_to))
+                    remappings.append((edge.remap_from, edge.remap_to))
+            # Check to see if start app service exists for the node, abort if not
+            #self._concert_clients['/' + concert_client_name].start_app(app_name, remappings)
+            start_app_name = '/' + node.id + '/start_app'
+            rospy.wait_for_service(start_app_name)
+            start_app = rospy.ServiceProxy(start_app_name, appmanager_srvs.StartApp)
+            req = appmanager_srvs.StartAppRequest()
+            req.name = app_name
+            req.remappings = []
+            for remapping in remappings:
+                req.remappings.append(appmanager_msgs.Remapping(remapping[0], remapping[1]))
+            resp = start_app(req)
+            if not resp.started:
+                response.success = False
+                response.message = "aigoo, failed to start app %s" % app_name
+        response.message = "bonza"
+        self._solution_running = True
+        return response
+
+    def _process_stop_solution(self, req):
+        rospy.loginfo("Orchestra : stopping the solution.")
+        response = concert_srvs.StopSolutionResponse()
+        response.success = True
+        response.message = "Bonza"
+        if not self._solution_running:
+            response.success = False
+            response.message = "chincha? the solution is not running..."
+            return response
+        for node in self._implementation.nodes:
+            stop_app_name = '/' + node['id'] + '/stop_app'
+            app_name = node['tuple'].split('.')[3]
+            # check first if it exists, also timeouts?
+            rospy.wait_for_service(stop_app_name)
+            stop_app = rospy.ServiceProxy(stop_app_name, appmanager_srvs.StopApp)
+            req = appmanager_srvs.StopAppRequest(app_name)
+            resp = stop_app(req)
+            if not resp.stopped:
+                response.success = False
+                response.message = "aigoo, failed to stop app %s" % app_name
+        self._solution_running = False
+        return response
