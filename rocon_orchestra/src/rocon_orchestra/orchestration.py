@@ -54,6 +54,7 @@ class Orchestration(object):
                     req = concert_srvs.StartSolutionRequest()
                     req.implementation = self._implementation.to_msg()
                     unused_resp = self._start_solution(req)
+                    self._solution_running = True
                 except rospy.ServiceException, e:
                     rospy.logwarn("Orchestration : service call failed [%s]" % e)
 
