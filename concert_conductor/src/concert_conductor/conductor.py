@@ -35,8 +35,6 @@ class Conductor(object):
         self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
-        self.services['start_solution'] = rospy.Service('start_solution', concert_srvs.StartSolution, self._process_start_solution)
-        #self.services['stop_solution'] = rospy.Service('stop_solution', concert_srvs.StopSolution, self._process_stop_solution)
 
         ##################################
         # Variables
@@ -106,39 +104,6 @@ class Conductor(object):
     ###########################################################################
     # Ros Callbacks
     ###########################################################################
-
-    def _process_start_solution(self, req):
-        '''
-          Serves request from the orchestra to start a solution. Not sure if
-          should do this wholly here or just have the conductor handle
-          minor start app requests.
-
-          Details in the implementation.
-        '''
-        # Put in checks to see if a solution is already running
-        resp = concert_srvs.StartSolutionResponse()
-        resp.success = True
-        link_graph = req.implementation.link_graph
-        rospy.loginfo("Conductor : starting solution [%s]" % req.implementation.name)
-        for node in link_graph.nodes:
-            concert_client_name = node.id
-            app_name = node.tuple.split('.')[3]
-            remappings = []
-            rospy.loginfo("            node: %s" % concert_client_name)
-            rospy.loginfo("              app: %s" % app_name)
-            rospy.loginfo("              remaps")
-            for edge in link_graph.edges:
-                if edge.start == concert_client_name or edge.finish == concert_client_name:
-                    rospy.loginfo("                %s->%s" % (edge.remap_from, edge.remap_to))
-                    remappings.append((edge.remap_from, edge.remap_to))
-            # Fix bad hack with slashes
-            if '/' + concert_client_name not in self._concert_clients.keys():
-                rospy.logwarn("Conductor : received request to start app on a nonexistant client.")
-                resp.success = False
-                return resp
-            self._concert_clients['/' + concert_client_name].start_app(app_name, remappings)
-        resp.success = True
-        return resp
 
     def _process_invitation_request(self, req):
         '''
