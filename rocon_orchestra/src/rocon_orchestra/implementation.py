@@ -13,6 +13,7 @@ import rospy
 import re
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
+import pydot
 
 ##############################################################################
 # Classes
@@ -84,3 +85,16 @@ class Implementation:
                         edge['remap_from'] = edge['remap_from'].replace(node_id, client_name)
                     if re.search(node_id, edge['remap_to']):
                         edge['remap_to'] = edge['remap_to'].replace(node_id, client_name)
+
+    def to_dot(self):
+        graph = pydot.Dot(graph_type='graph')
+#        for node in self.nodes:
+#            n = pydot.Node(node['id'], style="filled", fillcolor="red")
+#            graph.add_node(n)
+#        self.nodes = rospy.get_param("~nodes", [])
+#        self._topics = rospy.get_param("~topics", [])
+#        self._actions = rospy.get_param("~actions", [])
+#        self._edges = rospy.get_param("~edges", [])
+#        self._dot_graph = rospy.get_param("~dot_graph", "")
+#        self._implementation_publisher = rospy.Publisher("implementation", concert_msgs.Implementation, latch=True)
+#        self.publish()

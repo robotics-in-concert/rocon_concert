@@ -48,19 +48,25 @@ class Orchestration(object):
             rospy.loginfo("       Client: %s" % (concert_client.name))
             rospy.loginfo("               %s.%s.%s" % (concert_client.platform, concert_client.system, concert_client.robot))
             rospy.loginfo("               %s" % concert_client.client_status)
-        if not self._solution_running:
-            node_client_matches = self._implementation_ready()
-            if node_client_matches:
+        node_client_matches = self._implementation_ready()
+        if node_client_matches:
+            if not self._solution_running:
                 self._implementation.rebuild(node_client_matches)
                 self._implementation.publish()
                 rospy.loginfo("Orchestration : solution is ready to run")
+        else:
+            pass
+            # probably not robust if you have apps coming and going
+            #self._process_stop_solution()
+            #if self._solution_running:
+            #    self._solution_running = False
 
     def _implementation_ready(self):
         '''
           Checks if the listed concert clients are a match with the
           implementation.
 
-          @return list of (node, client) tuples
+          @return list of (node, client) tuples or None
         '''
         clients = copy.deepcopy(self._concert_clients)
         matched = []
@@ -119,10 +125,12 @@ class Orchestration(object):
     def _process_start_solution(self, req):
         # Put in checks to see if a solution is already running
         response = concert_srvs.StartSolutionResponse()
-        if self._solution_running:
+        if not self._implementation_ready():
             response.success = False
-            response.message = "chincha? the solution is already running..."
+            response.message = "solution is not yet ready (waiting for clients)..."
             return response
+        if self._solution_running:
+            rospy.loginfo("Orchestration : chincha? the solution is already running, try restarting anyway")
         implementation = self._implementation.to_msg()
         response.success = True
         link_graph = implementation.link_graph
@@ -156,8 +164,7 @@ class Orchestration(object):
         self._solution_running = True
         return response
 
-    def _process_stop_solution(self, req):
-        rospy.loginfo("Orchestra : stopping the solution.")
+    def _process_stop_solution(self, req=None):
         response = concert_srvs.StopSolutionResponse()
         response.success = True
         response.message = "Bonza"
@@ -165,6 +172,8 @@ class Orchestration(object):
             response.success = False
             response.message = "chincha? the solution is not running..."
             return response
+        self._solution_running = False
+        rospy.loginfo("Orchestra : stopping the solution.")
         for node in self._implementation.nodes:
             stop_app_name = '/' + node['id'] + '/stop_app'
             app_name = node['tuple'].split('.')[3]
@@ -176,5 +185,4 @@ class Orchestration(object):
             if not resp.stopped:
                 response.success = False
                 response.message = "aigoo, failed to stop app %s" % app_name
-        self._solution_running = False
         return response
