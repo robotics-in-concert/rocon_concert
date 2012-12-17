@@ -10,6 +10,7 @@
     <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml"/>
     <param name="name" value="$(arg concert_name)"/>
     <param name="firewall" value="false"/>
+    <param name="watch_loop_period" value="1.0"/>
     <param name="hub_whitelist" value="[$(arg concert_name)]"/>
   </node>
   <node pkg="concert_master" type="concert_master.py" name="concert_master" output="screen">
