@@ -55,11 +55,10 @@ class Orchestration(object):
                 self._implementation.publish()
                 rospy.loginfo("Orchestration : solution is ready to run")
         else:
-            pass
+            # means you've lost a client
             # probably not robust if you have apps coming and going
+            self._solution_running = False
             #self._process_stop_solution()
-            #if self._solution_running:
-            #    self._solution_running = False
 
     def _implementation_ready(self):
         '''
