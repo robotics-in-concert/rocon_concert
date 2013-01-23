@@ -20,7 +20,7 @@ catkin_python_setup()
 
 install(
     PROGRAMS 
-        scripts/concert_master.py
+        scripts/concerto.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
