@@ -3,8 +3,6 @@
 # License: BSD
 #   https://raw.github.com/robotics-in-concert/rocon_app_manager/concert_conductor/LICENSE
 #
-import roslib
-roslib.load_manifest('concert_conductor')
 import rospy
 import concert_conductor
 

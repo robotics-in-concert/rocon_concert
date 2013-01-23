@@ -7,8 +7,6 @@
 # Imports
 ##############################################################################
 
-import roslib
-roslib.load_manifest('concert_master')
 import rospy
 import sys
 import traceback

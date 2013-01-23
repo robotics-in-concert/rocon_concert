@@ -7,8 +7,6 @@
 # Imports
 ##############################################################################
 
-import roslib
-roslib.load_manifest('concert_conductor')
 import rospy
 import appmanager_msgs.msg as appmanager_msgs
 import appmanager_msgs.srv as appmanager_srvs

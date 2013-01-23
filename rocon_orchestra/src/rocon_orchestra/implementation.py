@@ -7,8 +7,6 @@
 # Imports
 ##############################################################################
 
-import roslib
-roslib.load_manifest('rocon_orchestra')
 import rospy
 import re
 import concert_msgs.msg as concert_msgs

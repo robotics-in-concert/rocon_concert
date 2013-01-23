@@ -7,10 +7,8 @@
 # Imports
 ##############################################################################
 
-import roslib
-roslib.load_manifest('concert_master')
 import rospy
-from concert_master.concert_master import ConcertMaster
+from concert_master import ConcertMaster
 
 ##############################################################################
 # Main

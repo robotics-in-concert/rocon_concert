@@ -7,8 +7,6 @@
 # Imports
 ##############################################################################
 
-import roslib
-roslib.load_manifest('rocon_orchestra')
 import rospy
 import rocon_orchestra
 

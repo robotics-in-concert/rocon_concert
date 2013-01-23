@@ -8,8 +8,6 @@
 ##############################################################################
 
 import copy
-import roslib
-roslib.load_manifest('rocon_orchestra')
 import rospy
 import appmanager_msgs.msg as appmanager_msgs
 import appmanager_msgs.srv as appmanager_srvs
