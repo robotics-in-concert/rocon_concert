@@ -8,8 +8,8 @@
 ##############################################################################
 
 import rospy
-import appmanager_msgs.msg as appmanager_msgs
-import appmanager_msgs.srv as appmanager_srvs
+import rocon_app_manager_msgs.msg as rapp_manager_msgs
+import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -128,11 +128,11 @@ class ConcertClient(object):
           @type list of tuples
         '''
         self.service_execution['start_app'].wait_for_service()
-        req = appmanager_srvs.StartAppRequest()
+        req = rapp_manager_srvs.StartAppRequest()
         req.name = app_name
         req.remappings = []
         for remapping in remappings:
-            req.remappings.append(appmanager_msgs.Remapping(remapping[0], remapping[1]))
+            req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
         unused_resp = self.service_execution['start_app'](req)
 
     def set_channel(self):

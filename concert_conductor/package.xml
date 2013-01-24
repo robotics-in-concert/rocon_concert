@@ -16,7 +16,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>rospy</run_depend>
-  <run_depend>appmanager_msgs</run_depend>
+  <run_depend>rocon_app_manager_msgs</run_depend>
   <run_depend>concert_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>gateway_msgs</run_depend>

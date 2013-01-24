@@ -9,8 +9,8 @@
 
 import copy
 import rospy
-import appmanager_msgs.msg as appmanager_msgs
-import appmanager_msgs.srv as appmanager_srvs
+import rocon_app_manager_msgs.msg as rapp_manager_msgs
+import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -147,12 +147,12 @@ class Orchestration(object):
             #self._concert_clients['/' + concert_client_name].start_app(app_name, remappings)
             start_app_name = '/' + node.id + '/start_app'
             rospy.wait_for_service(start_app_name)
-            start_app = rospy.ServiceProxy(start_app_name, appmanager_srvs.StartApp)
-            req = appmanager_srvs.StartAppRequest()
+            start_app = rospy.ServiceProxy(start_app_name, rapp_manager_srvs.StartApp)
+            req = rapp_manager_srvs.StartAppRequest()
             req.name = app_name
             req.remappings = []
             for remapping in remappings:
-                req.remappings.append(appmanager_msgs.Remapping(remapping[0], remapping[1]))
+                req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
             resp = start_app(req)
             if not resp.started:
                 response.success = False
@@ -176,8 +176,8 @@ class Orchestration(object):
             app_name = node['tuple'].split('.')[3]
             # check first if it exists, also timeouts?
             rospy.wait_for_service(stop_app_name)
-            stop_app = rospy.ServiceProxy(stop_app_name, appmanager_srvs.StopApp)
-            req = appmanager_srvs.StopAppRequest(app_name)
+            stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)
+            req = rapp_manager_srvs.StopAppRequest(app_name)
             resp = stop_app(req)
             if not resp.stopped:
                 response.success = False

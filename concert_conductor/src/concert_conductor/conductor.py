@@ -9,7 +9,7 @@
 
 import rospy
 import rosservice
-import appmanager_msgs.srv as appmanager_srvs
+import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import gateway_msgs.srv as gateway_srvs
@@ -186,13 +186,13 @@ class Conductor(object):
 
         param['invitation'] = (rospy.get_param('~invitation', 'invitation'), concert_srvs.Invitation)
         param['info'] = {}
-        param['info']['list_apps'] = (rospy.get_param('~list_apps', 'list_apps'), appmanager_srvs.GetAppList)
+        param['info']['list_apps'] = (rospy.get_param('~list_apps', 'list_apps'), rapp_manager_srvs.GetAppList)
         param['info']['platform_info'] = (rospy.get_param('~platform_info', 'platform_info'), concert_srvs.GetPlatformInfo)
         param['info']['status'] = (rospy.get_param('~status', 'status'), concert_srvs.Status)
 
         param['execution'] = {}
         param['execution']['srv'] = {}
-        param['execution']['srv']['start_app'] = (rospy.get_param('~start_app', 'start_app'), appmanager_srvs.StartApp)
-        param['execution']['srv']['stop_app'] = (rospy.get_param('~stop_app', 'stop_app'), appmanager_srvs.StopApp)
+        param['execution']['srv']['start_app'] = (rospy.get_param('~start_app', 'start_app'), rapp_manager_srvs.StartApp)
+        param['execution']['srv']['stop_app'] = (rospy.get_param('~stop_app', 'stop_app'), rapp_manager_srvs.StopApp)
 
         self.param = param
