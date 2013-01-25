@@ -30,6 +30,10 @@ class Orchestration(object):
         self._concert_clients = []
         rospy.Subscriber("list_concert_clients", concert_msgs.ConcertClients, self._callback_concert_clients)
 
+        # parameters
+        self._params = {}
+        self._params['auto_start'] = rospy.get_param("~auto_start", False)
+
         self._services = {}
         # later disassemble these to start_apps/stop_apps (plural) to the conductor
         self._services['stop_solution'] = rospy.Service('stop_solution', concert_srvs.StopSolution, self._process_stop_solution)
@@ -52,6 +56,8 @@ class Orchestration(object):
                 self._implementation.rebuild(node_client_matches)
                 self._implementation.publish()
                 rospy.loginfo("Orchestration : solution is ready to run")
+                if self._params['auto_start']:
+                    self._process_start_solution(concert_srvs.StartSolutionRequest())
         else:
             # means you've lost a client
             # probably not robust if you have apps coming and going
