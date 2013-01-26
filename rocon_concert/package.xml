@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>rocon_orchestration</name>
+  <name>rocon_concert</name>
   <version>0.1.0</version>
   <description>
     Includes tools for handling solutions, linking and app distribution.
@@ -8,9 +8,9 @@
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
   <maintainer email="jihoonl@rnd.yujinrobot.com">Jihoon Lee</maintainer>
   <license>BSD</license>
-  <url type="website">http://www.ros.org/wiki/rocon_orchestration</url>
-  <url type="repository">https://github.com/robotics-in-concert/rocon_orchestration</url>
-  <url type="bugtracker">https://github.com/robotics-in-concert/rocon_orchestration/issues</url>
+  <url type="website">http://www.ros.org/wiki/rocon_concert</url>
+  <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
+  <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
   <author email="jihoonl@rnd.yujinrobot.com">Jihoon Lee</author>
 
