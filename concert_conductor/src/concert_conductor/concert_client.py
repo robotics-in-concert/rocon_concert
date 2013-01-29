@@ -12,6 +12,8 @@ import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
+import gateway_msgs.msg as gateway_msgs
+import gateway_msgs.srv as gateway_srvs
 
 ##############################################################################
 # Exceptions
@@ -46,6 +48,13 @@ class ConcertClient(object):
         self.service_info = {}
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
 
+        platform_info = self._get_platform_info()
+        print platform_info
+        self.data.name = platform_info.name
+        self.data.platform = platform_info.platform
+        self.data.system = platform_info.system
+        self.data.robot = platform_info.robot
+
         #### Setup Invitation                        name, type
         self.invitation = rospy.ServiceProxy(str(self.name + '/' + param['invitation'][0]), param['invitation'][1])
 
@@ -70,6 +79,31 @@ class ConcertClient(object):
             self._update()
         except ConcertClientException:
             raise
+
+    def _get_platform_info(self):
+        '''
+          Pulls platform information from the advertised platform_info on another
+          ros system. It is just a one-shot only used at construction time.
+        '''
+        pull_service = rospy.ServiceProxy('~pull', gateway_srvs.Remote)
+        req = gateway_srvs.RemoteRequest()
+        req.cancel = False
+        req.remotes = []
+        rule = gateway_msgs.Rule()
+        rule.name = str(self.name + '/' + 'platform_info')
+        rule.node = ''
+        rule.type = gateway_msgs.ConnectionType.SERVICE
+        req.remotes.append(gateway_msgs.RemoteRule(self.name.lstrip('/'), rule))
+        resp = pull_service(req)
+        if resp.result != 0:
+            rospy.logwarn("Conductor: failed to pull the platform info service from the client.")
+            return None
+        platform_info_service = rospy.ServiceProxy(str(self.name + '/' + 'platform_info'), rapp_manager_srvs.GetPlatformInfo)
+        try:
+            platform_info_service.wait_for_service()
+        except rospy.ServiceException, e:
+            raise e
+        return platform_info_service().platform_info
 
     def to_msg_format(self):
         '''
@@ -98,14 +132,10 @@ class ConcertClient(object):
                 self._rawdata[key] = service()
         except rospy.service.ServiceException:
             raise ConcertClientException("client platform information services unavailable (disconnected?)")
+        
+        # update the data entity (concert_msgs.ConcertClient())
 
-        self.data = concert_msgs.ConcertClient()
         #self.data.name = self.name
-        platform_info = self._rawdata['platform_info'].platform_info
-        self.data.name = platform_info.name
-        self.data.platform = platform_info.platform
-        self.data.system = platform_info.system
-        self.data.robot = platform_info.robot
         self.data.status = self._rawdata['status'].status
         self.data.last_connection_timestamp = rospy.Time.now()
         self.data.client_status = self._rawdata['status'].client_status
