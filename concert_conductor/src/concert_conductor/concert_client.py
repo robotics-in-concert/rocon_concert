@@ -49,7 +49,6 @@ class ConcertClient(object):
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
 
         platform_info = self._get_platform_info()
-        print platform_info
         self.data.name = platform_info.name
         self.data.platform = platform_info.platform
         self.data.system = platform_info.system
@@ -132,8 +131,6 @@ class ConcertClient(object):
                 self._rawdata[key] = service()
         except rospy.service.ServiceException:
             raise ConcertClientException("client platform information services unavailable (disconnected?)")
-        
-        # update the data entity (concert_msgs.ConcertClient())
 
         #self.data.name = self.name
         self.data.status = self._rawdata['status'].status
