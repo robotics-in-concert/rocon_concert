@@ -78,6 +78,7 @@ class Conductor(object):
                 try:
                     rospy.loginfo("Conductor : new client found [%s]" % new_client)
                     self._concert_clients[new_client] = ConcertClient(new_client, self.param)
+                    rospy.loginfo("Conductor : new client created [%s]" % new_client)
                     number_of_new_clients += 1
 
                     # re-invitation of clients that disappeared and came back
@@ -185,8 +186,8 @@ class Conductor(object):
         param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
 
         param['invitation'] = (rospy.get_param('~invitation', 'invitation'), concert_srvs.Invitation)
+        # Depracate this (make it simpler)
         param['info'] = {}
-        param['info']['list_apps'] = ('list_apps', rapp_manager_srvs.GetAppList)
         param['info']['status'] = ('status', concert_srvs.Status)
 
         param['execution'] = {}
