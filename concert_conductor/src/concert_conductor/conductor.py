@@ -132,7 +132,6 @@ class Conductor(object):
         suffix = 'platform_info'
         visible_clients = []
         remote_gateway_info = self._remote_gateway_info_service()
-        print remote_gateway_info
         for remote_gateway in remote_gateway_info.gateways:
             for rule in remote_gateway.public_interface:
                 if rule.name.endswith(suffix):
@@ -195,8 +194,6 @@ class Conductor(object):
         param = {}
         param['config'] = {}
         param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
-
-        param['invitation'] = (rospy.get_param('~invitation', 'invitation'), concert_srvs.Invitation)
 
         param['execution'] = {}
         param['execution']['srv'] = {}
