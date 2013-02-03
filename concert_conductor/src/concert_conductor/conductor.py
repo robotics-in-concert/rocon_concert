@@ -33,6 +33,12 @@ class Conductor(object):
         self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
+        # service clients
+        self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
+        try:
+            self._remote_gateway_info_service.wait_for_service()
+        except rospy.ServiceException, e:
+            raise e
 
         ##################################
         # Variables
@@ -119,13 +125,18 @@ class Conductor(object):
     def _get_visible_clients(self):
         '''
           Return the list of clients currently visible on network. This
-          currently just checks the local system for any topic
-          ending with 'invitation'...which should be representative of a
-          concert client.
+          currently just checks the remote gateways for 'platform_info'
+          services ...which should be representative of a
+          concert client (aye, not real safe like).
         '''
-        suffix = self.param['invitation'][0]
-        services = rosservice.get_service_list()
-        visible_clients = [s[:-(len(suffix) + 1)] for s in services if s.endswith(suffix)]
+        suffix = 'platform_info'
+        visible_clients = []
+        remote_gateway_info = self._remote_gateway_info_service()
+        print remote_gateway_info
+        for remote_gateway in remote_gateway_info.gateways:
+            for rule in remote_gateway.public_interface:
+                if rule.name.endswith(suffix):
+                    visible_clients.append(rule.name[:-(len(suffix) + 1)])
         return visible_clients
 
     def _prune_client_list(self, new_clients):
