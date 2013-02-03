@@ -186,9 +186,6 @@ class Conductor(object):
         param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
 
         param['invitation'] = (rospy.get_param('~invitation', 'invitation'), concert_srvs.Invitation)
-        # Depracate this (make it simpler)
-        param['info'] = {}
-        param['info']['status'] = ('status', concert_srvs.Status)
 
         param['execution'] = {}
         param['execution']['srv'] = {}
