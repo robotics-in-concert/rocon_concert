@@ -1,6 +1,6 @@
 <package>
   <name>concert_master</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>
     The ros master at the heard of the concert subsystem along with a few utility functions.
   </description>

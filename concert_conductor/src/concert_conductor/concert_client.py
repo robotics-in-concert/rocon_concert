@@ -47,22 +47,8 @@ class ConcertClient(object):
         self.platform_info = None
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
 
-        self._get_client_info()
+        self._pull_concert_client()  # get concert client info and pull required handles in
 
-        #### Setup Invitation                        name, type
-        self.invitation = rospy.ServiceProxy(str(self.name + '/' + param['invitation'][0]), param['invitation'][1])
-
-        # Depracate this (make it simpler, we only listen for status now.
-        self.service_info = {}
-        for k in param['info'].keys():
-            key = param['info'][k][0]
-            service_type = param['info'][k][1]
-            #rospy.loginfo("Getting info for key %s"%str(self.name + '/' + key))
-            self.service_info[k] = rospy.ServiceProxy(str(self.name + '/' + key), service_type)
-            try:
-                self.service_info[k].wait_for_service()
-            except rospy.ServiceException, e:
-                raise e
         # Don't wait for these - not up till invited
         for k in param['execution']['srv'].keys():
             key = param['execution']['srv'][k][0]
@@ -74,19 +60,21 @@ class ConcertClient(object):
         except ConcertClientException:
             raise
 
-    def _get_client_info(self):
+    def _pull_concert_client(self):
         '''
           Pulls platform information from the advertised platform_info on another
           ros system. It is just a one-shot only used at construction time.
-          
+
           It pulls platform_info and list_apps information.
+
+          It also pulls the required handles in for further manipulation ('status' and 'invite')
         '''
         rospy.loginfo("Conductor: retrieving client information [%s]" % self.name)
         pull_service = rospy.ServiceProxy('~pull', gateway_srvs.Remote)
         req = gateway_srvs.RemoteRequest()
         req.cancel = False
         req.remotes = []
-        for service_name in ['platform_info', 'list_apps']:
+        for service_name in ['platform_info', 'list_apps', 'status', 'invite']:
             rule = gateway_msgs.Rule()
             rule.name = str(self.name + '/' + service_name)
             rule.node = ''
@@ -99,8 +87,14 @@ class ConcertClient(object):
         # Platform_info
         platform_info_service = rospy.ServiceProxy(str(self.name + '/' + 'platform_info'), rapp_manager_srvs.GetPlatformInfo)
         list_app_service = rospy.ServiceProxy(str(self.name + '/' + 'list_apps'), rapp_manager_srvs.GetAppList)
+        # These are permanent
+        self._status_service = rospy.ServiceProxy(str(self.name + '/' + 'status'), rapp_manager_srvs.Status)
+        self._invite_service = rospy.ServiceProxy(str(self.name + '/' + 'invite'), rapp_manager_srvs.Invite)
         try:
             platform_info_service.wait_for_service()
+            list_app_service.wait_for_service()
+            self._status_service.wait_for_service()
+            self._invite_service.wait_for_service()
         except rospy.ServiceException, e:
             raise e
         platform_info = platform_info_service().platform_info
@@ -132,27 +126,37 @@ class ConcertClient(object):
 
     def _update(self):
         '''
-          Reads from a concert client's flipped platform_info, status, list_apps topics
-          and puts them in a convenient msg format, ready for exposing outside the conductor.
+          Adds the current client status to the platform_info, list_apps information already
+          retrieved from the client and puts them in a convenient msg format,
+          ready for exposing outside the conductor (where? I can't remember).
 
           @raise rospy.service.ServiceException : when assumed service link is unavailable
         '''
         try:
-            for key, service in self.service_info.items():
-                self._rawdata[key] = service()
+            self._rawdata['status'] = self._status_service(rapp_manager_srvs.StatusRequest())
         except rospy.service.ServiceException:
             raise ConcertClientException("client platform information services unavailable (disconnected?)")
 
-        #self.data.name = self.name
-        self.data.status = self._rawdata['status'].status
+        self.data.name = self._rawdata['status'].namespace
         self.data.last_connection_timestamp = rospy.Time.now()
-        self.data.client_status = self._rawdata['status'].client_status
+        if self._rawdata['status'].remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
+            self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_AVAILABLE
+        # Todo - fix this
+        #elif self._rawdata['status'].remote_controller == _this_concert_name:
+        #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
+        else:
+            self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
+        #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
 
     def invite(self, name, ok_flag):
-        req = concert_srvs.InvitationRequest(name, ok_flag)
-        resp = self.invitation(req)
+        '''
+          Bit messy with ok_flag here as we are mid-transition to using 'cancel' flag in the
+          invite services.
+        '''
+        req = rapp_manager_srvs.InviteRequest(name, not ok_flag)
+        resp = self._invite_service(req)
 
-        if resp.success == True:
+        if resp.result == True:
             self.set_channel()
         else:
             raise Exception(str("Invitation Failed : " + self.name))

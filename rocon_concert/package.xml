@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rocon_concert</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>
     Includes tools for handling solutions, linking and app distribution.
   </description>
@@ -13,6 +13,9 @@
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
   <author email="jihoonlee.in@gmail.com">Jihoon Lee</author>
+
+  <run_depend>rocon_msgs</run_depend>
+  <run_depend>rocon_multimaster</run_depend>
 
   <run_depend>concert_conductor</run_depend>
   <run_depend>concert_master</run_depend>
