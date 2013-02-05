@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rocon_concert</name>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <description>
     Includes tools for handling solutions, linking and app distribution.
   </description>
