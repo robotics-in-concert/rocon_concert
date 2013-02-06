@@ -1,6 +1,7 @@
 # == Overview ==
 #
-# Installs the complete rocon environment and all its components - gateways, app platform and concert parts.
+# Installs the complete rocon environment and all its components - gateways, app platform and concert parts. 
+# Development branch for hydro medusa release
 #
 # == Dependencies ==
 #
