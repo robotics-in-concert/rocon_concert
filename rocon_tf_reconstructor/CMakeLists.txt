@@ -28,6 +28,9 @@ add_library(${PROJECT_NAME}_lib
             src/rocon_tf_reconstructor.cpp
             src/rocon_pose_client.cpp
 )
+set_target_properties(${PROJECT_NAME}_lib PROPERTIES OUTPUT_NAME rocon_tf_reconstructor)
+target_link_libraries(${PROJECT_NAME}_lib ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_lib concert_msgs_gencpp)
 
 ## Declare a cpp executable
 add_executable(rocon_tf_reconstructor src/main.cpp)
