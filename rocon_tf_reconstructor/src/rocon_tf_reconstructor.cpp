@@ -50,7 +50,7 @@ void RoconTFReconstructor::processClientLists(const concert_msgs::ConcertClients
     // if it doesn't exist create subscriber
     if(this->sub_clients_pose.find(name) == this->sub_clients_pose.end())
     {
-      std::string topic_name = name + "/" + this->sub_robotpose_topic;  
+      std::string topic_name = "/" + name + "/" + this->sub_robotpose_topic;  
       ROS_INFO_STREAM("Create Subscriber for : " << name << "\tTopic : " << topic_name);
       this->sub_clients_pose[name] = new RoconPoseClient(this->nh,name,this->sub_robotpose_topic);
     }

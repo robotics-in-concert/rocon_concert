@@ -8,7 +8,7 @@ RoconPoseClient::RoconPoseClient()
 RoconPoseClient::RoconPoseClient(ros::NodeHandle& nh,std::string client_name,std::string pose_topic)
 {
   ros::NodeHandle n;
-  std::string topic_name = client_name + "/" + pose_topic;  
+  std::string topic_name = "/" + client_name + "/" + pose_topic;  
 
   this->initialized = false;
   this->client_name = client_name;
