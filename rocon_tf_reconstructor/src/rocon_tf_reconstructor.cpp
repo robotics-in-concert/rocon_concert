@@ -1,5 +1,4 @@
 #include <rocon_tf_reconstructor/rocon_tf_reconstructor.h>
-#include<boost/bind.hpp>
 
 RoconTFReconstructor::RoconTFReconstructor()
 {
