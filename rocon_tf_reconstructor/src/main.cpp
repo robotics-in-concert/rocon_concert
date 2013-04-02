@@ -6,7 +6,7 @@ int main(int argc, char ** argv)
   ros::init(argc,argv, "tf_reconstructor");
   ros::NodeHandle n;
   
-  RoconTFReconstructor tr(n);
+  rocon::RoconTFReconstructor tr(n);
 
   ROS_INFO("Initialized");
   tr.spin();

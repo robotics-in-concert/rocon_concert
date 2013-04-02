@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef ROCON_TF_RECONSTRUCTOR_H_
-#define ROCON_TF_RECONSTRUCTOR_H_
+#ifndef ROCON_TF_RECONSTRUCTOR_ROCON_TF_RECONSTRUCTOR_H_
+#define ROCON_TF_RECONSTRUCTOR_ROCON_TF_RECONSTRUCTOR_H_
 
 #include<ros/ros.h>
 #include<tf/tf.h>
@@ -44,33 +44,36 @@
 #include<geometry_msgs/TransformStamped.h>
 #include "rocon_pose_client.h"
 
-class RoconTFReconstructor {
-  public:
-    RoconTFReconstructor();
-    RoconTFReconstructor(ros::NodeHandle& n);
-    ~RoconTFReconstructor();
-    void spin();
+namespace rocon {
 
-  protected:
-    void setSubscriber();
-    void getParams();
-    void init();
+  class RoconTFReconstructor {
+    public:
+      RoconTFReconstructor();
+      RoconTFReconstructor(ros::NodeHandle& n);
+      ~RoconTFReconstructor();
+      void spin();
 
-    void processClientLists(const concert_msgs::ConcertClients::ConstPtr msg);
-    void publishClientTF(std::string client_name,geometry_msgs::PoseStamped pose_stamped);
+    protected:
+      void setSubscriber();
+      void getParams();
+      void init();
 
-  private:
-    ros::NodeHandle nh;
+      void processClientLists(const concert_msgs::ConcertClients::ConstPtr msg);
+      void publishClientTF(std::string client_name,geometry_msgs::PoseStamped pose_stamped);
 
-    tf::TransformBroadcaster tf_broadcaster;
-    ros::Subscriber sub_clientlist;
+    private:
+      ros::NodeHandle nh;
 
-    std::vector<std::string> clients;
-    std::map<std::string,RoconPoseClient*> sub_clients_pose;
+      tf::TransformBroadcaster tf_broadcaster;
+      ros::Subscriber sub_clientlist;
 
-    std::string sub_client_list_topic;
-    std::string sub_robotpose_topic;
+      std::vector<std::string> clients;
+      std::map<std::string,RoconPoseClient*> sub_clients_pose;
 
-};
+      std::string sub_client_list_topic;
+      std::string sub_robotpose_topic;
+
+  };
+}
 
 #endif

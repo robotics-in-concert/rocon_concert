@@ -32,31 +32,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef ROCON_POSECLIENT_H_
-#define ROCON_POSECLIENT_H_
+#ifndef ROCON_TF_RECONSTRUCTOR_ROCON_POSE_CLIENT_H_
+#define ROCON_TF_RECONSTRUCTOR_ROCON_POSE_CLIENT_H_
 
 #include<ros/ros.h>
 #include<geometry_msgs/PoseStamped.h>
 
-class RoconPoseClient {
-  public:
-    RoconPoseClient();
-    RoconPoseClient(ros::NodeHandle& nh,std::string client_name,std::string topic_name);
-    ~RoconPoseClient();
+namespace rocon {
 
-    void processPose(const geometry_msgs::PoseStamped::ConstPtr msg);
-    geometry_msgs::PoseStamped getPoseStamped();
-    std::string getClientName();
-    bool isInitialized();
+  class RoconPoseClient {
+    public:
+      RoconPoseClient();
+      RoconPoseClient(ros::NodeHandle& nh,std::string client_name,std::string topic_name);
+      ~RoconPoseClient();
+
+      void processPose(const geometry_msgs::PoseStamped::ConstPtr msg);
+      geometry_msgs::PoseStamped getPoseStamped();
+      std::string getClientName();
+      bool isInitialized();
 
 
-  private:
-    std::string client_name;
-    std::string pose_topic;
-    ros::Subscriber sub;
-    bool initialized;
+    private:
+      std::string client_name;
+      std::string pose_topic;
+      ros::Subscriber sub;
+      bool initialized;
 
-    geometry_msgs::PoseStamped pose_stamped;
-};
+      geometry_msgs::PoseStamped pose_stamped;
+  };
+}
 
 #endif
