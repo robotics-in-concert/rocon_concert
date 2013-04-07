@@ -12,7 +12,9 @@ import rosservice
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
+import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
+import rocon_utilities
 from .concert_client import ConcertClient, ConcertClientException
 
 ##############################################################################
@@ -177,17 +179,20 @@ class Conductor(object):
 
     def _get_concert_name(self):
         # Get concert name (i.e. gateway name)
-        gateway_info_service = rospy.ServiceProxy("~gateway_info", gateway_srvs.GatewayInfo)
-        gateway_info_service.wait_for_service()
-        gateway_is_connected = False
+        gateway_info_proxy = rocon_utilities.SubscriberProxy("~gateway_info", gateway_msgs.GatewayInfo)
+        try:
+            gateway_info_proxy.wait_for_publishers()
+        except rospy.exceptions.ROSInterruptException:
+            rospy.logwarn("Conductor : ros shut down before gateway info could be found.")
 
-        while not rospy.is_shutdown() and not gateway_is_connected:
-            gateway_info = gateway_info_service(gateway_srvs.GatewayInfoRequest())
-            gateway_is_connected = gateway_info.connected
-            if gateway_info.connected == True:
-                self._concert_name = gateway_info.name
-            else:
-                rospy.loginfo("Conductor : no hub yet available, spinning...")
+        while not rospy.is_shutdown():
+            gateway_info = gateway_info_proxy(rospy.Duration(0.2))
+            if gateway_info:
+                if gateway_info.connected:
+                    self._concert_name = gateway_info.name
+                    break
+                else:
+                    rospy.loginfo("Conductor : no hub yet available, spinning...")
             rospy.sleep(1.0)
 
     def _setup_ros_parameters(self):

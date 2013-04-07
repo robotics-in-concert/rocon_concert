@@ -12,9 +12,9 @@ import sys
 import traceback
 
 from concert_msgs.srv import *
-from gateway_msgs.srv import GatewayInfo
+from gateway_msgs.msg import GatewayInfo
 from rocon_hub_client.hub_client import HubClient
-
+import rocon_utilities
 
 class ConcertMaster(object):
     concertmaster_key = "concertmasterlist"
@@ -36,10 +36,10 @@ class ConcertMaster(object):
 
         self.service = {}
         try:
-            self.service['gateway_info'] = rospy.ServiceProxy("~gateway_info", GatewayInfo)
-            self.service['gateway_info'].wait_for_service()
+            self.service['gateway_info'] = rocon_utilities.SubscriberProxy("~gateway_info", GatewayInfo)
+            self.service['gateway_info'].wait_for_publishers()
         except rospy.exceptions.ROSInterruptException:
-            rospy.logwarn("Concert Master : ros shut down before services could be found.")
+            rospy.logwarn("Concert Master : ros shut down before gateway info could be found.")
 
     def spin(self):
         self._connect_to_hub()
