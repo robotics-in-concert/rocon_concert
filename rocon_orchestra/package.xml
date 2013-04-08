@@ -1,6 +1,6 @@
 <package>
   <name>rocon_orchestra</name>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <description>
     Orchestrating the concert - linking, connections, remappings, resource handling.
   </description>
