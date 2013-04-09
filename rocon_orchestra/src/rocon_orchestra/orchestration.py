@@ -27,7 +27,7 @@ class Orchestration(object):
     def __init__(self):
         self._implementation = Implementation()
         self._solution_running = False
-        self._concert_clients = []
+        self._concert_clients = {}  # dictionary of human friendly name - concert_msgs.ConcertClient pairs
         rospy.Subscriber("list_concert_clients", concert_msgs.ConcertClients, self._callback_concert_clients)
 
         # parameters
@@ -43,10 +43,15 @@ class Orchestration(object):
         '''
           The conductor publishes the concert client list, which also happens to
           be latched so you'll always get the latest list.
+
+          @param up to date concert client list provided by the conductor
+          @type concert_msgs.ConcertClients
         '''
-        self._concert_clients = copy.deepcopy(concert.clients)
         rospy.loginfo("Orchestration : updated concert clients list:")
+        self._concert_clients = {}  # maybe small race condition in doing this
         for concert_client in concert.clients:
+            # create a dictionary of concert client objects, keyed by the human consumable name
+            self._concert_clients[concert_client.name] = copy.deepcopy(concert_client)
             rospy.loginfo("       Client: %s" % (concert_client.name))
             rospy.loginfo("               %s.%s.%s" % (concert_client.platform, concert_client.system, concert_client.robot))
             rospy.loginfo("               %s" % concert_client.client_status)
@@ -71,7 +76,7 @@ class Orchestration(object):
 
           @return list of (node, client) tuples or None
         '''
-        clients = copy.deepcopy(self._concert_clients)
+        clients = copy.deepcopy(self._concert_clients.values())
         matched = []
         for node in self._implementation.nodes:
             #print "Node %s" % str(node)
@@ -150,8 +155,7 @@ class Orchestration(object):
                     rospy.loginfo("                %s->%s" % (edge.remap_from, edge.remap_to))
                     remappings.append((edge.remap_from, edge.remap_to))
             # Check to see if start app service exists for the node, abort if not
-            #self._concert_clients['/' + concert_client_name].start_app(app_name, remappings)
-            start_app_name = '/' + node.id + '/start_app'
+            start_app_name = '/' + self._concert_clients[concert_client_name].gateway_name + '/start_app'
             rospy.wait_for_service(start_app_name)
             start_app = rospy.ServiceProxy(start_app_name, rapp_manager_srvs.StartApp)
             req = rapp_manager_srvs.StartAppRequest()
