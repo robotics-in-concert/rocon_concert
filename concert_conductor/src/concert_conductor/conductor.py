@@ -64,7 +64,7 @@ class Conductor(object):
     def invite(self, concert_name, clientnames, ok_flag):
         for name in clientnames:
             try:
-                unused_resp = self._concert_clients[name].invite(concert_name, ok_flag)
+                unused_resp = self._concert_clients[name].invite(concert_name, name,ok_flag)
                 rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
                 self._invited_clients[name] = ok_flag
             except KeyError:  # raised when name is not in the self._concert_clients keys

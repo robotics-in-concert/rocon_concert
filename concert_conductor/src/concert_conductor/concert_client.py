@@ -155,7 +155,7 @@ class ConcertClient(object):
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
 
-    def invite(self, concert_gateway_name, ok_flag):
+    def invite(self, concert_gateway_name, client_local_name,ok_flag):
         '''
           Bit messy with ok_flag here as we are mid-transition to using 'cancel' flag in the
           invite services.
@@ -164,7 +164,7 @@ class ConcertClient(object):
                                         so they can flip us topics...
           @type str
         '''
-        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, not ok_flag)
+        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name,not ok_flag)
         resp = self._invite_service(req)
 
         if resp.result == True:
