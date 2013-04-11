@@ -141,6 +141,7 @@ class Orchestration(object):
             rospy.loginfo("Orchestration : chincha? the solution is already running, try restarting anyway")
         implementation = self._implementation.to_msg()
         response.success = True
+        response.message = "bonza"
         link_graph = implementation.link_graph
         rospy.loginfo("Orchestra : starting solution [%s]" % implementation.name)
         for node in link_graph.nodes:
@@ -163,11 +164,17 @@ class Orchestration(object):
             req.remappings = []
             for remapping in remappings:
                 req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
+            rospy.loginfo("              Starting...")
             resp = start_app(req)
             if not resp.started:
                 response.success = False
-                response.message = "aigoo, failed to start app %s" % app_name
-        response.message = "bonza"
+                response.message = "aigoo, failed to start app %s of %s" % (app_name, concert_client_name)
+                rospy.logwarn("              failed to start app %s" % (app_name))
+        if response.success:
+            rospy.loginfo("Orchestra: All clients' app are started")
+        else:
+            rospy.logwarn("Orchestra: " + response.message)
+            
         self._solution_running = True
         return response
 
