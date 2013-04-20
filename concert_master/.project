@@ -3,6 +3,9 @@
 	<name>concert_master</name>
 	<comment></comment>
 	<projects>
+		<project>gateway_msgs</project>
+		<project>rocon_hub_client</project>
+		<project>rocon_utilities</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
