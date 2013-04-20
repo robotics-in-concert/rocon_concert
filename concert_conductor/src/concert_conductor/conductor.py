@@ -85,28 +85,26 @@ class Conductor(object):
             number_of_new_clients = 0
             new_clients = [c for c in visible_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
                                                      and (c not in self._bad_clients)]
-
             # Create new clients info instance
-            for gateway_name in new_clients:
+            for gateway_hash_name in new_clients:
+                gateway_name = rocon_utilities.gateway_basename(gateway_hash_name)
                 try:
                     # remove the 16 byte hex hash from the name
-                    name = rocon_utilities.basename(gateway_name)
                     same_name_count = 0
                     for client in self._concert_clients.values():
-                        if name == rocon_utilities.basename(client.gateway_name):
+                        if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
                             same_name_count += 1
-                    if same_name_count != 0:
-                        name = name + str(same_name_count + 1)
-                    self._concert_clients[name] = ConcertClient(name, gateway_name, self.param)
-                    rospy.loginfo("Conductor : new client found [%s]" % name)
+                    concert_name = gateway_name if same_name_count == 0 else gateway_name + str(same_name_count + 1)
+                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, self.param)
+                    rospy.loginfo("Conductor : new client found [%s]" % concert_name)
                     number_of_new_clients += 1
 
                     # re-invitation of clients that disappeared and came back
-                    if name in self._invited_clients:
-                        self.invite(self._concert_name, [name], True)
+                    if concert_name in self._invited_clients:
+                        self.invite(self._concert_name, [concert_name], True)
                 except Exception as e:
                     self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(name), str(e)))
+                    rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
 
             if self.param['config']['auto_invite']:
                 client_list = [client for client in self._concert_clients
