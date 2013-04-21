@@ -1,5 +1,5 @@
 <package>
-  <name>rocon_orchestra</name>
+  <name>concert_orchestra</name>
   <version>0.4.0</version>
   <description>
     Orchestrating the concert - linking, connections, remappings, resource handling.
@@ -7,7 +7,7 @@
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
   <maintainer email="jihoonlee.in@gmail.com">Jihoon Lee</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/rocon_orchestra</url>
+  <url type="website">http://ros.org/wiki/concert_orchestra</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
