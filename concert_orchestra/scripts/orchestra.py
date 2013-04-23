@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_concert/rocon_orchestra/LICENSE
+#   https://raw.github.com/robotics-in-concert/rocon_concert/hydro-devel/concert_orchestra/LICENSE
 #
 ##############################################################################
 # Imports
 ##############################################################################
 
 import rospy
-import rocon_orchestra
+import concert_orchestra
 
 ##############################################################################
 # Main
@@ -16,5 +16,5 @@ import rocon_orchestra
 
 if __name__ == '__main__':
     rospy.init_node('orchestration')  # , log_level=rospy.DEBUG)
-    orchestration = rocon_orchestra.Orchestration()
+    orchestration = concert_orchestra.Orchestration()
     rospy.spin()
