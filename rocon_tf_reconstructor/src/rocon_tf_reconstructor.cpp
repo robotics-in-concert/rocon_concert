@@ -91,7 +91,7 @@ namespace rocon {
   {
     ROS_INFO("In Spin!");
     RoconPoseClient* rpc;
-  //  ros::Rate spin_rate(100);
+    ros::Rate spin_rate(1000);
 
     while(ros::ok())
     {
@@ -107,7 +107,7 @@ namespace rocon {
           publishClientTF(client_name,client_pose);
         }
       }
-  //    spin_rate.sleep();
+      spin_rate.sleep();
     }
   }
 }
