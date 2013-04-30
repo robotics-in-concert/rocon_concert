@@ -7,6 +7,7 @@
 # Imports
 ##############################################################################
 
+import re
 import copy
 import rospy
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
@@ -77,34 +78,46 @@ class Orchestration(object):
           @return list of (node, client) tuples or None
         '''
         clients = copy.deepcopy(self._concert_clients.values())
-        matched = []
+        compatibles = []
+        # make a list of (node, matching client list) tuples
         for node in self._implementation.nodes:
-            #print "Node %s" % str(node)
-            index = 0
-            possible_match_indices = []
-            for client in clients:
-                if self._match(node, client):
-                    possible_match_indices.append(index)
-                index += 1
-            #print "Possible match indices %s" % str(possible_match_indices)
-            if not possible_match_indices:
-                #print "Match failed: %s" % str(node)
-                return None
-            elif len(possible_match_indices) == 1:
-                matched.append((node['id'], clients[possible_match_indices[0]].name))
-                del clients[possible_match_indices[0]]
-            else:
-                matching_index = possible_match_indices[0]
-                for index in possible_match_indices:
-                    if node['id'] == clients[index].name:
-                        matching_index = index
-                        break
-                matched.append((node['id'], clients[matching_index].name))
-                #print "Appending matched %s-%s" % (node['id'], clients[matching_index].name)
-                del clients[matching_index]
+            print "Node %s" % str(node)
+            compatible_clients = [client for client in clients if self._compatible_node_client(node, client)]
+            print "  Matching Clients: %s" % str([client.name for client in compatible_clients])
+            compatibles.append((node, compatible_clients))
+
+
         return matched
 
-    def _match(self, node, concert_client):
+    def _perfect_matches(self, node_client_list_pairs):
+        '''
+          Checks a (node, matching_client[]) tuple list to see if nodes and client names
+          match and min/max conditions are satisfied.
+
+          Names will successivly match if there's only a trailing numerical number difference.
+
+          WARNING: this is only valid if we assume the nodes are uniquely named in the implementation.
+
+          @param node_client_list_pairs
+          @type [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
+
+          @return node - client list (pruned of non-perfect matches)
+          @rtype [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
+        '''
+        node_perfect_match_client_list_pairs = []
+        for (node, compatible_client_list) in node_client_list_pairs:
+            # matches for which the names only differ by a trailing numerical value (e.g. dude, dude1234)
+            perfect_matches = [client for client in compatible_client_list if re.match(node.name, re.sub('[0-9]*$', '', client.name))]
+            node_perfect_match_client_list_pairs.append((node, perfect_matches))
+        # Check min quota for each node
+
+
+
+
+    def _compatible_node_client(self, node, concert_client):
+        '''
+          Checks to see if a client is compatible for the implementation's node rule.
+        '''
         #print "****** _match ******"
         #print str(node)
         #print concert_client.name + "-" + concert_client.platform + "." + concert_client.system + "." + concert_client.robot
@@ -174,7 +187,7 @@ class Orchestration(object):
             rospy.loginfo("Orchestra: All clients' app are started")
         else:
             rospy.logwarn("Orchestra: " + response.message)
-            
+
         self._solution_running = True
         return response
 
@@ -200,3 +213,42 @@ class Orchestration(object):
                 response.success = False
                 response.message = "aigoo, failed to stop app %s" % app_name
         return response
+
+##############################################################################
+# Graveyard
+##############################################################################
+
+#    def _implementation_ready_graveyard(self):
+#        '''
+#          Checks if the listed concert clients are a match with the
+#          implementation.
+#
+#          @return list of (node, client) tuples or None
+#        '''
+#        clients = copy.deepcopy(self._concert_clients.values())
+#        matched = []
+#        for node in self._implementation.nodes:
+#            #print "Node %s" % str(node)
+#            index = 0
+#            possible_match_indices = []
+#            for client in clients:
+#                if self._match(node, client):
+#                    possible_match_indices.append(index)
+#                index += 1
+#            #print "Possible match indices %s" % str(possible_match_indices)
+#            if not possible_match_indices:
+#                #print "Match failed: %s" % str(node)
+#                return None
+#            elif len(possible_match_indices) == 1:
+#                matched.append((node['id'], clients[possible_match_indices[0]].name))
+#                del clients[possible_match_indices[0]]
+#            else:
+#                matching_index = possible_match_indices[0]
+#                for index in possible_match_indices:
+#                    if node['id'] == clients[index].name:
+#                        matching_index = index
+#                        break
+#                matched.append((node['id'], clients[matching_index].name))
+#                #print "Appending matched %s-%s" % (node['id'], clients[matching_index].name)
+#                del clients[matching_index]
+#        return matched
