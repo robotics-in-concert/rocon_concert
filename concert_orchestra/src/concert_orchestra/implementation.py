@@ -12,6 +12,9 @@ import re
 import concert_msgs.msg as concert_msgs
 import pydot
 
+# local imports
+from node import Node
+
 ##############################################################################
 # Classes
 ##############################################################################
@@ -24,31 +27,16 @@ class Implementation:
     def __init__(self):
         # This will need some modification if we go to multiple solutions on file.
         self._name = rospy.get_param("~name", "Implementation 42")
-        self.nodes = rospy.get_param("~nodes", [])
+        self.nodes = []
+        for param in rospy.get_param("~nodes", []):
+            self.nodes.append(Node(param))
         self._topics = rospy.get_param("~topics", [])
         self._actions = rospy.get_param("~actions", [])
         self._edges = rospy.get_param("~edges", [])
         self._dot_graph = rospy.get_param("~dot_graph", "")
-        self._validate_parameters()
         self._implementation_publisher = rospy.Publisher("implementation", concert_msgs.Implementation, latch=True)
         self.publish()
         rospy.loginfo("Orchestration : initialised the implementation server.")
-
-    def _validate_parameters(self):
-        '''
-          Validate that the incoming parameters are correct and warn if not.
-        '''
-        for node in self.nodes:
-            if not 'min' in node and not 'max' in node:
-                node['min'] = 1
-                node['max'] = 1
-            elif not 'min' in node:
-                node['min'] = 1
-            elif not 'max' in node:
-                node['max'] = concert_msgs.LinkNode.UNLIMITED_RESOURCE
-            rospy.logwarn("Name: %s" % node['id'])
-            rospy.logwarn("Min: %s" % node['min'])
-            rospy.logwarn("Max: %s" % node['max'])
 
     def publish(self):
         self._implementation_publisher.publish(self.to_msg())
@@ -61,7 +49,7 @@ class Implementation:
         implementation = concert_msgs.Implementation()
         implementation.name = self._name
         for node in self.nodes:
-            implementation.link_graph.nodes.append(concert_msgs.LinkNode(node['id'], node['tuple'], node['min'], node['max']))
+            implementation.link_graph.nodes.append(concert_msgs.LinkNode(node.id, node.tuple, node.min, node.max, node.force_name_matching))
         for topic in self._topics:
             implementation.link_graph.topics.append(concert_msgs.LinkConnection(topic['id'], topic['type']))
         for action in self._actions:
@@ -80,12 +68,10 @@ class Implementation:
         for pair in node_client_pairs:
             node_id = pair[0]
             client_name = pair[1]
-            rospy.logwarn("Debug: node id...........%s" % node_id)
-            rospy.logwarn("Debug: client name...........%s" % client_name)
             if node_id != client_name:
                 for node in self.nodes:
-                    if node['id'] == node_id:
-                        node['id'] = client_name
+                    if node.id == node_id:
+                        node.id = client_name
                 for topic in self._topics:
                     if re.search(node_id, topic['id']):
                         topic['id'] = topic['id'].replace(node_id, client_name)
@@ -105,7 +91,7 @@ class Implementation:
     def to_dot(self):
         graph = pydot.Dot(graph_type='graph')
 #        for node in self.nodes:
-#            n = pydot.Node(node['id'], style="filled", fillcolor="red")
+#            n = pydot.Node(node.id, style="filled", fillcolor="red")
 #            graph.add_node(n)
 #        self.nodes = rospy.get_param("~nodes", [])
 #        self._topics = rospy.get_param("~topics", [])
@@ -129,8 +115,8 @@ class Implementation:
 #            rospy.logwarn("Debug: client name...........%s" % client_name)
 #            if node_id != client_name:
 #                for node in self.nodes:
-#                    if node['id'] == node_id:
-#                        node['id'] = client_name
+#                    if node.id == node_id:
+#                        node.id = client_name
 #                for topic in self._topics:
 #                    if re.search(node_id, topic['id']):
 #                        topic['id'] = topic['id'].replace(node_id, client_name)

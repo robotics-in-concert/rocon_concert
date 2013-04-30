@@ -77,70 +77,48 @@ class Orchestration(object):
 
           @return list of (node, client) tuples or None
         '''
+        compatibles = self._generate_compatible_matches()
+        pruned = self._generate_pruned_compatible_matches(compatibles)
+        return []
+
+    def _generate_pruned_compatible_matches(self, compatibles):
+        '''
+          Recursive function that checks rule min/max allotments and prunes
+          the compatibility tree. It assumes none are currently fixed, so
+          pruning can happen anywhere.
+
+          @param compatible node-client list tuples
+          @type [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
+        '''
+        finalised_matches = []
+        remaining_compatibles = []
+        # 1st level scan - look for exact fulfillment of rules
+        for (node, client_list) in compatibles:
+            if node.is_singleton and len(client_list) == node.min:
+                finalised_matches.append((node, client_list))
+            else:
+                remaining_compatibles.append((node, client_list))
+        # are we guaranteed of clearing all of these?
+        if remaining_compatibles:
+            finalised_matches, remaining_compatibles = self._generate_pruned_compatible_matches(remaining_compatibles)
+
+    def _generate_compatible_matches(self):
+        '''
+          Checks off implementation node rules and matches them to potential clients fulfilling the
+          required conditions (platform tuple, app, optionally name)
+
+          @return list of tuples, each of which is a node and list of clients that satisfy requirements for that node.
+          @rtype [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
+        '''
         clients = copy.deepcopy(self._concert_clients.values())
         compatibles = []
         # make a list of (node, matching client list) tuples
         for node in self._implementation.nodes:
             print "Node %s" % str(node)
-            compatible_clients = [client for client in clients if self._compatible_node_client(node, client)]
+            compatible_clients = [client for client in clients if node.is_compatible(client)]
             print "  Matching Clients: %s" % str([client.name for client in compatible_clients])
             compatibles.append((node, compatible_clients))
-            perfect_match_combinations = self._perfect_matches(compatibles)
-            if perfect_match_combinations:
-                return perfect_match_combinations
-        return []
-
-    def _perfect_matches(self, node_client_list_pairs):
-        '''
-          Checks a (node, matching_client[]) tuple list to see if nodes and client names
-          match and min/max conditions are satisfied.
-
-          Names will successivly match if there's only a trailing numerical number difference.
-
-          WARNING: this is only valid if we assume the nodes are uniquely named in the implementation.
-
-          @param node_client_list_pairs
-          @type [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
-
-          @return node - client list (pruned of non-perfect matches)
-          @rtype [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
-        '''
-        node_perfect_match_client_list_pairs = []
-        for (node, compatible_client_list) in node_client_list_pairs:
-            # matches for which the names only differ by a trailing numerical value (e.g. dude, dude1234)
-            perfect_matches = [client for client in compatible_client_list if re.match(node.name, re.sub('[0-9]*$', '', client.name))]
-            # Now validate, this is easy assuming that each node name is unique
-            # We just make sure none o these lists break min max constraints
-            l = len(perfect_matches)
-            if l < node['min']:
-                return []
-            if node['max'] != concert_msgs.LinkNode.UNLIMITED_RESOURCE and l > node['max']:
-                return []
-            node_perfect_match_client_list_pairs.append((node, perfect_matches))
-        return node_perfect_match_client_list_pairs
-
-    def _compatible_node_client(self, node, concert_client):
-        '''
-          Checks to see if a client is compatible for the implementation's node rule.
-        '''
-        #print "****** _match ******"
-        #print str(node)
-        #print concert_client.name + "-" + concert_client.platform + "." + concert_client.system + "." + concert_client.robot
-        parts = node['tuple'].split('.')
-        platform = parts[0]
-        system = parts[1]
-        robot = parts[2]
-        app_name = parts[3]
-        if platform != concert_client.platform:
-            return False
-        if system != concert_client.system:
-            return False
-        if robot != concert_client.robot:
-            return False
-        for client_app in concert_client.apps:
-            if app_name == client_app.name:
-                return True
-        return False
+        return compatibles
 
     ##########################################################################
     # Ros Callbacks
@@ -207,8 +185,8 @@ class Orchestration(object):
         self._solution_running = False
         rospy.loginfo("Orchestra : stopping the solution.")
         for node in self._implementation.nodes:
-            stop_app_name = '/' + node['id'] + '/stop_app'
-            app_name = node['tuple'].split('.')[3]
+            stop_app_name = '/' + node.id + '/stop_app'
+            app_name = node.tuple.split('.')[3]
             # check first if it exists, also timeouts?
             rospy.wait_for_service(stop_app_name)
             stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)
