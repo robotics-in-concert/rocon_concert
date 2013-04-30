@@ -85,9 +85,10 @@ class Orchestration(object):
             compatible_clients = [client for client in clients if self._compatible_node_client(node, client)]
             print "  Matching Clients: %s" % str([client.name for client in compatible_clients])
             compatibles.append((node, compatible_clients))
-
-
-        return matched
+            perfect_match_combinations = self._perfect_matches(compatibles)
+            if perfect_match_combinations:
+                return perfect_match_combinations
+        return []
 
     def _perfect_matches(self, node_client_list_pairs):
         '''
@@ -108,11 +109,15 @@ class Orchestration(object):
         for (node, compatible_client_list) in node_client_list_pairs:
             # matches for which the names only differ by a trailing numerical value (e.g. dude, dude1234)
             perfect_matches = [client for client in compatible_client_list if re.match(node.name, re.sub('[0-9]*$', '', client.name))]
+            # Now validate, this is easy assuming that each node name is unique
+            # We just make sure none o these lists break min max constraints
+            l = len(perfect_matches)
+            if l < node['min']:
+                return []
+            if node['max'] != concert_msgs.LinkNode.UNLIMITED_RESOURCE and l > node['max']:
+                return []
             node_perfect_match_client_list_pairs.append((node, perfect_matches))
-        # Check min quota for each node
-
-
-
+        return node_perfect_match_client_list_pairs
 
     def _compatible_node_client(self, node, concert_client):
         '''

@@ -114,3 +114,36 @@ class Implementation:
 #        self._dot_graph = rospy.get_param("~dot_graph", "")
 #        self._implementation_publisher = rospy.Publisher("implementation", concert_msgs.Implementation, latch=True)
 #        self.publish()
+
+
+#    def rebuild_graveyard(self, node_client_pairs):
+#        '''
+#          If the node name and client name don't match, rebuild
+#
+#          @param node_client_pairs : list of node id-client name pairs
+#        '''
+#        for pair in node_client_pairs:
+#            node_id = pair[0]
+#            client_name = pair[1]
+#            rospy.logwarn("Debug: node id...........%s" % node_id)
+#            rospy.logwarn("Debug: client name...........%s" % client_name)
+#            if node_id != client_name:
+#                for node in self.nodes:
+#                    if node['id'] == node_id:
+#                        node['id'] = client_name
+#                for topic in self._topics:
+#                    if re.search(node_id, topic['id']):
+#                        topic['id'] = topic['id'].replace(node_id, client_name)
+#                for action in self._actions:
+#                    if re.search(node_id, action['id']) is not None:
+#                        action['id'] = action['id'].replace(node_id, client_name)
+#                for edge in self._edges:
+#                    if edge['start'] == node_id:
+#                        edge['start'] = client_name
+#                    if edge['finish'] == node_id:
+#                        edge['finish'] = client_name
+#                    if re.search(node_id, edge['remap_from']):
+#                        edge['remap_from'] = edge['remap_from'].replace(node_id, client_name)
+#                    if re.search(node_id, edge['remap_to']):
+#                        edge['remap_to'] = edge['remap_to'].replace(node_id, client_name)
+
