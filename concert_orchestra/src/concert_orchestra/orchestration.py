@@ -150,17 +150,19 @@ class Orchestration(object):
             return response
         self._solution_running = False
         rospy.loginfo("Orchestra : stopping the solution.")
-        for node in self._implementation.nodes:
-            stop_app_name = '/' + node.id + '/stop_app'
-            app_name = node.tuple.split('.')[3]
-            # check first if it exists, also timeouts?
-            rospy.wait_for_service(stop_app_name)
-            stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)
-            req = rapp_manager_srvs.StopAppRequest(app_name)
-            resp = stop_app(req)
-            if not resp.stopped:
-                response.success = False
-                response.message = "aigoo, failed to stop app %s" % app_name
+        for branch in self._pruned_compatibility_tree.branches:
+            app_name = branch.node.tuple.split('.')[3]
+            for leaf in branch.leaves:
+                concert_client_name = leaf.name
+                stop_app_name = '/' + self._concert_clients[concert_client_name].gateway_name + '/stop_app'
+                # check first if it exists, also timeouts?
+                rospy.wait_for_service(stop_app_name)
+                stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)
+                req = rapp_manager_srvs.StopAppRequest()
+                resp = stop_app(req)
+                if not resp.stopped:
+                    response.success = False
+                    response.message = "aigoo, failed to stop app %s" % app_name
         return response
 
 ##############################################################################
