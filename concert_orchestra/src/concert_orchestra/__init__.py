@@ -5,3 +5,11 @@
 #
 
 from .orchestration import Orchestration
+from .compatibility_tree import (
+             CompatibilityBranch,
+             CompatibilityTree,
+             create_compatibility_tree,
+             prune_compatibility_tree,
+             print_branches
+             )
+from .node import Node

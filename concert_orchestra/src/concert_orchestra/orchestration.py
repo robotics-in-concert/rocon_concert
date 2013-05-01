@@ -17,6 +17,7 @@ import concert_msgs.srv as concert_srvs
 
 # Local imports
 from .implementation import Implementation
+from .compatibility_tree import create_compatibility_tree, prune_compatibility_tree, CompatibilityTree
 
 ##############################################################################
 # Orchestration
@@ -27,6 +28,7 @@ class Orchestration(object):
 
     def __init__(self):
         self._implementation = Implementation()
+        self._compatibility_tree = create_compatibility_tree(self._implementation.nodes, {})
         self._solution_running = False
         self._concert_clients = {}  # dictionary of human friendly name - concert_msgs.ConcertClient pairs
         rospy.Subscriber("list_concert_clients", concert_msgs.ConcertClients, self._callback_concert_clients)
@@ -45,6 +47,11 @@ class Orchestration(object):
           The conductor publishes the concert client list, which also happens to
           be latched so you'll always get the latest list.
 
+          It stores the concert clients in a dictionary of concert clients keyed
+          by the client names.
+
+          @todo - write what is the imperative reason for a dic over a simple list
+
           @param up to date concert client list provided by the conductor
           @type concert_msgs.ConcertClients
         '''
@@ -56,69 +63,24 @@ class Orchestration(object):
             rospy.loginfo("       Client: %s" % (concert_client.name))
             rospy.loginfo("               %s.%s.%s" % (concert_client.platform, concert_client.system, concert_client.robot))
             rospy.loginfo("               %s" % concert_client.client_status)
-        node_client_matches = self._implementation_ready()
-        if node_client_matches:
-            if not self._solution_running:
-                self._implementation.rebuild(node_client_matches)
-                self._implementation.publish()
-                rospy.loginfo("Orchestration : solution is ready to run")
-                if self._params['auto_start']:
-                    self._process_start_solution(concert_srvs.StartSolutionRequest())
+        if not self._solution_running:
+            self._compatibility_tree = create_compatibility_tree(self._implementation.nodes, self._concert_clients)
+            pruned_branches = prune_compatibility_tree(self._compatibility_tree)
+            if pruned_branches:
+                self._pruned_compatibility_tree = CompatibilityTree(pruned_branches)
+                if self._pruned_compatibility_tree.is_valid():
+                    rospy.loginfo("Orchestration : solution is ready to run")
+                    # Could do this, but no-one is listening right now.
+                    # self._implementation.rebuild(node_client_matches)
+                    # self._implementation.publish()
+                    if self._params['auto_start']:
+                        self._process_start_solution(concert_srvs.StartSolutionRequest())
         else:
-            # means you've lost a client
-            # probably not robust if you have apps coming and going
-            self._solution_running = False
-            #self._process_stop_solution()
-
-    def _implementation_ready(self):
-        '''
-          Checks if the listed concert clients are a match with the
-          implementation.
-
-          @return list of (node, client) tuples or None
-        '''
-        compatibles = self._generate_compatible_matches()
-        pruned = self._generate_pruned_compatible_matches(compatibles)
-        return []
-
-    def _generate_pruned_compatible_matches(self, compatibles):
-        '''
-          Recursive function that checks rule min/max allotments and prunes
-          the compatibility tree. It assumes none are currently fixed, so
-          pruning can happen anywhere.
-
-          @param compatible node-client list tuples
-          @type [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
-        '''
-        finalised_matches = []
-        remaining_compatibles = []
-        # 1st level scan - look for exact fulfillment of rules
-        for (node, client_list) in compatibles:
-            if node.is_singleton and len(client_list) == node.min:
-                finalised_matches.append((node, client_list))
-            else:
-                remaining_compatibles.append((node, client_list))
-        # are we guaranteed of clearing all of these?
-        if remaining_compatibles:
-            finalised_matches, remaining_compatibles = self._generate_pruned_compatible_matches(remaining_compatibles)
-
-    def _generate_compatible_matches(self):
-        '''
-          Checks off implementation node rules and matches them to potential clients fulfilling the
-          required conditions (platform tuple, app, optionally name)
-
-          @return list of tuples, each of which is a node and list of clients that satisfy requirements for that node.
-          @rtype [ (concert_msgs.LinkNode, concert_msgs.ConcertClient[]) ]
-        '''
-        clients = copy.deepcopy(self._concert_clients.values())
-        compatibles = []
-        # make a list of (node, matching client list) tuples
-        for node in self._implementation.nodes:
-            print "Node %s" % str(node)
-            compatible_clients = [client for client in clients if node.is_compatible(client)]
-            print "  Matching Clients: %s" % str([client.name for client in compatible_clients])
-            compatibles.append((node, compatible_clients))
-        return compatibles
+            # we either gained or lost a client
+#            # probably not robust if you have apps coming and going
+#            self._solution_running = False
+#            #self._process_stop_solution()
+            pass
 
     ##########################################################################
     # Ros Callbacks
@@ -129,7 +91,7 @@ class Orchestration(object):
     def _process_start_solution(self, req):
         # Put in checks to see if a solution is already running
         response = concert_srvs.StartSolutionResponse()
-        if not self._implementation_ready():
+        if not self._pruned_compatibility_tree.is_valid():
             response.success = False
             response.message = "solution is not yet ready (waiting for clients)..."
             return response
@@ -139,33 +101,37 @@ class Orchestration(object):
         response.success = True
         response.message = "bonza"
         link_graph = implementation.link_graph
+
         rospy.loginfo("Orchestra : starting solution [%s]" % implementation.name)
-        for node in link_graph.nodes:
-            concert_client_name = node.id
-            app_name = node.tuple.split('.')[3]
+        for branch in self._pruned_compatibility_tree.branches:
+            app_name = branch.node.tuple.split('.')[3]
+            node_name = branch.node.id
             remappings = []
-            rospy.loginfo("            node: %s" % concert_client_name)
-            rospy.loginfo("              app: %s" % app_name)
-            rospy.loginfo("              remaps")
             for edge in link_graph.edges:
-                if edge.start == concert_client_name or edge.finish == concert_client_name:
-                    rospy.loginfo("                %s->%s" % (edge.remap_from, edge.remap_to))
+                if edge.start == node_name or edge.finish == node_name:
                     remappings.append((edge.remap_from, edge.remap_to))
-            # Check to see if start app service exists for the node, abort if not
-            start_app_name = '/' + self._concert_clients[concert_client_name].gateway_name + '/start_app'
-            rospy.wait_for_service(start_app_name)
-            start_app = rospy.ServiceProxy(start_app_name, rapp_manager_srvs.StartApp)
-            req = rapp_manager_srvs.StartAppRequest()
-            req.name = app_name
-            req.remappings = []
-            for remapping in remappings:
-                req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
-            rospy.loginfo("              Starting...")
-            resp = start_app(req)
-            if not resp.started:
-                response.success = False
-                response.message = "aigoo, failed to start app %s of %s" % (app_name, concert_client_name)
-                rospy.logwarn("              failed to start app %s" % (app_name))
+            for leaf in branch.leaves:
+                concert_client_name = leaf.name
+                rospy.loginfo("            node: %s/%s" % (node_name, concert_client_name))
+                rospy.loginfo("              app: %s" % app_name)
+                rospy.loginfo("              remaps")
+                for (remap_from, remap_to) in remappings:
+                    rospy.loginfo("                %s->%s" % (remap_from, remap_to))
+                # Check to see if start app service exists for the node, abort if not
+                start_app_name = '/' + self._concert_clients[concert_client_name].gateway_name + '/start_app'
+                rospy.wait_for_service(start_app_name)
+                start_app = rospy.ServiceProxy(start_app_name, rapp_manager_srvs.StartApp)
+                req = rapp_manager_srvs.StartAppRequest()
+                req.name = app_name
+                req.remappings = []
+                for remapping in remappings:
+                    req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
+                rospy.loginfo("              Starting...")
+                resp = start_app(req)
+                if not resp.started:
+                    response.success = False
+                    response.message = "aigoo, failed to start app %s of %s" % (app_name, concert_client_name)
+                    rospy.logwarn("              failed to start app %s" % (app_name))
         if response.success:
             rospy.loginfo("Orchestra: All clients' app are started")
         else:
