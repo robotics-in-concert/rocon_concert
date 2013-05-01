@@ -56,6 +56,7 @@ class Orchestration(object):
           @type concert_msgs.ConcertClients
         '''
         rospy.loginfo("Orchestration : updated concert clients list:")
+        old_concert_clients = copy.deepcopy(self._concert_clients)
         self._concert_clients = {}  # maybe small race condition in doing this
         for concert_client in concert.clients:
             # create a dictionary of concert client objects, keyed by the human consumable name
@@ -76,6 +77,13 @@ class Orchestration(object):
                     if self._params['auto_start']:
                         self._process_start_solution(concert_srvs.StartSolutionRequest())
         else:
+            diff = lambda l1, l2: [x for x in l1 if x not in l2] # diff of lists
+            new_client_names = diff(self._concert_clients.keys(), old_concert_clients.keys())
+            lost_client_names = diff(old_concert_clients.keys(), self._concert_clients.keys())
+            for new_client_name in new_client_names:
+                new_client = self._concert_clients[new_client_name]
+                branch = self._pruned_compatibility_tree.add_leaf(new_client)
+                self._process_start_client(new_client, branch)
             # we either gained or lost a client
 #            # probably not robust if you have apps coming and going
 #            self._solution_running = False
@@ -139,6 +147,37 @@ class Orchestration(object):
 
         self._solution_running = True
         return response
+    
+    def _process_start_client(self, client, branch):
+        '''
+          Used to start a single client. This is done when a client dynamically joins after the solution has started.
+        '''
+        app_name = branch.node.tuple.split('.')[3]
+        node_name = branch.node.id
+        remappings = []
+        implementation = self._implementation.to_msg()
+        link_graph = implementation.link_graph
+        for edge in link_graph.edges:
+            if edge.start == node_name or edge.finish == node_name:
+                remappings.append((edge.remap_from, edge.remap_to))
+        rospy.loginfo("            node: %s/%s" % (node_name, client.name))
+        rospy.loginfo("              app: %s" % app_name)
+        rospy.loginfo("              remaps")
+        for (remap_from, remap_to) in remappings:
+            rospy.loginfo("                %s->%s" % (remap_from, remap_to))
+        # Check to see if start app service exists for the node, abort if not
+        start_app_name = '/' + client.gateway_name + '/start_app'
+        rospy.wait_for_service(start_app_name)
+        start_app = rospy.ServiceProxy(start_app_name, rapp_manager_srvs.StartApp)
+        req = rapp_manager_srvs.StartAppRequest()
+        req.name = app_name
+        req.remappings = []
+        for remapping in remappings:
+            req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
+        rospy.loginfo("              Starting...")
+        resp = start_app(req)
+        if not resp.started:
+            rospy.logwarn("              failed to start app %s" % (app_name))
 
     def _process_stop_solution(self, req=None):
         response = concert_srvs.StopSolutionResponse()
@@ -153,8 +192,7 @@ class Orchestration(object):
         for branch in self._pruned_compatibility_tree.branches:
             app_name = branch.node.tuple.split('.')[3]
             for leaf in branch.leaves:
-                concert_client_name = leaf.name
-                stop_app_name = '/' + self._concert_clients[concert_client_name].gateway_name + '/stop_app'
+                stop_app_name = '/' + leaf.gateway_name + '/stop_app'
                 # check first if it exists, also timeouts?
                 rospy.wait_for_service(stop_app_name)
                 stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)

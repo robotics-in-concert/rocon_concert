@@ -286,4 +286,15 @@ class CompatibilityTree(object):
         console.pretty_println(indent + "%s" % name, console.bold)
         for branch in self.branches:
             print(indent + "  %s" % branch)
+    
+    def add_leaf(self, leaf):
+        '''
+          Just add to the first compatible branch (worry about more intelligent adding later)
+        '''
+        for branch in self.branches:
+            if branch.node.is_compatible(leaf):
+                if branch.maximum_leaves == concert_msgs.LinkNode.UNLIMITED_RESOURCE or len(branch.leaves) < branch.maximum_leaves:
+                    branch.leaves.append(leaf)
+                    return branch
+        return None
 
