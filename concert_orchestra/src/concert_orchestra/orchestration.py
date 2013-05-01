@@ -84,11 +84,13 @@ class Orchestration(object):
                 new_client = self._concert_clients[new_client_name]
                 branch = self._pruned_compatibility_tree.add_leaf(new_client)
                 self._process_start_client(new_client, branch)
-            # we either gained or lost a client
-#            # probably not robust if you have apps coming and going
-#            self._solution_running = False
-#            #self._process_stop_solution()
-            pass
+            for lost_client_name in lost_client_names:
+                lost_client = old_concert_clients[lost_client_name]
+                self._pruned_compatibility_tree.remove_leaf(lost_client)
+                if not self._pruned_compatibility_tree.is_valid():
+                    rospy.logerr("Orchestra: client disengaged and the solution is now no longer valid [%s]" % lost_client_name)
+                    self._solution_running = False
+                    self._process_stop_solution()
 
     ##########################################################################
     # Ros Callbacks

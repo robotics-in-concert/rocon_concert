@@ -298,3 +298,15 @@ class CompatibilityTree(object):
                     return branch
         return None
 
+    def remove_leaf(self, leaf):
+        '''
+          Just remove the first matching leaf name. Assumption is the name is unique of course
+          (guaranteed by the conductor).
+        '''
+        for branch in self.branches:
+            for l in branch.leaves:
+                if leaf.name == l.name:
+                    branch.leaves[:] = [l for l in branch.leaves if leaf.name != l.name]
+                    break
+
+
