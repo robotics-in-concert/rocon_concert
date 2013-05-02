@@ -30,7 +30,7 @@ class ConcertClientException(Exception):
 
 class ConcertClient(object):
 
-    def __init__(self, client_name, gateway_name, param):
+    def __init__(self, client_name, gateway_name, is_local_client=False):
         '''
           Initialise, finally ending with a call on the service to the client's
           platform info service.
@@ -39,8 +39,8 @@ class ConcertClient(object):
           @type str
           @param gateway_name : the name with 16 byte hash attached
           @type str
-          @param
-
+          @param is_local_client : differentiates an interactive local client from a gateway client
+          @type bool
 
           @raise ConcertClientException : when platform info service is unavailable
         '''
@@ -48,18 +48,15 @@ class ConcertClient(object):
         self.data = concert_msgs.ConcertClient()
         self.gateway_name = gateway_name  # this is the rather unsightly name + hash key
         self.name = client_name  # usually name (+ index), a more human consumable name
-        self.param = param
 
         self.platform_info = None
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
-
-        self._pull_concert_client()  # get concert client info and pull required handles in
-
-        # Don't wait for these - not up till invited
-        for k in param['execution']['srv'].keys():
-            key = param['execution']['srv'][k][0]
-            service_type = param['execution']['srv'][k][1]
-            self.service_execution[k] = rospy.ServiceProxy(str(self.name + '/' + key), service_type)
+        self._is_local_client = is_local_client  # As opposed to a gateway client
+        if not self._is_local_client:
+            self._pull_concert_client()  # get concert client info and pull required handles in
+            # could maybe catch an exception on error here
+        self._init()
+        self._setup_service_proxies()
 
         try:
             self._update()
@@ -90,6 +87,8 @@ class ConcertClient(object):
         if resp.result != 0:
             rospy.logwarn("Conductor: failed to pull the platform info service from the client.")
             return None
+
+    def _init(self):
         # Platform_info
         platform_info_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'platform_info'), rapp_manager_srvs.GetPlatformInfo)
         list_app_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'list_apps'), rapp_manager_srvs.GetAppList)
@@ -155,7 +154,7 @@ class ConcertClient(object):
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
 
-    def invite(self, concert_gateway_name, client_local_name,ok_flag):
+    def invite(self, concert_gateway_name, client_local_name, ok_flag):
         '''
           Bit messy with ok_flag here as we are mid-transition to using 'cancel' flag in the
           invite services.
@@ -164,11 +163,11 @@ class ConcertClient(object):
                                         so they can flip us topics...
           @type str
         '''
-        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name,not ok_flag)
+        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, not ok_flag)
         resp = self._invite_service(req)
 
         if resp.result == True:
-            self.set_channel()
+            self._setup_service_proxies()
         else:
             raise Exception(str("Invitation Failed : " + self.name))
 
@@ -179,19 +178,14 @@ class ConcertClient(object):
           @param remappings : list of (from,to) pairs
           @type list of tuples
         '''
-        self.service_execution['start_app'].wait_for_service()
+        self._start_app_service.wait_for_service()
         req = rapp_manager_srvs.StartAppRequest()
         req.name = app_name
         req.remappings = []
         for remapping in remappings:
             req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
-        unused_resp = self.service_execution['start_app'](req)
+        unused_resp = self._start_app_service(req)
 
-    def set_channel(self):
-        param = self.param
-        # Services
-        self.service_exec = {}
-        for k in param['execution']['srv'].keys():
-            key = param['execution']['srv'][k][0]
-            type = param['execution']['srv'][k][1]
-            self.service_exec[k] = rospy.ServiceProxy(str(self.name + '/' + key), type)
+    def _setup_service_proxies(self):
+        self._start_app_service = rospy.ServiceProxy(str(self.name + '/start_app'), rapp_manager_srvs.StartApp)
+        self._stop_app_service = rospy.ServiceProxy(str(self.name + '/stop_app'), rapp_manager_srvs.StopApp)

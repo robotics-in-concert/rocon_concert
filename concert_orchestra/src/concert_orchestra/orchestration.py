@@ -66,7 +66,7 @@ class Orchestration(object):
             rospy.loginfo("               %s" % concert_client.client_status)
         if not self._solution_running:
             self._compatibility_tree = create_compatibility_tree(self._implementation.nodes, self._concert_clients)
-            pruned_branches = prune_compatibility_tree(self._compatibility_tree, verbosity=False)
+            pruned_branches = prune_compatibility_tree(self._compatibility_tree, verbosity=True)
             if pruned_branches:
                 self._pruned_compatibility_tree = CompatibilityTree(pruned_branches)
                 if self._pruned_compatibility_tree.is_valid():
