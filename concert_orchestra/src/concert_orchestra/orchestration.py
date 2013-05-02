@@ -106,7 +106,10 @@ class Orchestration(object):
             response.message = "solution is not yet ready (waiting for clients)..."
             return response
         if self._solution_running:
-            rospy.loginfo("Orchestration : chincha? the solution is already running, try restarting anyway")
+            rospy.logwarn("Orchestration : %s" % response.message)
+            response.message = "chincha? the solution is already running..."
+            response.success = False
+            return response
         implementation = self._implementation.to_msg()
         response.success = True
         response.message = "bonza"
