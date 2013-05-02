@@ -228,7 +228,7 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
     #
     # I might have to add something in here that helps prevent it from actually
     # choosing something that will make the tree non-redundant.
-    value = lambda b: b.free_slots() if b.free_slots() < 0 else (1.0/b.redundancy())*min([3, b.free_slots()])
+    value = lambda b: b.free_slots() if b.free_slots() < 0 else (1.0/b.redundancy())* min([3, b.free_slots()])
     most_valuable_branch = None
     for branch in least_visible_branches:
         if most_valuable_branch is None or value(branch) > value(most_valuable_branch):
@@ -240,7 +240,7 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
             branch.prune_leaves([least_visible_leaf])
     if verbosity:
         console.pretty_println("      --> pruning least visible leaf: %s" % least_visible_leaf.name, console.green)
-    
+
     return pruned_compatibility_tree
 
 
@@ -278,7 +278,7 @@ class CompatibilityTree(object):
         for branch in self.branches:
             leaves.extend(branch.leaves)
         return list(set(leaves))
-    
+
     def is_valid(self):
         leaves = []
         for branch in self.branches:
@@ -299,7 +299,7 @@ class CompatibilityTree(object):
         console.pretty_println(indent + "%s" % name, console.bold)
         for branch in self.branches:
             print(indent + "  %s" % branch)
-    
+
     def add_leaf(self, leaf):
         '''
           Just add to the first compatible branch (worry about more intelligent adding later)
@@ -321,5 +321,3 @@ class CompatibilityTree(object):
                 if leaf.name == l.name:
                     branch.leaves[:] = [l for l in branch.leaves if leaf.name != l.name]
                     break
-
-

@@ -52,18 +52,18 @@ class Node(object):
           Checks to see if a client is compatible for the implementation's node rule.
         '''
         #print "****** _match ******"
-        #print str(node)
+        #print "%s-%s-%s-%s-%s" % (self.id, self.tuple, str(self.min), str(self.max), self.force_name_matching)
         #print concert_client.name + "-" + concert_client.platform + "." + concert_client.system + "." + concert_client.robot
         parts = self.tuple.split('.')
         platform = parts[0]
         system = parts[1]
         robot = parts[2]
         app_name = parts[3]
-        if platform != concert_client.platform:
+        if platform != '*' and platform != concert_client.platform:
             return False
-        if system != concert_client.system:
+        if system != '*' and system != concert_client.system:
             return False
-        if robot != concert_client.robot:
+        if robot != '*' and robot != concert_client.robot:
             return False
         # Check if we should match name prefixes (i.e. ignore trailing numericals)
         if self.force_name_matching and not re.match(self.id, re.sub('[0-9]*$', '', concert_client.name)):

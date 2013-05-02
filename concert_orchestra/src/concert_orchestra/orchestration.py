@@ -77,13 +77,17 @@ class Orchestration(object):
                     if self._params['auto_start']:
                         self._process_start_solution(concert_srvs.StartSolutionRequest())
         else:
-            diff = lambda l1, l2: [x for x in l1 if x not in l2] # diff of lists
+            diff = lambda l1, l2: [x for x in l1 if x not in l2]  # diff of lists
             new_client_names = diff(self._concert_clients.keys(), old_concert_clients.keys())
             lost_client_names = diff(old_concert_clients.keys(), self._concert_clients.keys())
             for new_client_name in new_client_names:
                 new_client = self._concert_clients[new_client_name]
                 branch = self._pruned_compatibility_tree.add_leaf(new_client)
-                self._process_start_client(new_client, branch)
+                if branch is None:
+                    rospy.logerr("Orchestra: this client is not compatible for any node in this implementation.")
+                    # should get listed as a bad client?
+                else:
+                    self._process_start_client(new_client, branch)
             for lost_client_name in lost_client_names:
                 lost_client = old_concert_clients[lost_client_name]
                 self._pruned_compatibility_tree.remove_leaf(lost_client)
@@ -152,7 +156,7 @@ class Orchestration(object):
 
         self._solution_running = True
         return response
-    
+
     def _process_start_client(self, client, branch):
         '''
           Used to start a single client. This is done when a client dynamically joins after the solution has started.
