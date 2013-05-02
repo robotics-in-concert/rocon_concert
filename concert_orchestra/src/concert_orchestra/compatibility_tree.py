@@ -126,7 +126,7 @@ def prune_compatibility_tree(compatibility_tree, verbosity=False):
     # i.e. the one that has the largest buffer until it is maxxed out.
     pruned_compatibility_tree = prune_least_valuable_leaf(compatibility_tree, verbosity)
     if pruned_compatibility_tree is not None:
-        pruned_branches.extend(prune_compatibility_tree(pruned_compatibility_tree))
+        pruned_branches.extend(prune_compatibility_tree(pruned_compatibility_tree, verbosity))
     else:
         pruned_branches.extend(compatibility_tree.branches)
     return pruned_branches
@@ -142,10 +142,16 @@ def prune_resolvable_branches(compatibility_tree, verbosity):
     removed_leaves = []
     for branch in branches:
         if not branch.leaves:
-            pruned_branches.append(copy.deepcopy(branch))
+            if not pruned_branches:  # Only accept one change at a time
+                pruned_branches.append(copy.deepcopy(branch))
+            else:
+                remaining_branches.append(copy.deepcopy(branch))
         elif len(branch.leaves) <= branch.minimum_leaves:
-            pruned_branches.append(copy.deepcopy(branch))
-            removed_leaves.extend(branch.leaves)
+            if not pruned_branches:
+                pruned_branches.append(copy.deepcopy(branch))
+                removed_leaves.extend(branch.leaves)
+            else:
+                remaining_branches.append(copy.deepcopy(branch))
         else:
             remaining_branches.append(copy.deepcopy(branch))
     removed_leaves = list(set(removed_leaves))
@@ -209,7 +215,6 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
     least_visible_leaf_names = [name for name in leaf_count if leaf_count[name] == least_visible_count]
     # let's just take the first one...should I error check here?
     least_visible_leaf = leaves[least_visible_leaf_names[0]]
-
     # branches associated with least_visible_leaf
     least_visible_branches = []
     for branch in compatibility_tree.branches:
@@ -217,8 +222,13 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
             least_visible_branches.append(copy.deepcopy(branch))
 
     # find most valuable branch - using a complicated formula here:
-    # that lets it strip itself from the branches that are close to pushing their max.
-    value = lambda b: (1.0/b.redundancy())*min([3, b.free_slots()])
+    # If any of the branches are over their max limits (free_slots < 0) then
+    # make sure we only use that as a criteria (absolutely avoid the most over-maxxed
+    # branches. Otherwise consider a nice balance between redundancy and free slots.
+    #
+    # I might have to add something in here that helps prevent it from actually
+    # choosing something that will make the tree non-redundant.
+    value = lambda b: b.free_slots() if b.free_slots() < 0 else (1.0/b.redundancy())*min([3, b.free_slots()])
     most_valuable_branch = None
     for branch in least_visible_branches:
         if most_valuable_branch is None or value(branch) > value(most_valuable_branch):
@@ -228,6 +238,9 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
     for branch in pruned_compatibility_tree.branches:
         if branch.name() != most_valuable_branch.name():
             branch.prune_leaves([least_visible_leaf])
+    if verbosity:
+        console.pretty_println("      --> pruning least visible leaf: %s" % least_visible_leaf.name, console.green)
+    
     return pruned_compatibility_tree
 
 
