@@ -7,6 +7,7 @@
 # Imports
 ##############################################################################
 
+import os
 import rospy
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import concert_msgs.msg as concert_msgs
@@ -14,6 +15,7 @@ import concert_msgs.srv as concert_srvs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
 import rocon_utilities
+import xmlrpclib
 
 # local imports
 from .concert_client import ConcertClient, ConcertClientException
@@ -58,7 +60,7 @@ class Conductor(object):
         # Initialisation
         ##################################
         self._get_concert_name()
-        self._setup_ros_parameters()
+        self._param = self._setup_ros_parameters()
         self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
 
     def invite(self, concert_name, clientnames, ok_flag):
@@ -77,16 +79,21 @@ class Conductor(object):
 
     def spin(self):
         '''
-          Maintains the clientele list.
+          Maintains the clientele list. We have to manage for two kinds here. Currently I use the same
+          class interface for both with just a flag to differentiate, but it could probably use a split somewhere in the future.
         '''
+        master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])
         while not rospy.is_shutdown():
-            visible_clients = self._get_visible_clients()  # list of clients identified by gateway hash names
+            gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
+            local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
+            visible_clients = gateway_clients + local_clients
             number_of_pruned_clients = self._prune_client_list(visible_clients)
             number_of_new_clients = 0
             new_clients = [c for c in visible_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
                                                      and (c not in self._bad_clients)]
             # Create new clients info instance
             for gateway_hash_name in new_clients:
+                is_local_client = True if gateway_hash_name in local_clients and gateway_hash_name not in visible_clients else False
                 gateway_name = rocon_utilities.gateway_basename(gateway_hash_name)
                 try:
                     # remove the 16 byte hex hash from the name
@@ -95,7 +102,7 @@ class Conductor(object):
                         if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
                             same_name_count += 1
                     concert_name = gateway_name if same_name_count == 0 else gateway_name + str(same_name_count + 1)
-                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, self.param)
+                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=is_local_client)
                     rospy.loginfo("Conductor : new client found [%s]" % concert_name)
                     number_of_new_clients += 1
 
@@ -106,7 +113,7 @@ class Conductor(object):
                     self._bad_clients.append(gateway_name)
                     rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
 
-            if self.param['config']['auto_invite']:
+            if self._param['config']['auto_invite']:
                 client_list = [client for client in self._concert_clients
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
@@ -134,7 +141,28 @@ class Conductor(object):
     # Helpers
     ###########################################################################
 
-    def _get_visible_clients(self):
+    def _get_local_clients(self, master):
+        '''
+          This keeps tab on the ros master's xmlrpc api to check for new incoming connections.
+          It's a bit naive, but it does the job - at least until we can do proper invites across
+          the board (android is on-connect only atm).
+
+          @param master : comes from `master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])`
+          @type xmlrpclib server proxy
+        '''
+        caller_id = '/script'
+        error_code, msg, val = master.getSystemState(caller_id)
+        client_hash_name_list = []
+        if error_code == 1:
+            unused_pubs, unused_subs, srvs = val
+            for srv, unused_node in srvs:
+                if srv.find("platform_info") != -1:
+                    client_hash_name_list.append(srv.split('/')[1])  # is of form /client_hash_name/platform_info
+        else:
+            rospy.logerr("Conductor: failed to call the concert master for the system state [%s][%s]." % (error_code, msg))
+        return client_hash_name_list
+
+    def _get_gateway_clients(self):
         '''
           Return the list of clients currently visible on network. This
           currently just checks the remote gateways for 'platform_info'
@@ -215,10 +243,4 @@ class Conductor(object):
         param = {}
         param['config'] = {}
         param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
-
-        param['execution'] = {}
-        param['execution']['srv'] = {}
-        param['execution']['srv']['start_app'] = (rospy.get_param('~start_app', 'start_app'), rapp_manager_srvs.StartApp)
-        param['execution']['srv']['stop_app'] = (rospy.get_param('~stop_app', 'stop_app'), rapp_manager_srvs.StopApp)
-
-        self.param = param
+        return param
