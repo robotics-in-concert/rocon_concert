@@ -13,7 +13,7 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 catkin_python_setup()
-catkin_add_nosetests(test)
+catkin_add_nosetests(test/test_compatibles.py)
 
 ##############################################################################
 # Installs
