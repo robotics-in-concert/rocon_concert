@@ -38,8 +38,8 @@ add_executable(rocon_tf_reconstructor src/main.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
   rocon_tf_reconstructor
-  ${catkin_LIBRARIES}
   ${PROJECT_NAME}_lib
+  ${catkin_LIBRARIES}
 )
 
 #############
