@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rocon_tf_reconstructor</name>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
   <description>The rocon_tf_reconstructor package</description>
 
   <maintainer email="jihoonl@todo.todo">jihoonl</maintainer>

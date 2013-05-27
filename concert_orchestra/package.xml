@@ -1,6 +1,6 @@
 <package>
   <name>concert_orchestra</name>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
   <description>
     Orchestrating the concert - linking, connections, remappings, resource handling.
   </description>
