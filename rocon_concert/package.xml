@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rocon_concert</name>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <description>
     Includes tools for handling solutions, linking and app distribution.
   </description>
@@ -14,9 +14,9 @@
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
   <author email="jihoonlee.in@gmail.com">Jihoon Lee</author>
 
+  <buildtool_depend>catkin</buildtool_depend>
   <run_depend>concert_conductor</run_depend>
-  <run_depend>concert_master</run_depend>
-  <run_depend>rocon_orchestra</run_depend>
+  <run_depend>concert_orchestra</run_depend>
   
   <export>
     <metapackage/>

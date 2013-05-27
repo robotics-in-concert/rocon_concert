@@ -1,13 +1,13 @@
 <package>
-  <name>concert_conductor</name>
+  <name>concert_orchestra</name>
   <version>0.4.0</version>
   <description>
-    Managing the concert clients - invitations, monitoring connections...
+    Orchestrating the concert - linking, connections, remappings, resource handling.
   </description>
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
   <maintainer email="jihoonlee.in@gmail.com">Jihoon Lee</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/concert_conductor</url>
+  <url type="website">http://ros.org/wiki/concert_orchestra</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
@@ -15,12 +15,12 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>rospy</run_depend>
+  <run_depend>roslib</run_depend>
   <run_depend>rocon_utilities</run_depend>
-  <run_depend>rocon_app_manager_msgs</run_depend>
+  <run_depend>rospy</run_depend>
   <run_depend>concert_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>gateway_msgs</run_depend>
+  <run_depend>python-pydot</run_depend>
+  <run_depend>graphviz</run_depend>
   <export>
     <rosdoc config="rosdoc.yaml"/>
   </export>
