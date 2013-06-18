@@ -98,10 +98,24 @@ class Conductor(object):
                 try:
                     # remove the 16 byte hex hash from the name
                     same_name_count = 0
+                    human_friendly_indices = set([])
                     for client in self._concert_clients.values():
                         if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
+                            index = client.name.replace(gateway_name, "")
+                            if index == "":
+                                human_friendly_indices.add("0")
+                            else:
+                                human_friendly_indices.add(index)
                             same_name_count += 1
-                    concert_name = gateway_name if same_name_count == 0 else gateway_name + str(same_name_count + 1)
+                    if same_name_count == 0:
+                        concert_name = gateway_name
+                    else:
+                        human_friendly_index = -1
+                        while True:
+                            human_friendly_index += 1
+                            if not str(human_friendly_index) in human_friendly_indices:
+                                break
+                        concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
                     self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=is_local_client)
                     rospy.loginfo("Conductor : new client found [%s]" % concert_name)
                     number_of_new_clients += 1
