@@ -96,7 +96,6 @@ class Orchestration(object):
                 self._pruned_compatibility_tree.remove_leaf(lost_client)
                 if not self._pruned_compatibility_tree.is_valid():
                     rospy.logerr("Orchestra: client disengaged and the solution is now no longer valid [%s]" % lost_client_name)
-                    self._solution_running = False
                     self._process_stop_solution()
 
     ##########################################################################
@@ -200,6 +199,7 @@ class Orchestration(object):
         if not self._solution_running:
             response.success = False
             response.message = "chincha? the solution is not running..."
+            rospy.logwarn("Orchestration : %s" % response.message)
             return response
         self._solution_running = False
         rospy.loginfo("Orchestra : stopping the solution.")
