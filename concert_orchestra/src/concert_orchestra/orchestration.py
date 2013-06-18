@@ -76,6 +76,9 @@ class Orchestration(object):
                     # self._implementation.publish()
                     if self._params['auto_start']:
                         self._process_start_solution(concert_srvs.StartSolutionRequest())
+                else:
+                    rospy.loginfo("Orchestration : solution not yet ready [%s]" % self._pruned_compatibility_tree.error_message)
+                    self._pruned_compatibility_tree.print_branches("Current Branches")
         else:
             diff = lambda l1, l2: [x for x in l1 if x not in l2]  # diff of lists
             new_client_names = diff(self._concert_clients.keys(), old_concert_clients.keys())
@@ -107,7 +110,9 @@ class Orchestration(object):
         response = concert_srvs.StartSolutionResponse()
         if not self._pruned_compatibility_tree.is_valid():
             response.success = False
-            response.message = "solution is not yet ready (waiting for clients)..."
+            response.message = "cowardly refused to start the solution [%s]..." % self._pruned_compatibility_tree.error_message
+            rospy.loginfo("Orchestration : %s" % response.message)
+            self._pruned_compatibility_tree.print_branches()
             return response
         if self._solution_running:
             rospy.logwarn("Orchestration : %s" % response.message)
@@ -202,6 +207,7 @@ class Orchestration(object):
             app_name = branch.node.tuple.split('.')[3]
             for leaf in branch.leaves:
                 stop_app_name = '/' + leaf.gateway_name + '/stop_app'
+                rospy.loginfo("Orchestra :   stopping %s" % stop_app_name)
                 # check first if it exists, also timeouts?
                 rospy.wait_for_service(stop_app_name)
                 stop_app = rospy.ServiceProxy(stop_app_name, rapp_manager_srvs.StopApp)

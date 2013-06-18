@@ -263,12 +263,18 @@ def print_leaves(leaves, name='Leaves', indent=''):
 
 
 class CompatibilityTree(object):
+    ERROR_NONE = 0
+    ERROR_MINIMUM_REQUIREMENT_UNMET = 1
+    ERROR_EXCEEDED_MAXIMUM_REQUIREMENT = 2
+    ERROR_DUPLICATE_LEAVES = 3
     '''
       Stores the implementation node - concert client list compatibility
       tree with algorithms to manipulate it.
     '''
     def __init__(self, branches):
         self.branches = branches
+        self.error_message = ""  # Used to indicate a failure reason.
+        self.error_type = CompatibilityTree.ERROR_NONE
 
     def nodes(self):
         return [branch.node for branch in self.branches]
@@ -281,15 +287,22 @@ class CompatibilityTree(object):
 
     def is_valid(self):
         leaves = []
+        self.error_message = ""
         for branch in self.branches:
             # Check min, max.
             if len(branch.leaves) < branch.minimum_leaves:
+                self.error_mode = CompatibilityTree.ERROR_MINIMUM_REQUIREMENT_UNMET
+                self.error_message = "waiting for clients of type " + branch.name() + " [" + str(len(branch.leaves)) + " < " +  str(branch.minimum_leaves) + "]"
                 return False
             if  branch.maximum_leaves != concert_msgs.LinkNode.UNLIMITED_RESOURCE and len(branch.leaves) > branch.maximum_leaves:
+                self.error_mode = CompatibilityTree.ERROR_EXCEEDED_MAXIMUM_REQUIREMENT
+                self.error_message = branch.name() +  "exceeded the maximum requirement [" + str(len(branch.leaves)) + " < " +  str(branch.minimum_leaves) + "]"
                 return False
             # Check for more than 1 occurrence of a leaf
             for leaf in branch.leaves:
                 if leaf in leaves:
+                    self.error_mode = CompatibilityTree.ERROR_DUPLICATE_LEAVES
+                    self.error_message = branch.name() +  "more than one occurrence of a leaf [" + str(leaf) + "]"
                     return False
                 else:
                     leaves.append(leaf)
