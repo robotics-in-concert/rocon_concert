@@ -216,6 +216,7 @@ class Orchestration(object):
                 if not resp.stopped:
                     response.success = False
                     response.message = "aigoo, failed to stop app %s" % app_name
+	rospy.loginfo("Orchestra : the solution has stopped successfully")
         return response
 
 ##############################################################################
