@@ -112,7 +112,7 @@ class ConcertClient(object):
             list_app_service.wait_for_service()
         except rospy.ServiceException, e:
             raise e
-        self.data.apps = list_app_service().apps
+        self.data.apps = list_app_service().available_apps
 
     def to_msg_format(self):
         '''
