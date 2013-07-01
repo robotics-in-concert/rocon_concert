@@ -1,5 +1,4 @@
-
-= Robotics in Concert =
+<h1> Robotics in Concert </h1>
 
 
 http://www.robotconcert.org/wiki/Main_Page
