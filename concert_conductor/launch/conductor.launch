@@ -2,6 +2,7 @@
   <!-- ******************************* Arguments ******************************* -->
   <arg name="concert_name" default="concert_master"/>
   <arg name="concert_hub_uri" default="http://localhost:6380"/>
+  <arg name="concert_auto_invite" default="true"/>
   <arg name="gateway_watch_loop_period" default="2"/> <!-- Polling period for multimaster advertising/flipping -->
 
   <!-- ********************************* Hub *********************************** -->
@@ -26,10 +27,10 @@
 
   <!-- ******************************* Conductor ******************************* -->
   <node pkg="concert_conductor" type="conductor.py" name="conductor" output="screen">
+    <param name="auto_invite" value="$(arg concert_auto_invite)"/>
     <remap from="conductor/gateway_info" to="gateway/gateway_info"/>
     <remap from="conductor/remote_gateway_info" to="gateway/remote_gateway_info"/>
     <remap from="conductor/pull" to="gateway/pull"/>
     <remap from="conductor/flip" to="gateway/flip"/>
-    <rosparam command="load" file="$(find concert_conductor)/param/default.yaml"/>
   </node>
 </launch>
