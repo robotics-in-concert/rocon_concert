@@ -56,10 +56,15 @@ target_link_libraries(
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
+install(TARGETS rocon_tf_reconstructor_lib 
+  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
 # Mark executables and/or libraries for installation
-install(TARGETS rocon_tf_reconstructor_lib rocon_tf_reconstructor
+install(TARGETS rocon_tf_reconstructor
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
 
 # Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
