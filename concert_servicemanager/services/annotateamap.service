@@ -1,0 +1,4 @@
+name: AnnotateAMap
+description: Loads a map from DB and annotates the semantic information
+type: automatic
+
