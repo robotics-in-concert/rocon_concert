@@ -44,6 +44,7 @@ class RoleManager(object):
         publishers['icon'] = rospy.Publisher('~icon', rocon_std_msgs.Icon, latch=True)
         icon = rocon_utilities.icon_resource_to_msg('concert_roles/rocon.png')
         publishers['icon'].publish(icon)
+        publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
         return publishers
 
     def _setup_parameters(self):
@@ -53,8 +54,14 @@ class RoleManager(object):
         return param
 
     def _stub_init(self):
-        sub_roles = ['admin', 'dev', 'guzzler']
-        for role in sub_roles:
+        '''
+          Hard codes some roles and apps. Later this configuration should come from
+          the services.
+        '''
+        hard_coded_roles = concert_msgs.Roles()
+        hard_coded_roles.list = ['admin', 'dev', 'guzzler']
+        self.publishers['roles'].publish(hard_coded_roles)
+        for role in hard_coded_roles.list:
             self.roles[role] = []
         android_platform_info_list = [rocon_std_msgs.PlatformInfo.OS_ANDROID,
                                  rocon_std_msgs.PlatformInfo.VERSION_ANY,
@@ -68,6 +75,30 @@ class RoleManager(object):
                                               android_platform_info,
                                               "Solution Manager",
                                               "Configuration manager for the concert",
+                                              icon
+                                              )
+                                   )
+        self.roles['admin'].append(concert_msgs.RemoconApp(
+                                              "com.github.robotics_in_concert.rocon_android.SolutionMonitor",
+                                              android_platform_info,
+                                              "Solution Monitor",
+                                              "Monitors various aspects of the solution.",
+                                              icon
+                                              )
+                                   )
+        self.roles['dev'].append(concert_msgs.RemoconApp(
+                                              "com.github.robotics_in_concert.rocon_android.Pizza",
+                                              android_platform_info,
+                                              "Pizza Delivery",
+                                              "Tantalises and tickles the taste buds with a virtual pizza.",
+                                              icon
+                                              )
+                                   )
+        self.roles['dev'].append(concert_msgs.RemoconApp(
+                                              "com.github.robotics_in_concert.rocon_android.Beer",
+                                              android_platform_info,
+                                              "Beer",
+                                              "The super sopper.",
                                               icon
                                               )
                                    )

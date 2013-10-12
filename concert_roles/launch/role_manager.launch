@@ -5,6 +5,7 @@
   <!-- ******************************** Gateway ******************************** -->
   <node pkg="concert_roles" type="role_manager.py" name="role_manager">
     <remap from="role_manager/icon" to="concert/icon"/>
+    <remap from="role_manager/icon" to="concert/roles"/>
   </node>
 
 </launch>
