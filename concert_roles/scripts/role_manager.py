@@ -4,10 +4,10 @@
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 import rospy
-import concert_conductor
+import concert_roles
 
 if __name__ == '__main__':
 
-    rospy.init_node('conductor')
-    conductor = concert_conductor.Conductor()
-    conductor.spin()
+    rospy.init_node('role_manager')
+    role_manager = concert_roles.RoleManager()
+    role_manager.spin()

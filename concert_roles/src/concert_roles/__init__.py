@@ -7,5 +7,4 @@
 # Imports
 ##############################################################################
 
-from .conductor import Conductor
-from .concert_client import ConcertClientException
+from .manager import RoleManager

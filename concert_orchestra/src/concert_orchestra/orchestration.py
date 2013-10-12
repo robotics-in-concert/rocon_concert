@@ -12,6 +12,7 @@ import copy
 import rospy
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -146,7 +147,7 @@ class Orchestration(object):
                 req.name = app_name
                 req.remappings = []
                 for remapping in remappings:
-                    req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
+                    req.remappings.append(rocon_std_msgs.Remapping(remapping[0], remapping[1]))
                 rospy.loginfo("              Starting...")
                 resp = start_app(req)
                 if not resp.started:

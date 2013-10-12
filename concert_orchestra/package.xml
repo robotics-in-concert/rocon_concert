@@ -19,6 +19,7 @@
   <run_depend>rocon_utilities</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>concert_msgs</run_depend>
+  <run_depend>rocon_std_msgs</run_depend>
   <run_depend>python-pydot</run_depend>
   <run_depend>graphviz</run_depend>
   <export>
