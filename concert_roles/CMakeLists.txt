@@ -18,11 +18,11 @@ catkin_python_setup()
 # Installs
 ##############################################################################
 
-#install(
-#    PROGRAMS 
-#        scripts/conductor.py
-#    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#    )
+install(
+    PROGRAMS 
+        scripts/concert_roles_and_apps
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
