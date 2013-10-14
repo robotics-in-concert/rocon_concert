@@ -1,0 +1,12 @@
+<launch>
+  <!-- ******************************* Arguments ******************************* -->
+  <!-- <arg name="concert_name" default="concert_master"/> -->
+
+  <!-- ******************************** Gateway ******************************** -->
+  <node pkg="concert_roles" type="role_manager.py" name="role_manager">
+    <remap from="role_manager/icon" to="concert/icon"/>
+    <remap from="role_manager/roles" to="concert/roles"/>
+    <remap from="role_manager/get_roles_and_apps" to="concert/get_roles_and_apps"/>
+  </node>
+
+</launch>
