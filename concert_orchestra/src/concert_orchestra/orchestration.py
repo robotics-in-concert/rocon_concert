@@ -187,7 +187,7 @@ class Orchestration(object):
         req.name = app_name
         req.remappings = []
         for remapping in remappings:
-            req.remappings.append(rapp_manager_msgs.Remapping(remapping[0], remapping[1]))
+            req.remappings.append(rocon_std_msgs.Remapping(remapping[0], remapping[1]))
         rospy.loginfo("              Starting...")
         resp = start_app(req)
         if not resp.started:
