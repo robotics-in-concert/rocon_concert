@@ -1,28 +1,3 @@
 name: Chatter
 description: Chatting between agents 
 author: YujinRobot
-dedicated_apps:
-  - tuple: linux.ros.pc.rocon_apps/talker
-    min: 1
-implementation:
-  nodes:
-    - id: dudes
-      tuple: linux.ros.pc.rocon_apps/listener
-      min: 0
-      max: 5
-    - id: dudette
-      tuple: linux.ros.pc.rocon_apps/talker
-      force_name_matching: true
-  topics:
-    - id: chatter
-      type: std_msgs/String
-  actions: []
-  edges:
-    - start: chatter
-      finish: dudes
-      remap_from: chatter
-      remap_to: /conversation/chatter
-    - start: dudette
-      finish: chatter
-      remap_from: chatter
-      remap_to: /conversation/chatter

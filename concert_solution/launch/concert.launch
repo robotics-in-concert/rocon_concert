@@ -1,0 +1,18 @@
+<launch>
+    <group ns="concert">
+        <include file="$(find concert_conductor)/launch/conductor.launch">
+            <arg name="concert_name" value="solution_concert"/>
+        </include>
+        <include file="$(find concert_servicemanager)/launch/servicemanager.launch"/>
+
+        <node pkg="concert_servicemanager" name="add_service" type="add_service_from_file.py">
+            <param name="filename" value="$(find concert_servicemanager)/services/turtle.service"/>
+        </node>
+
+        <node pkg="concert_servicemanager" name="add_service1" type="add_service_from_file.py">
+            <param name="filename" value="$(find concert_servicemanager)/services/chatter.service"/>
+        </node>
+    </group>
+
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+</launch>

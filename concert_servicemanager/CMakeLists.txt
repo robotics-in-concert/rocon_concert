@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(concert_servicemanager)
 
-find_package(catkin REQUIRED COMPONENTS rospy)
+find_package(catkin REQUIRED)
 
 catkin_python_setup()
 
 catkin_package(
-    CATKIN_DEPENDS 
+    CATKIN_DEPENDS rospy 
 )
 
 install(PROGRAMS
-  nodes/concert_servicemanager
+  scripts/concert_servicemanager
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
