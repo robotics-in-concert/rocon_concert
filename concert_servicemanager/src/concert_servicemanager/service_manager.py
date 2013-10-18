@@ -25,7 +25,6 @@ class ServiceManager(object):
     def setup_ros_api(self):
         # Service
         self.srv['add_service'] = rospy.Service('service/add',AddConcertService,self.process_add_concertservice)
-        self.srv['enable_service'] = rospy.Service('service/enable',EnableConcertService,self.process_enable_concertservice)
 
         # Publisher
         self.pub['list_service'] = rospy.Publisher('service/list',ListConcertService, latch = True)
@@ -54,8 +53,6 @@ class ServiceManager(object):
 
         return AddConcertServiceResponse(success,reason)
 
-    def process_enable_concertservice(self,req):
-        return EnableConcertServiceResponse()
 
     def update(self):
         rs = [v.to_msg() for k,v in self.concert_services.items()]

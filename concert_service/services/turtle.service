@@ -1,3 +1,46 @@
 name: Turtle Service
 description: Turtlesim service 
 author: Yujinrobot
+linkgraph: 
+  dedicated_nodes:
+    - id: kobuki
+      tuple: linux.ros.pc.turtle_concert/turtle_stroll
+    - id: guimul
+      tuple: linux.ros.pc.turtle_concert/turtle_stroll
+    - id: turtlesim
+      tuple: linux.ros.pc.turtle_concert/turtle_stroll_sim
+  topics:
+    - id: kobuki_cmd_vel
+      type: geometry_msgs/Twist
+    - id: guimul_cmd_vel
+      type: geometry_msgs/Twist
+    - id: kobuki_pose
+      type: turtlesim/Pose
+    - id: guimul_pose
+      type: turtlesim/Pose
+  actions: []
+  edges:
+    - start: kobuki_cmd_vel
+      finish: turtlesim
+      remap_from: turtle_one/cmd_vel
+      remap_to: /kobuki/cmd_vel
+    - start: guimul_cmd_vel
+      finish: turtlesim
+      remap_from: turtle_two/cmd_vel
+      remap_to: /guimul/cmd_vel
+    - start: turtlesim
+      finish: kobuki_pose
+      remap_from: turtle_one/pose
+      remap_to: /kobuki/pose
+    - start: turtlesim
+      finish: guimul_pose
+      remap_from: turtle_two/pose
+      remap_to: /guimul/pose
+    - start: kobuki_pose
+      finish: kobuki
+      remap_from: pose
+      remap_to: /kobuki/pose
+    - start: guimul_pose
+      finish: guimul
+      remap_from: pose
+      remap_to: /guimul/pose
