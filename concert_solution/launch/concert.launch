@@ -6,11 +6,11 @@
         <include file="$(find concert_servicemanager)/launch/servicemanager.launch"/>
 
         <node pkg="concert_servicemanager" name="add_service" type="add_service_from_file.py">
-            <param name="filename" value="$(find concert_servicemanager)/services/turtle.service"/>
+            <param name="filename" value="$(find concert_service)/services/turtle.service"/>
         </node>
 
         <node pkg="concert_servicemanager" name="add_service1" type="add_service_from_file.py">
-            <param name="filename" value="$(find concert_servicemanager)/services/chatter.service"/>
+            <param name="filename" value="$(find concert_service)/services/chatter.service"/>
         </node>
     </group>
 
