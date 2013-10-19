@@ -137,7 +137,7 @@ class Conductor(object):
             # Long term solution
             if number_of_pruned_clients != 0 or number_of_new_clients != 0:
                 self._publish_discovered_concert_clients()
-            rospy.sleep(self._watcher_period)
+            rospy.rostime.wallsleep(self._watcher_period)  # human time
 
     ###########################################################################
     # Ros Callbacks
@@ -251,7 +251,7 @@ class Conductor(object):
                     break
                 else:
                     rospy.loginfo("Conductor : no hub yet available, spinning...")
-            rospy.sleep(1.0)
+            rospy.rostime.wallsleep(1.0)  # human time
 
     def _setup_ros_parameters(self):
         param = {}
