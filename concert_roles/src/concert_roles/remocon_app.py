@@ -30,6 +30,7 @@ class RemoconApp(object):
             'platform_info',
             'display_name',
             'description',
+            'service_name',
             'remappings',
             'parameters'
         ]
@@ -39,6 +40,7 @@ class RemoconApp(object):
                  platform_info=rocon_std_msgs.PlatformInfo(),
                  display_name="Unknown App",
                  description="Unknown description.",
+                 service_name="self-serving service",
                  remappings=[],
                  parameters=[]
                  ):
@@ -46,6 +48,7 @@ class RemoconApp(object):
         self.platform_info = platform_info
         self.display_name = display_name
         self.description = description
+        self.service_name = service_name
         self.remappings = remappings
         self.parameters = parameters
 
@@ -83,6 +86,7 @@ class RemoconApp(object):
                                 name=self.name,
                                 display_name=self.display_name,
                                 description=self.description,
+                                service_name=self.service_name,
                                 icon=self.platform_info.icon,
                                 remappings=self.remappings,
                                 parameters=self.parameters

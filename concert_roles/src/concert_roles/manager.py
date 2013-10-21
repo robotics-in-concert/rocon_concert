@@ -92,6 +92,7 @@ class RoleManager(object):
                                               platform_info=platform_info,
                                               display_name="Solution Manager",
                                               description="Configuration manager for the concert",
+                                              service_name="admin",
                                               remappings=[],
                                               parameters=[],
                                               )
@@ -101,6 +102,7 @@ class RoleManager(object):
                                               platform_info=platform_info,
                                               display_name="Solution Monitor",
                                               description="Monitors various aspects of the solution.",
+                                              service_name="admin",
                                               remappings=[],
                                               parameters=[]
                                               )
@@ -110,6 +112,7 @@ class RoleManager(object):
                                               platform_info=platform_info,
                                               display_name="Pizza Delivery",
                                               description="Tantalises and tickles the taste buds with a virtual pizza.",
+                                              service_name="spooning",
                                               remappings=[],
                                               parameters=[rocon_std_msgs.KeyValue('type', 'super supreme')]
                                               )
@@ -119,6 +122,7 @@ class RoleManager(object):
                                               platform_info=platform_info,
                                               display_name="Beer",
                                               description="The super sopper.",
+                                              service_name="leeching",
                                               remappings=[rocon_std_msgs.Remapping('/fosters', '/beer/leffe')],
                                               parameters=[]
                                               )
