@@ -12,4 +12,6 @@ class CompatibilityTable(object):
         self.nodes = nodes
 
     def is_ready(self,client_list): 
-        return ConcertService.NOT_READY
+
+        # returns status as well as pair of app and client
+        return ConcertService.NOT_READY, []

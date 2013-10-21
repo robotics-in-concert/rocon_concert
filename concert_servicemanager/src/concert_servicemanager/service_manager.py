@@ -25,10 +25,11 @@ class ServiceManager(object):
     def setup_ros_api(self):
         # Service
         self.srv['add_service'] = rospy.Service('service/add',AddConcertService,self.process_add_concertservice)
+        self.srv['enable_service'] = rospy.Service('service/enable',EnableConcertService,self.process_enable_concertservice)
 
         # Publisher
         self.pub['list_service'] = rospy.Publisher('service/list',ListConcertService, latch = True)
-        
+
 
     def process_add_concertservice(self, req):
 
@@ -44,7 +45,7 @@ class ServiceManager(object):
                 self.concert_services[req.service.name] = cs
                 self.update()
                 success = True
-                reason  = ""
+                reason  = str(req.service.name) + " Successfully added"
         except Exception as e:
             tb = traceback.format_exc()
             success = False
@@ -53,6 +54,17 @@ class ServiceManager(object):
 
         return AddConcertServiceResponse(success,reason)
 
+    def process_enable_concertservice(self,req):
+        name = req.concertservice_name
+
+        success = False
+        reason = ""
+        if req.enable:
+            success, reason = self.concert_services[name].enable()
+        else:
+            success, reason = self.concert_services[name].disable()
+
+        return EnableConcertServiceResponse(success,reason)
 
     def update(self):
         rs = [v.to_msg() for k,v in self.concert_services.items()]

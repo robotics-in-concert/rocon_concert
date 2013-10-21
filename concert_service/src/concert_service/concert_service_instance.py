@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import traceback
 import threading
 from .compatibility_table import *
 from concert_msgs.msg import ConcertService, ConcertClients
@@ -36,8 +37,7 @@ class ConcertServiceInstance(object):
         # Subscriber 
         self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients',ConcertClients,self.process_list_concert_clients)
 
-        #  Service
-#        self.srv['enable_service'] = rospy.Service('service/enable',EnableConcertService,self.process_enable_concertservice)
+
 
     def process_list_concert_clients(self, msg):
         self.log("Bling Bling")
@@ -49,30 +49,39 @@ class ConcertServiceInstance(object):
         clients = msg.clients
         client_list = [(c.name, str(c.platform) + "." +  str(c.system) + "." +str(c.robot)) for c in clients]
         self.log("\n" + str(client_list))
-        self.description.status = self.compatibility_table.is_ready(client_list)
+        self.description.status, self.app_pairs = self.compatibility_table.is_ready(client_list)
         self.lock.release()
-
-
-    def process_enable_concertservice(self,req):
-
-        success = False
-        reason = ""
-        if req.enable:
-            success, reason = self.enable()
-        else:
-            success, reason = self.disable()
-
-        return EnableConcertServiceResponse(success,reason)
 
     def enable(self):
 
         self.lock.acquire()
         # if status is valid,  Starts up clients' app
+        success = False
+        reason = "Bad"
+        if self.description.status == ConcertClients.READY:
+            try:
+                # Starts apps
+                self.starts_apps()
+
+                # Flag service as enabled
+                success = True
+                reason = "Successfully enabled"
+            except Exception as e:
+                # Any issue?
+                tb = traceback.format_exc()
+                success = False
+                reason = "Unexpected Error while loading service"
+                self.log("\n"+str(tb))
+        else:
+            reason = "Service is not ready"
+            success = False
+            self.description.enabled = False
+        
         # flag service as enabled
         # if not, return false and reason
         self.lock.release()
 
-        return False, "Not Implemented"
+        return sucess, reason 
 
     def disable(self):
         self.lock.acquire()
@@ -82,6 +91,10 @@ class ConcertServiceInstance(object):
         self.lock.release()
 
         return False, "Not Implemented"
+
+    def starts_apps(self):
+#        for app, client in self.app_pairs:
+
 
 
     def to_msg(self):
