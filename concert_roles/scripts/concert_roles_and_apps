@@ -58,6 +58,7 @@ if __name__ == '__main__':
             console.pretty_println("  %s" % remocon_app.display_name, console.green)
             print(console.cyan + "    Name" + console.reset + "       : " + console.yellow + "%s" % remocon_app.name + console.reset)
             print(console.cyan + "    Description" + console.reset + ": " + console.yellow + "%s" % remocon_app.description + console.reset)
+            print(console.cyan + "    Service" + console.reset + "    : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
             for remapping in remocon_app.remappings:
                 print(console.cyan + "    Remapping" + console.reset + "  : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
             for parameter in remocon_app.parameters:
