@@ -9,6 +9,7 @@
 
 import os
 import rospy
+import std_msgs.msg as std_msgs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_std_msgs.msg as rocon_std_msgs
@@ -29,6 +30,7 @@ class RoleManager(object):
       for human interactive agent (aka remocon) connections.
     '''
     __slots__ = [
+            'concert_name',
             'roles',
             'publishers',
             'parameters',
@@ -43,17 +45,18 @@ class RoleManager(object):
     ##########################################################################
 
     def __init__(self):
+        self.concert_name = rospy.get_param('~concert_name')
         self.roles = {}
         self.publishers = self._setup_publishers()
         self.services = self._setup_services()
         self.parameters = self._setup_parameters()
-        self.icon = rocon_utilities.icon_resource_to_msg('concert_roles/rocon.png')
+        self.icon = rocon_utilities.icon_resource_to_msg('concert_roles/' + self.concert_name + '.png')
         self.platform_info = rocon_app_mng_msgs.PlatformInfo(
 #                                os=rocon_std_msgs.PlatformInfo.OS_ANDROID,
 #                                version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
                                 platform=rocon_std_msgs.PlatformInfo.PLATFORM_SMART_DEVICE,
                                 system=rocon_std_msgs.PlatformInfo.SYSTEM_ROSJAVA,
-                                name='concert', icon=self.icon, robot='concert')
+                                name=self.concert_name, icon=self.icon, robot='___robot___')
         self._stub_init()
         # Aliases
         self.spin = rospy.spin
@@ -62,7 +65,9 @@ class RoleManager(object):
         publishers = {}
         publishers['icon']  = rospy.Publisher('~icon', rocon_std_msgs.Icon, latch=True)
         publishers['info']  = rospy.Publisher('~info', rocon_app_mng_msgs.PlatformInfo, latch=True)
-        publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
+        # TMP FAKE publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
+        publishers['roles'] = rospy.Publisher('~roles', std_msgs.String, latch=True)
+
         publishers['apps']  = rospy.Publisher('~app_list', rocon_app_mng_msgs.AppList, latch=True)
 
         return publishers
@@ -97,12 +102,12 @@ class RoleManager(object):
         hard_coded_roles.list = ['Admin', 'Dev', 'Guzzler']
         self.publishers['icon'].publish(self.icon)
         self.publishers['info'].publish(self.platform_info)
-        self.publishers['roles'].publish(hard_coded_roles)
+        self.publishers['roles'].publish('[Admin, Dev, Guzzler]') # FAKE  hard_coded_roles)
         self.publishers['apps'].publish(rocon_app_mng_msgs.AppList())
 
         for role in hard_coded_roles.list:
             self.roles[role] = []
-        icon = rocon_utilities.icon_resource_to_msg('concert_roles/rocon.png')
+        icon = rocon_utilities.icon_resource_to_msg('concert_roles/' + self.concert_name + '.png')
         platform_info = rocon_std_msgs.PlatformInfo(
                                     os=rocon_std_msgs.PlatformInfo.OS_ANDROID,
                                     version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
