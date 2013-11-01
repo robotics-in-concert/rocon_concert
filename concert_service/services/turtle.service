@@ -44,3 +44,13 @@ linkgraph:
       finish: guimul
       remap_from: pose
       remap_to: /guimul/pose
+    - start: kobuki
+      finish: kobuki_cmd_vel
+      remap_from: cmd_vel
+      remap_to: /kobuki/cmd_vel
+    - start: guimul
+      finish: guimul_cmd_vel
+      remap_from: cmd_vel
+      remap_to: /guimul/cmd_vel
+
+

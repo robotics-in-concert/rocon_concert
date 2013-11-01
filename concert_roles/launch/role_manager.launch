@@ -8,5 +8,4 @@
     <remap from="role_manager/roles" to="concert/roles"/>
     <remap from="role_manager/get_roles_and_apps" to="concert/get_roles_and_apps"/>
   </node>
-
 </launch>

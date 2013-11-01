@@ -38,6 +38,7 @@ class Conductor(object):
         self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
+        self.services['lock_concert_clients'] = rospy.Service('~lock_concert_clients',concert_srvs.LockConcertClients, self._process_lock_concert_clients_request)
         # service clients
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
@@ -84,6 +85,20 @@ class Conductor(object):
         '''
         master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])
         while not rospy.is_shutdown():
+
+            # Grep list of remote clients from gateway
+            # Grep list of local clients.
+            # Prune unavailable clients. 
+
+            # For each new clients
+            #   Resolve human friendly index
+            #   add into the concert client list. Mark whether it is local client or not
+            #   Invite the client if it was invited previously
+            # If auto_invite is true
+            #   Invite all available clients
+            # If there is a change in the list, update the topic
+
+            
             gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
             local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
             visible_clients = gateway_clients + local_clients
@@ -150,6 +165,16 @@ class Conductor(object):
         mastername = req.mastername
         resp = self.invite(mastername, req.clientnames, req.ok_flag)
         return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
+
+    def _process_lock_concert_clients_request(self,req):
+        '''
+        '''
+        rospy.loginfo("Conductor: Lock Request")
+        for c in req.clients:
+            rospy.loginfo("Conductor:   [" + str(c)+"]")
+
+        rospy.loginfo("Conductor: NOT IMPLEMENTED return FALSE")
+        return concert_srvs.LockConcertClientsResponse(False,"Not Implemented")
 
     ###########################################################################
     # Helpers

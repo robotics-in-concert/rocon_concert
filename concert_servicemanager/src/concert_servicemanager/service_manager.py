@@ -3,15 +3,17 @@
 import rospy
 import traceback
 import yaml
+import threading
 import concert_service
 
-from concert_msgs.msg import *
-from concert_msgs.srv import *
+import concert_msgs.msg as concert_msg
+import concert_msgs.srv as concert_srv
 
 class ServiceManager(object):
 
     concert_services = {}
     last_list_concert_client = []
+    lock = None
 
     param = {}
     srv = {}
@@ -22,49 +24,90 @@ class ServiceManager(object):
         self.log("in init")
         self.setup_ros_api()
 
+        self.lock = threading.Lock()
+
     def setup_ros_api(self):
         # Service
-        self.srv['add_service'] = rospy.Service('service/add',AddConcertService,self.process_add_concertservice)
-        self.srv['enable_service'] = rospy.Service('service/enable',EnableConcertService,self.process_enable_concertservice)
+        self.srv['add_service'] = rospy.Service('service/add',concert_srv.AddConcertService,self.process_add_concertservice)
+        self.srv['remove_service'] = rospy.Service('service/remove',concert_srv.RemoveConcertService,self.process_remove_concertservice)
+        self.srv['enable_service'] = rospy.Service('service/enable',concert_srv.EnableConcertService,self.process_enable_concertservice)
 
         # Publisher
-        self.pub['list_service'] = rospy.Publisher('service/list',ListConcertService, latch = True)
+        self.pub['list_service'] = rospy.Publisher('service/list',concert_msg.ListConcertService, latch = True)
+
+        # Subscriber 
+        self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients',concert_msg.ConcertClients,self.process_list_concert_clients)
+
+    def process_list_concert_clients(self, msg):
+        self.lock.acquire()
+        for name in self.concert_services:
+            self.concert_services[name].process_list_concert_clients(msg)
+        self.lock.release()
 
 
     def process_add_concertservice(self, req):
 
         success = False
-        reason  = "No reason"
+        message  = "No reason"
+        self.lock.acquire()
         try:
             if req.service.name in self.concert_services:
                 success = False
-                reason = "Already registered service"
-                self.log(reason)
+                message = "Already registered service"
             else:
                 cs = concert_service.ConcertServiceInstance(req.service)
                 self.concert_services[req.service.name] = cs
                 self.update()
                 success = True
-                reason  = str(req.service.name) + " Successfully added"
+                message  = str(req.service.name) + " Successfully added"
         except Exception as e:
             tb = traceback.format_exc()
             success = False
-            reason = "Unexpected Error while loading service"
+            message = "Unexpected Error while loading service"
             self.log("\n"+str(tb))
+        self.lock.release()
 
-        return AddConcertServiceResponse(success,reason)
+        self.log(message)
+
+        return concert_srv.AddConcertServiceResponse(success,message)
+
+    def process_remove_concertservice(self, req):
+        success = False
+        message = "NOT Implemented"
+        self.lock.acquire()
+        try:
+            service_name = req.service_name
+            if service_name in self.concert_services:
+                if self.concert_services[service_name].is_enabled():
+                    message = "Service["+str(service_name)+"] is enabled. It should be disabled first to remove"
+                    raise(Exception(message))
+                else:
+                    del self.concert_services[service_name]
+                    success = True
+                    message  = str(service_name) + " Successfully removed"
+                    self.update()
+            else:
+                message = "Service["+str(service_name) +"] does not exist."
+                raise(Exception(message))
+        except Exception as e:
+            success = False
+            message = str(e)
+        self.lock.release()
+        self.log(message)
+
+        return concert_srv.RemoveConcertServiceResponse(success,message)
 
     def process_enable_concertservice(self,req):
         name = req.concertservice_name
 
         success = False
-        reason = ""
+        message = ""
         if req.enable:
-            success, reason = self.concert_services[name].enable()
+            success, message = self.concert_services[name].enable()
         else:
-            success, reason = self.concert_services[name].disable()
+            success, message = self.concert_services[name].disable()
 
-        return EnableConcertServiceResponse(success,reason)
+        return concert_srv.EnableConcertServiceResponse(success,message)
 
     def update(self):
         rs = [v.to_msg() for k,v in self.concert_services.items()]

@@ -1,4 +1,5 @@
 <launch>
+    <arg name="concert_name" value="solution_concert"/>
     <group ns="concert">
         <include file="$(find concert_conductor)/launch/conductor.launch">
             <arg name="concert_name" value="solution_concert"/>
@@ -13,6 +14,12 @@
             <param name="filename" value="$(find concert_service)/services/chatter.service"/>
         </node>
     </group>
+
+    <node pkg="zeroconf_avahi" type="zeroconf" name="zeroconf_avahi" ns="zeroconf">
+      <rosparam param="services" subst_value="true">
+        [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "concert master" } ] 
+      </rosparam>
+    </node>
 
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>

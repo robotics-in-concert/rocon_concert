@@ -144,6 +144,10 @@ class ConcertClient(object):
         self.data.name = self.name  # use the human friendly name
         self.data.gateway_name = self.gateway_name
         #self.data.name = status.namespace
+
+        # Updating app status
+        self.data.app_status = status.application_status
+
         self.data.last_connection_timestamp = rospy.Time.now()
         if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_AVAILABLE
@@ -153,6 +157,7 @@ class ConcertClient(object):
         else:
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
+
 
     def invite(self, concert_gateway_name, client_local_name, ok_flag):
         '''

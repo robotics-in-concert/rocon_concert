@@ -6,7 +6,7 @@
         <arg name="robot_name" value="$(arg concert_client_name)"/>
         <arg name="concert_name" value="$(arg concert_name)"/>
         <arg name="robot_type" value="pc"/>
-        <arg name="rapp_lists" value="rocon_apps/rocon.rapps"/>
+        <arg name="rapp_lists" value="rocon_apps/rocon.rapps;turtle_concert/turtle_concert.rapps"/>
         <arg name="gateway_watch_loop_period" value="1"/>
     </include>
 </launch>

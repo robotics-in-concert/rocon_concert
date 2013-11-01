@@ -1,4 +1,6 @@
 <concert>
     <launch package="concert_solution" name="concert.launch" port="11311"/>
     <launch package="concert_solution" name="dude.launch" port="11312"/>
+    <launch package="concert_solution" name="dude.launch" port="11313"/>
+    <launch package="concert_solution" name="dude.launch" port="11314"/>
 </concert>
