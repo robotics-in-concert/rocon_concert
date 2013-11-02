@@ -9,10 +9,8 @@
     <remap from="role_manager/info" to="$(arg concert_name)/info"/>
     <remap from="role_manager/icon" to="$(arg concert_name)/icon"/>
     <remap from="role_manager/roles" to="$(arg concert_name)/roles"/>
-    <remap from="role_manager/app_list" to="$(arg concert_name)/app_list"/>
     
-    <remap from="role_manager/platform_info" to="$(arg concert_name)/platform_info"/>
-    <remap from="role_manager/list_apps" to="$(arg concert_name)/list_apps"/>
+    <remap from="role_manager/get_platform_info" to="$(arg concert_name)/get_platform_info"/>
     <remap from="role_manager/get_roles_and_apps" to="$(arg concert_name)/get_roles_and_apps"/>
   </node>
 </launch>

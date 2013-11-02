@@ -65,7 +65,6 @@ class RoleManager(object):
         publishers['icon']  = rospy.Publisher('~icon', rocon_std_msgs.Icon, latch=True)
         publishers['info']  = rospy.Publisher('~info', rocon_std_msgs.PlatformInfo, latch=True)
         publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
-        publishers['apps']  = rospy.Publisher('~app_list', concert_msgs.RoleAppList, latch=True)
 
         return publishers
 
@@ -95,7 +94,6 @@ class RoleManager(object):
         self.publishers['icon'].publish(self.icon)
         self.publishers['info'].publish(self.platform_info)
         self.publishers['roles'].publish(hard_coded_roles)
-        self.publishers['apps'].publish(concert_msgs.RoleAppList())
 
         for role in hard_coded_roles.list:
             self.roles[role] = []
