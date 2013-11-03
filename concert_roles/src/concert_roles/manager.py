@@ -29,7 +29,6 @@ class RoleManager(object):
       for human interactive agent (aka remocon) connections.
     '''
     __slots__ = [
-            'concert_name',
             'roles',
             'publishers',
             'parameters',
@@ -43,26 +42,21 @@ class RoleManager(object):
     ##########################################################################
 
     def __init__(self):
-        self.concert_name = rospy.get_param('~concert_name', 'concert1')
         self.roles = {}
         self.publishers = self._setup_publishers()
         self.services = self._setup_services()
         self.parameters = self._setup_parameters()
-        self.platform_info = rocon_std_msgs.PlatformInfo(
-                                os=rocon_std_msgs.PlatformInfo.OS_LINUX,
-                                version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
-                                platform=rocon_std_msgs.PlatformInfo.PLATFORM_PC,
-                                system=rocon_std_msgs.PlatformInfo.SYSTEM_ROS,
-                                name=self.concert_name)
         self._stub_init()
         # Aliases
         self.spin = rospy.spin
 
     def _setup_publishers(self):
+        '''
+          These are all public topics. Typically that will drop them into the /concert
+          namespace.
+        '''
         publishers = {}
-        publishers['info']  = rospy.Publisher('~info', rocon_std_msgs.PlatformInfo, latch=True)
-        publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
-
+        publishers['roles'] = rospy.Publisher('roles', concert_msgs.Roles, latch=True)
         return publishers
 
     def _setup_services(self):
@@ -76,19 +70,15 @@ class RoleManager(object):
                                                        self._ros_service_filter_roles_and_apps)
         services['set_roles_and_apps'] = rospy.Service('set_roles_and_apps',
                                                        concert_srvs.SetRolesAndApps,
-                                                       self._ros_service_filter_roles_and_apps)
+                                                       self._ros_service_set_roles_and_apps)
         services['request_interaction'] = rospy.Service('request_interaction',
-                                                       concert_srvs.SetRolesAndApps,
-                                                       self._ros_service_filter_roles_and_apps)
-        services['get_platform_info'] = rospy.Service('~get_platform_info',
-                                                      rocon_std_srvs.GetPlatformInfo,
-                                                      self._ros_service_get_platform_info)
+                                                       concert_srvs.RequestInteraction,
+                                                       self._ros_service_request_interaction)
         return services
 
     def _setup_parameters(self):
         param = {}
-        #param['config'] = {}
-        #param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
+        #param['auto_invite'] = rospy.get_param('~auto_invite', False)
         return param
 
     def _stub_init(self):
