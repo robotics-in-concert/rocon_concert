@@ -1,12 +1,7 @@
 <launch>
-  <!-- ******************************* Arguments ******************************* -->
-  <arg name="concert_name" default="concert"/>
+  <!-- ***************************** Concert Master ***************************** -->
+  <include file="$(find concert_master)/launch/concert_master.launch"/>
 
-  <!-- ******************************** Gateway ******************************** -->
-  <node pkg="concert_roles" type="role_manager.py" name="role_manager">
-    <param name="concert_name" type="string" value="$(arg concert_name)"/>
-
-    <remap from="role_manager/info" to="$(arg concert_name)/info"/>
-    <remap from="role_manager/roles" to="$(arg concert_name)/roles"/>
-  </node>
+  <!-- ****************************** Role Manager ****************************** -->
+  <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
 </launch>
