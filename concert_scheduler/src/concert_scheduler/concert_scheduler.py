@@ -1,0 +1,249 @@
+#!/usr/bin/env python
+
+import rospy
+import threading
+import concert_msgs.srv as concert_srv
+import concert_msgs.msg as concert_msg
+import rocon_std_msgs.msg as rocon_std_msg
+import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
+
+import compatibility_tree 
+from .exceptions import *
+
+class ConcertScheduler(object):
+
+    sub = {}
+    srv = {}
+
+    services = {}
+    clients  = {}
+    inuse_clients = []
+    pairs = {}
+
+    postfix_start_app = '/start_app'
+    postfix_stop_app  = '/stop_app'
+
+
+    lock = None
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.setup_ros_api()
+
+    def setup_ros_api(self):
+        self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients',concert_msg.ConcertClients,self.process_list_concert_clients)
+        self.sub['request_resources'] = rospy.Subscriber('request_resources',concert_msg.RequestResources,self.process_request_resources)
+
+    def process_list_concert_clients(self, msg):
+        self.lock.acquire()
+
+        clients = msg.clients
+
+        self.stop_services_of_left_clients(clients)
+
+        self.clients = {}
+        for c in clients:
+            self.clients[c.name] = c
+
+        self.update_services_status()
+        self.lock.release()
+
+    def stop_services_of_left_clients(self,clients):
+
+        left_clients = self.get_left_clients(clients)
+        service_to_stop = []
+
+        for service_name in self.pairs: 
+            if not is_service_still_valid(self.pairs[service_name], left_clients):
+                service_to_stop.append(service_name)
+
+        for s in service_to_stop:
+            self.stop_service(s)
+
+    def is_service_still_valid(pairs, left_clients):
+
+        g_set = set([ gateway for _1,_2, gateway in pairs])
+        l_set = set(left_clients)
+
+        intersect = g_set.intersection(l_set)
+        
+        if len(intersect) > 0:
+            return False
+        else:
+            return True
+
+    def stop_service(self,service_name):
+
+        for pairs in self.pairs[service_name]:
+            nodes, client, gateway_name = pairs
+            _, __, ___, app, node = nodes
+            self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
+
+            # Creates stop app service
+            stop_app_srv = self.get_stop_client_app_service(gateway_name)
+
+            # Create stop app request object
+            req = rapp_mamanager_srvs.StopAppRequest()
+            
+            # Request
+            self.loginfo("    Stopping...")
+            resp = stop_app_srv(req)
+
+            if not resp.stopped:
+                message = "Failed to stop[" + str(app) + "] in [" + str(client) +"]"
+                raise Exception(message)   
+            else:                                 
+                self.loginfo("    Done")                                                                
+
+            self.inuse_clients.remove(gateway_name)
+
+        del self.pairs[service_name]
+
+    def get_stop_client_app_service(self,gatewayname):
+        srv_name = '/' + gatewayname + self.postfix_stop_app
+        rospy.wait_for_service(srv_name)
+
+        srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StopApp)
+
+        return srv
+
+    def get_left_clients(self,clients):
+
+        inuse_gateway = set(self.inuse_clients)
+        clients_set = set([c.gateway_name for c in clients])
+
+        left_clients = inuse_gateway.difference(clients_set)
+        
+        return list(left_clients)
+
+
+    def process_request_resources(self,msg):
+        self.lock.acquire()
+
+        self.loginfo(self.services)
+        self.loginfo(self.pairs)
+        self.loginfo(self.inuse_clients)
+
+        if msg.enable == True: 
+            self.services[msg.service_name] = msg.linkgraph
+        else:
+            self.stop_service(msg.service_name)
+            del self.services[msg.service_name]
+#self.loginfo(self.services)
+
+        self.update_services_status()
+
+        self.lock.release()
+
+    def update_services_status(self):
+        for s in self.services:
+            linkgraph = self.services[s]
+
+            if s in self.pairs:
+                # nothing to touch
+                continue
+
+            clients = self.get_available_clients()
+            status, message, app_pairs = compatibility_tree.resolve(linkgraph.dedicated_nodes,clients) 
+
+            self.loginfo(str(app_pairs))
+
+            if status:
+                self.pairs[s] = app_pairs
+                self.mark_clients_as_inuse(app_pairs)
+                self.start_apps(self.pairs[s],str(s),linkgraph)
+
+    def mark_clients_as_inuse(self,pairs):
+        for p in pairs:
+            (_1, _2, gateway_name) = p 
+            self.inuse_clients.append(gateway_name)
+
+
+    def get_available_clients(self):
+        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msg.Constants.CONCERT_CLIENT_STATUS_CONNECTED and self.clients[c].app_status == concert_msg.Constants.APP_STATUS_STOPPED]
+        free_clients = [c for c in clients if not (c.gateway_name in self.inuse_clients)]
+
+        return free_clients 
+
+    
+    def start_apps(self,pairs,service_name,linkgraph):
+        self.loginfo("Starting apps for " + str(service_name))
+
+        for nodes, client, client_gatewayname in pairs:
+            _, __, ___, app, node = nodes
+            self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
+
+            # Creates start app service
+            start_app_srv = self.get_start_client_app_service(client_gatewayname)
+
+            # Create start app request object
+            req = self.create_startapp_request(app,node,linkgraph,service_name)
+
+            # Request client to start app 
+            self.loginfo("    Starting...")
+            self.loginfo(str(req.remappings))
+            resp = start_app_srv(req)
+
+            if not resp.started:
+#                message = "Failed to start [" + str(app) + "] in [" + str(client) +"]"
+                message = resp.message
+                raise FailedToStartAppsException(message)
+            else:
+                self.loginfo("    Done")
+
+    def get_start_client_app_service(self,gatewayname):
+        srv_name = '/' + gatewayname + self.postfix_start_app
+        rospy.wait_for_service(srv_name)
+
+        srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StartApp)
+
+        return srv
+
+
+    def create_startapp_request(self, app, node_name,linkgraph,service_name):
+
+        req = rapp_mamanager_srvs.StartAppRequest()
+        req.name = app
+
+        # Remappings
+
+        namespace_prefix = '/' + str(service_name) 
+
+        edges = linkgraph.edges
+
+        req.remappings = []
+        for e in edges:
+            fr = ''
+            to = ''
+            if e.start != node_name:
+                fr = e.remap_from
+
+                if e.remap_to.startswith('/'):
+                    to = namespace_prefix + e.remap_to
+                else:
+                    to = namespace_prefix + '/' + e.remap_to
+            else:
+                to = e.remap_to
+
+                if e.remap_from.startswith('/'):
+                    fr = namespace_prefix + e.remap_from
+                else:
+                    fr = namespace_prefix + '/' + e.remap_from
+
+            req.remappings.append(rocon_std_msg.Remapping(fr,to))
+
+        return req
+
+
+    def loginfo(self,msg):
+        rospy.loginfo("Scheduler : " + str(msg))
+
+    def logwarn(self,msg):
+        rospy.logwarn("Scheduler : " + str(msg))
+
+    def logerr(self,msg):
+        rospy.logerr("Scheduler : " + str(msg))
+
+    def spin(self):
+        self.loginfo("In spin")
+        rospy.spin()

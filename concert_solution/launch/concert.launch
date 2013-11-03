@@ -6,8 +6,10 @@
         </include>
         <include file="$(find concert_servicemanager)/launch/servicemanager.launch"/>
 
+        <node pkg="concert_scheduler" name="scheduler" type="scheduler" output="screen"/>
+
         <node pkg="concert_servicemanager" name="add_service" type="add_service_from_file.py" output="screen">
-            <param name="filename" value="$(find concert_service)/services/turtle.service"/>
+            <param name="filename" value="$(find concert_service)/services/chatter2.service"/>
         </node>
 
         <node pkg="concert_servicemanager" name="add_service1" type="add_service_from_file.py" output="screen">

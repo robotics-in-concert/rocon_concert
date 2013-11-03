@@ -33,20 +33,9 @@ class ServiceManager(object):
         self.srv['enable_service'] = rospy.Service('service/enable',concert_srv.EnableConcertService,self.process_enable_concertservice)
 
         # Publisher
-        self.pub['list_service'] = rospy.Publisher('service/list',concert_msg.ListConcertService, latch = True)
-
-        # Subscriber 
-        self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients',concert_msg.ConcertClients,self.process_list_concert_clients)
-
-    def process_list_concert_clients(self, msg):
-        self.lock.acquire()
-        for name in self.concert_services:
-            self.concert_services[name].process_list_concert_clients(msg)
-        self.lock.release()
-
+        self.pub['list_service'] = rospy.Publisher('list_concert_services',concert_msg.ListConcertService, latch = True)
 
     def process_add_concertservice(self, req):
-
         success = False
         message  = "No reason"
         self.lock.acquire()
@@ -106,6 +95,8 @@ class ServiceManager(object):
             success, message = self.concert_services[name].enable()
         else:
             success, message = self.concert_services[name].disable()
+
+        self.update()
 
         return concert_srv.EnableConcertServiceResponse(success,message)
 

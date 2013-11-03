@@ -3,4 +3,7 @@
     <launch package="concert_solution" name="dude.launch" port="11312"/>
     <launch package="concert_solution" name="dude.launch" port="11313"/>
     <launch package="concert_solution" name="dude.launch" port="11314"/>
+    <launch package="concert_solution" name="dude.launch" port="11315"/>
+    <launch package="concert_solution" name="dude.launch" port="11316"/>
+    <launch package="concert_solution" name="dude.launch" port="11317"/>
 </concert>
