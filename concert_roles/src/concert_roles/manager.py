@@ -35,7 +35,6 @@ class RoleManager(object):
             'parameters',
             'services',
             'spin',
-            'icon',
             'platform_info'
         ]
 
@@ -49,29 +48,37 @@ class RoleManager(object):
         self.publishers = self._setup_publishers()
         self.services = self._setup_services()
         self.parameters = self._setup_parameters()
-        self.icon = rocon_utilities.icon_resource_to_msg('concert_roles/' + self.concert_name + '.png')
         self.platform_info = rocon_std_msgs.PlatformInfo(
                                 os=rocon_std_msgs.PlatformInfo.OS_LINUX,
                                 version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
                                 platform=rocon_std_msgs.PlatformInfo.PLATFORM_PC,
                                 system=rocon_std_msgs.PlatformInfo.SYSTEM_ROS,
-                                name=self.concert_name, icon=self.icon)
+                                name=self.concert_name)
         self._stub_init()
         # Aliases
         self.spin = rospy.spin
 
     def _setup_publishers(self):
         publishers = {}
-        publishers['icon']  = rospy.Publisher('~icon', rocon_std_msgs.Icon, latch=True)
         publishers['info']  = rospy.Publisher('~info', rocon_std_msgs.PlatformInfo, latch=True)
         publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
 
         return publishers
 
     def _setup_services(self):
+        '''
+          These are all public services. Typically that will drop them into the /concert
+          namespace.
+        '''
         services = {}
-        services['get_roles_and_apps'] = rospy.Service('~get_roles_and_apps',
+        services['get_roles_and_apps'] = rospy.Service('get_roles_and_apps',
                                                        concert_srvs.GetRolesAndApps,
+                                                       self._ros_service_filter_roles_and_apps)
+        services['set_roles_and_apps'] = rospy.Service('set_roles_and_apps',
+                                                       concert_srvs.SetRolesAndApps,
+                                                       self._ros_service_filter_roles_and_apps)
+        services['request_interaction'] = rospy.Service('request_interaction',
+                                                       concert_srvs.SetRolesAndApps,
                                                        self._ros_service_filter_roles_and_apps)
         services['get_platform_info'] = rospy.Service('~get_platform_info',
                                                       rocon_std_srvs.GetPlatformInfo,
@@ -91,20 +98,17 @@ class RoleManager(object):
         '''
         hard_coded_roles = concert_msgs.Roles()
         hard_coded_roles.list = ['Admin', 'Dev', 'Guzzler']
-        self.publishers['icon'].publish(self.icon)
         self.publishers['info'].publish(self.platform_info)
         self.publishers['roles'].publish(hard_coded_roles)
 
         for role in hard_coded_roles.list:
             self.roles[role] = []
-        icon = rocon_utilities.icon_resource_to_msg('concert_roles/' + self.concert_name + '.png')
         platform_info = rocon_std_msgs.PlatformInfo(
                                     os=rocon_std_msgs.PlatformInfo.OS_ANDROID,
                                     version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
                                     platform=rocon_std_msgs.PlatformInfo.PLATFORM_SMART_DEVICE,
                                     system=rocon_std_msgs.PlatformInfo.SYSTEM_ROSJAVA,
                                     name='*',  # Not relevant to this list
-                                    icon=icon
                                     )
         self.roles['Admin'].append(RemoconApp(
                                               name="com.github.robotics_in_concert.rocon_android.SolutionManager",
