@@ -11,17 +11,17 @@ def resolve(dedicated_nodes,client_list):
     # create app indexed dict
     c_node = create_client_dict(client_list)
 
-    rospy.loginfo("=== Clients ===")
-    print_dict(c_node)
-    rospy.loginfo("=== Service ===")
-    print_array(d_node)
+#    rospy.loginfo("=== Clients ===")
+#    print_dict(c_node)
+#    rospy.loginfo("=== Service ===")
+#    print_array(d_node)
 
     pair = []
     result, message = get_app_client_pair(pair,d_node,c_node)
 
-    rospy.loginfo("== Result")
-    print_array(pair)
-    rospy.loginfo("================")
+#    rospy.loginfo("== Result")
+#    print_array(pair)
+#    rospy.loginfo("================")
     return result, message, pair
 
 def create_service_array(nodes):

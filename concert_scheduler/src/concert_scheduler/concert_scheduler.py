@@ -2,6 +2,7 @@
 
 import rospy
 import threading
+import copy
 import concert_msgs.srv as concert_srv
 import concert_msgs.msg as concert_msg
 import rocon_std_msgs.msg as rocon_std_msg
@@ -33,6 +34,59 @@ class ConcertScheduler(object):
     def setup_ros_api(self):
         self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients',concert_msg.ConcertClients,self.process_list_concert_clients)
         self.sub['request_resources'] = rospy.Subscriber('request_resources',concert_msg.RequestResources,self.process_request_resources)
+
+        self.srv['resource_status'] = rospy.Service('resource_status',concert_srv.ResourceStatus,self.process_resource_status)
+
+    def process_resource_status(self,req):
+        resp = concert_srv.ResourceStatusResponse()
+
+        self.lock.acquire()
+        
+        available = [ copy.deepcopy(self.clients[c]) for c in self.clients if not self.clients[c].gateway_name in self.inuse_clients]
+        inuse     = [ copy.deepcopy(self.clients[c]) for c in self.clients if self.clients[c].gateway_name in self.inuse_clients]
+
+        for a in available:
+            a.apps = []
+        for i in inuse:
+            i.apps = []
+
+        resp.available_clients = available
+        resp.inuse_clients     = inuse
+
+        resp.requested_resources = []
+        for s in self.services:
+            srp = concert_msg.ServiceResourcePair()
+                
+            srp.service_name = s
+
+            srp.resources = []
+            for n in self.services[s].dedicated_nodes:
+                for i in range(n.min):
+                    srp.resources.append(n.id )
+
+            resp.requested_resources.append(srp)
+
+
+        resp.engaged_pairs = []
+        for s in self.pairs:
+            
+            srp = concert_msg.ServiceResourcePair()
+            srp.service_name = s
+            
+            for pairs in self.pairs[s]:
+                nodes, client, gateway_name = pairs
+                platform,system, robot, app, node = nodes
+                
+                p = node + " - " + client + " - " + app
+
+                srp.resources.append(p)
+
+            resp.engaged_pairs.append(srp)
+
+        self.lock.release()
+
+        return resp
+
 
     def process_list_concert_clients(self, msg):
         self.lock.acquire()
@@ -206,11 +260,10 @@ class ConcertScheduler(object):
         req.name = app
 
         # Remappings
-
-        namespace_prefix = '/' + str(service_name) 
-
+        #namespace_prefix = '/' + str(service_name) 
         edges = linkgraph.edges
 
+        """
         req.remappings = []
         for e in edges:
             fr = ''
@@ -231,6 +284,8 @@ class ConcertScheduler(object):
                     fr = namespace_prefix + '/' + e.remap_from
 
             req.remappings.append(rocon_std_msg.Remapping(fr,to))
+        """
+        req.remappings = [ rocon_std_msg.Remapping(e.remap_from, e.remap_to) for e in edges if e.start == node_name or e.finish == node_name ]
 
         return req
 
