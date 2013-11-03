@@ -108,13 +108,13 @@ class ConcertScheduler(object):
         service_to_stop = []
 
         for service_name in self.pairs: 
-            if not is_service_still_valid(self.pairs[service_name], left_clients):
+            if not self.is_service_still_valid(self.pairs[service_name], left_clients):
                 service_to_stop.append(service_name)
 
         for s in service_to_stop:
-            self.stop_service(s)
+            self.stop_service(s,left_clients)
 
-    def is_service_still_valid(pairs, left_clients):
+    def is_service_still_valid(self,pairs, left_clients):
 
         g_set = set([ gateway for _1,_2, gateway in pairs])
         l_set = set(left_clients)
@@ -126,28 +126,32 @@ class ConcertScheduler(object):
         else:
             return True
 
-    def stop_service(self,service_name):
+    def stop_service(self,service_name,left_clients = []):
 
         for pairs in self.pairs[service_name]:
             nodes, client, gateway_name = pairs
             _, __, ___, app, node = nodes
             self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
 
-            # Creates stop app service
-            stop_app_srv = self.get_stop_client_app_service(gateway_name)
+            if not gateway_name in left_clients:
 
-            # Create stop app request object
-            req = rapp_mamanager_srvs.StopAppRequest()
-            
-            # Request
-            self.loginfo("    Stopping...")
-            resp = stop_app_srv(req)
+                # Creates stop app service
+                stop_app_srv = self.get_stop_client_app_service(gateway_name)
 
-            if not resp.stopped:
-                message = "Failed to stop[" + str(app) + "] in [" + str(client) +"]"
-                raise Exception(message)   
-            else:                                 
-                self.loginfo("    Done")                                                                
+                # Create stop app request object
+                req = rapp_mamanager_srvs.StopAppRequest()
+                
+                # Request
+                self.loginfo("    Stopping...")
+                resp = stop_app_srv(req)
+
+                if not resp.stopped:
+                    message = "Failed to stop[" + str(app) + "] in [" + str(client) +"]"
+                    raise Exception(message)   
+                else:                                 
+                    self.loginfo("    Done")                                                                
+            else:
+                self.loginfo("Client already left")
 
             self.inuse_clients.remove(gateway_name)
 
