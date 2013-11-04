@@ -45,4 +45,4 @@ rospy.wait_for_service('service/add')
 srv = rospy.ServiceProxy('service/add',AddConcertService)
 
 r = srv(rs)
-rospy.loginfo(str(r))
+#rospy.loginfo(str(r))

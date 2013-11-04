@@ -7,15 +7,15 @@ import concert_msgs.srv as concert_srv
 import concert_msgs.msg as concert_msg
 import rocon_std_msgs.msg as rocon_std_msg
 import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
-
-from .compatibility_tree import *
-from .exceptions import *
+import uuid_msgs.msg as uuid_msg
+import unique_id
 
 
 class ConcertServiceInstance(object):
 
     description = None
     pub = {}
+    uuid = None
 
     def __init__(self, service_description):
         '''
@@ -23,6 +23,9 @@ class ConcertServiceInstance(object):
         '''
         # Setting description(msg)
         self.description = service_description
+        self.uuid = unique_id.fromRandom()
+        self.log("UUID = " + str(self.uuid))
+
         self.setup_ros_api()
 
         # Enable/Disable
