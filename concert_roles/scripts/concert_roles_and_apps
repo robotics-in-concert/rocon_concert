@@ -56,10 +56,11 @@ if __name__ == '__main__':
         console.pretty_println("%s" % d.role, console.bold)
         for remocon_app in d.remocon_apps:
             console.pretty_println("  %s" % remocon_app.display_name, console.green)
-            print(console.cyan + "    Name" + console.reset + "       : " + console.yellow + "%s" % remocon_app.name + console.reset)
-            print(console.cyan + "    Description" + console.reset + ": " + console.yellow + "%s" % remocon_app.description + console.reset)
-            print(console.cyan + "    Service" + console.reset + "    : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
+            print(console.cyan + "    Name" + console.reset + "         : " + console.yellow + "%s" % remocon_app.name + console.reset)
+            print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
+            print(console.cyan + "    Platform Info" + console.reset + ": " + console.yellow + "%s.%s.%s.%s" % (remocon_app.platform_info.os, remocon_app.platform_info.version, remocon_app.platform_info.platform, remocon_app.platform_info.system) + console.reset)
+            print(console.cyan + "    Service" + console.reset + "      : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
             for remapping in remocon_app.remappings:
-                print(console.cyan + "    Remapping" + console.reset + "  : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
+                print(console.cyan + "    Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
             for parameter in remocon_app.parameters:
-                print(console.cyan + "    Parameter" + console.reset + "  : " + console.yellow + "[%s, %s]" % (parameter.key, parameter.value) + console.reset)
+                print(console.cyan + "    Parameter" + console.reset + "    : " + console.yellow + "[%s, %s]" % (parameter.key, parameter.value) + console.reset)
