@@ -19,7 +19,8 @@ import rocon_utilities
 class ConcertMaster(object):
     __slots__ = [
             'publishers',
-            'param'
+            'param',
+            'spin'
         ]
 
     def __init__(self):
@@ -35,6 +36,8 @@ class ConcertMaster(object):
         concert_info.description = self.param['description']
         concert_info.icon = rocon_utilities.icon_resource_to_msg(self.param['icon'])
         self.publishers['info'].publish(concert_info)
+        # Aliases
+        self.spin = rospy.spin
 
     def _setup_ros_parameters(self):
         '''
@@ -46,9 +49,3 @@ class ConcertMaster(object):
         param['icon'] = rospy.get_param('icon', 'concert_master/rocon_logo.png')
         param['description'] = rospy.get_param('description', 'A rocon concert.')
         return param
-
-    def spin(self):
-        '''
-          No work to do yet, just maintains the publisher connection.
-        '''
-        rospy.spin()

@@ -7,13 +7,6 @@
 # Imports
 ##############################################################################
 
-import os
-import rospy
-import concert_msgs.msg as concert_msgs
-import rocon_std_msgs.msg as rocon_std_msgs
-#import rocon_utilities
-#import xmlrpclib
-
 ##############################################################################
 # Methods Used on concert_msgs.RemoconApp classes
 ##############################################################################

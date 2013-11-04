@@ -9,17 +9,20 @@
 
 #import os
 import rospy
+import rosgraph
 #import std_msgs.msg as std_msgs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 #import rocon_std_msgs.msg as rocon_std_msgs
 #import rocon_std_msgs.srv as rocon_std_srvs
-#import rocon_utilities
+import rocon_utilities
+
+# Local imports
 import remocon_app_utils
-#import xmlrpclib
+from .remocon_monitor import RemoconMonitor
 
 ##############################################################################
-# Conductor
+# Role Manager
 ##############################################################################
 
 
@@ -34,7 +37,10 @@ class RoleManager(object):
             'parameters',
             'services',
             'spin',
-            'platform_info'
+            'platform_info',
+            '_watch_loop_period',
+            '_remocons_namespace',
+            '_remocon_monitors'  # list of currently connected remocons.
         ]
 
     ##########################################################################
@@ -46,8 +52,35 @@ class RoleManager(object):
         self.publishers = self._setup_publishers()
         self.services = self._setup_services()
         self.parameters = self._setup_parameters()
-        # Aliases
-        self.spin = rospy.spin
+        self._watch_loop_period = 1.0
+        self._remocons_namespace = '/remocons'
+        self._remocon_monitors = {}  # topic_name : RemoconMonitor
+
+    def spin(self):
+        '''
+          Parse the set of /remocons/<name>_<uuid> connections.
+        '''
+        while not rospy.is_shutdown():
+            master = rosgraph.Master(rospy.get_name())
+            diff = lambda l1, l2: [x for x in l1 if x not in l2]
+            try:
+                # This master call returns a filtered list of [topic_name, topic_type] elemnts (list of lists)
+                remocon_topics = [x[0] for x in master.getPublishedTopics(self._remocons_namespace)]
+                new_remocon_topics = diff(remocon_topics, self._remocon_monitors.keys())
+                lost_remocon_topics = diff(self._remocon_monitors.keys(), remocon_topics)
+                for remocon_topic in new_remocon_topics:
+                    self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic)
+                    rospy.loginfo("Role Manager : new remocon connected [%s]" % remocon_topic[10:])  # strips the /remocons/ part
+                for remocon_topic in lost_remocon_topics:
+                    self._remocon_monitors[remocon_topic].unregister()
+                    del self._remocon_monitors[remocon_topic]  # careful, this mutates the dictionary http://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
+                    rospy.loginfo("Role Manager : remocon left [%s]" % remocon_topic[10:])  # strips the /remocons/ part
+                # Clear the currently connected remocons
+            except rosgraph.masterapi.Error:
+                rospy.logerr("Role Manager : error trying to retrieve information from the local master.")
+            except rosgraph.masterapi.Failure:
+                rospy.logerr("Role Manager : failure trying to retrieve information from the local master.")
+            rospy.rostime.wallsleep(self._watch_loop_period)
 
     def _setup_publishers(self):
         '''
@@ -128,4 +161,7 @@ class RoleManager(object):
         return response
 
     def _ros_service_request_interaction(self, request):
-        pass
+        response = concert_srvs.RequestInteractionResponse()
+        response.result = True
+        response.error_code = concert_msgs.ErrorCodes.SUCCESS
+        return response
