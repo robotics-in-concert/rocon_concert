@@ -1,0 +1,14 @@
+<launch>
+  <!-- ******************************* Arguments ******************************* -->
+  <arg name="name" default="Demo Concert"/>
+  <arg name="icon" default="concert_master/rocon_text.png"/>
+  <arg name="description" default="A rocon concert."/>
+
+  <group ns="concert">
+    <param name="name" value="$(arg name)"/>
+    <param name="description" value="$(arg description)"/>
+    <param name="icon" value="$(arg icon)"/>
+  
+    <node pkg="concert_master" type="master.py" name="master"/>
+  </group>
+</launch>

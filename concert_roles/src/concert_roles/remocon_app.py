@@ -35,7 +35,7 @@ class RemoconApp(object):
             'parameters'
         ]
 
-    def __init__(self, 
+    def __init__(self,
                  name="unknown_app.py",
                  platform_info=rocon_std_msgs.PlatformInfo(),
                  display_name="Unknown App",
