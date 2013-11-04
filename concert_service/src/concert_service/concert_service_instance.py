@@ -15,16 +15,15 @@ class ConcertServiceInstance(object):
 
     description = None
     pub = {}
-    uuid = None
 
     def __init__(self, service_description):
         '''
             service_desciption : ConcertService.msg
         '''
         # Setting description(msg)
-        self.description = service_description
-        self.uuid = unique_id.fromRandom()
-        self.log("UUID = " + str(self.uuid))
+        self.description      = service_description
+        self.description.uuid = unique_id.toMsg(unique_id.fromRandom())
+        self.log("UUID = " + str(self.description.uuid))
 
         self.setup_ros_api()
 
