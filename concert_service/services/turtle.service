@@ -1,6 +1,7 @@
 name: Turtle
 description: Turtlesim service 
 author: Yujinrobot
+priority: 3
 linkgraph: 
   dedicated_nodes:
     - id: kobuki

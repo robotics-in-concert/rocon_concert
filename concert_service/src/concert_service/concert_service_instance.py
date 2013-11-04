@@ -7,6 +7,7 @@ import concert_msgs.srv as concert_srv
 import concert_msgs.msg as concert_msg
 import rocon_std_msgs.msg as rocon_std_msg
 import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
+import scheduler_msgs.msg as scheduler_msg
 import uuid_msgs.msg as uuid_msg
 import unique_id
 
@@ -15,6 +16,7 @@ class ConcertServiceInstance(object):
 
     description = None
     pub = {}
+    sub = {}
 
     def __init__(self, service_description):
         '''
@@ -23,7 +25,7 @@ class ConcertServiceInstance(object):
         # Setting description(msg)
         self.description      = service_description
         self.description.uuid = unique_id.toMsg(unique_id.fromRandom())
-        self.log("UUID = " + str(self.description.uuid))
+        self.loginfo("UUID = " + str(self.description.uuid))
 
         self.setup_ros_api()
 
@@ -38,15 +40,15 @@ class ConcertServiceInstance(object):
 
 
     def shutdown(self):
-        self.log("Destroying...")
-        self.log("Disabling... service")
+        self.loginfo("Destroying...")
+        self.loginfo("Disabling... service")
         self.disable()
-        self.log("Shutting down subscriber")
+        self.loginfo("Shutting down subscriber")
 # self.sub['list_concert_clients'].unregister()
-        self.log("Destroying...done")
+        self.loginfo("Destroying...done")
 
     def enable(self):
-        self.log("Enabled")
+        self.loginfo("Enabled")
 
         if self.description.enabled:
             return False, "already enabled"
@@ -63,8 +65,9 @@ class ConcertServiceInstance(object):
         
         return True, ""
 
+
     def disable(self):
-        self.log("Disabled")
+        self.loginfo("Disabled")
 
         if not self.description.enabled:
             return False, "already disabled"
@@ -81,8 +84,9 @@ class ConcertServiceInstance(object):
 
         return True, ""
 
+
     def to_msg(self):
         return self.description
         
-    def log(self,msg):
+    def loginfo(self,msg):
         rospy.loginfo("Service["+str(self.description.name)+"] : " + str(msg))

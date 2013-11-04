@@ -1,6 +1,7 @@
 name: Chatter2
 description: Chatting between agents 
 author: YujinRobot
+priority: 1
 linkgraph:
   dedicated_nodes:
     - id: dudes

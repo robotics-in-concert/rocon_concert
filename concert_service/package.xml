@@ -17,5 +17,6 @@
   <run_depend>concert_msgs</run_depend>
   <run_depend>unique_id</run_depend>
   <run_depend>uuid_msgs</run_depend>
+  <run_depend>scheduler_msgs</run_depend>
 
 </package>

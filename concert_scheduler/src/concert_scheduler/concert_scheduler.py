@@ -37,58 +37,12 @@ class ConcertScheduler(object):
 
         self.srv['resource_status'] = rospy.Service('resource_status',concert_srv.ResourceStatus,self.process_resource_status)
 
-    def process_resource_status(self,req):
-        resp = concert_srv.ResourceStatusResponse()
-
-        self.lock.acquire()
-        
-        available = [ copy.deepcopy(self.clients[c]) for c in self.clients if not self.clients[c].gateway_name in self.inuse_clients]
-        inuse     = [ copy.deepcopy(self.clients[c]) for c in self.clients if self.clients[c].gateway_name in self.inuse_clients]
-
-        for a in available:
-            a.apps = []
-        for i in inuse:
-            i.apps = []
-
-        resp.available_clients = available
-        resp.inuse_clients     = inuse
-
-        resp.requested_resources = []
-        for s in self.services:
-            srp = concert_msg.ServiceResourcePair()
-                
-            srp.service_name = s
-
-            srp.resources = []
-            for n in self.services[s].dedicated_nodes:
-                for i in range(n.min):
-                    srp.resources.append(n.id )
-
-            resp.requested_resources.append(srp)
-
-
-        resp.engaged_pairs = []
-        for s in self.pairs:
-            
-            srp = concert_msg.ServiceResourcePair()
-            srp.service_name = s
-            
-            for pairs in self.pairs[s]:
-                nodes, client, gateway_name = pairs
-                platform,system, robot, app, node = nodes
-                
-                p = node + " - " + client + " - " + app
-
-                srp.resources.append(p)
-
-            resp.engaged_pairs.append(srp)
-
-        self.lock.release()
-
-        return resp
-
-
     def process_list_concert_clients(self, msg):
+        """
+            1. Stops services which client left.
+            2. Rebuild client list
+            3. Starts services which has all requested resources
+        """
         self.lock.acquire()
 
         clients = msg.clients
@@ -102,7 +56,32 @@ class ConcertScheduler(object):
         self.update_services_status()
         self.lock.release()
 
+    def process_request_resources(self,msg):
+        """
+            1. enable : true. add service or update linkgraph
+            2. enable : false. stop service. and remove service 
+            3. Starts services which has all requested resources
+            
+            TODO: Current implementation expects service_name to be unique.
+        """
+        self.lock.acquire()
+
+        if msg.enable == True: 
+            self.services[msg.service_name] = msg.linkgraph
+        else:
+            self.stop_service(msg.service_name)
+            del self.services[msg.service_name]
+
+        self.update_services_status()
+
+        self.lock.release()
+
     def stop_services_of_left_clients(self,clients):
+        """
+            1. Get gateway_name of clients which left concert
+            2. Check all pairs of services whether it is still valid.
+            3. Stops services which left_clients are involved
+        """
 
         left_clients = self.get_left_clients(clients)
         service_to_stop = []
@@ -115,7 +94,6 @@ class ConcertScheduler(object):
             self.stop_service(s,left_clients)
 
     def is_service_still_valid(self,pairs, left_clients):
-
         g_set = set([ gateway for _1,_2, gateway in pairs])
         l_set = set(left_clients)
 
@@ -127,6 +105,9 @@ class ConcertScheduler(object):
             return True
 
     def stop_service(self,service_name,left_clients = []):
+        """
+            Stops all clients involved in <service_name> 
+        """
 
         for pairs in self.pairs[service_name]:
             nodes, client, gateway_name = pairs
@@ -175,25 +156,26 @@ class ConcertScheduler(object):
         return list(left_clients)
 
 
-    def process_request_resources(self,msg):
-        self.lock.acquire()
 
-        self.loginfo(self.services)
-        self.loginfo(self.pairs)
-        self.loginfo(self.inuse_clients)
 
-        if msg.enable == True: 
-            self.services[msg.service_name] = msg.linkgraph
-        else:
-            self.stop_service(msg.service_name)
-            del self.services[msg.service_name]
-#self.loginfo(self.services)
 
-        self.update_services_status()
 
-        self.lock.release()
+
+
+
+
+
+
+
+
+
+
+
 
     def update_services_status(self):
+        """
+            Current implementation is not aware of priority of service
+        """
         for s in self.services:
             linkgraph = self.services[s]
 
@@ -266,8 +248,11 @@ class ConcertScheduler(object):
         # Remappings
         #namespace_prefix = '/' + str(service_name) 
         edges = linkgraph.edges
+        req.remappings = [ rocon_std_msg.Remapping(e.remap_from, e.remap_to) for e in edges if e.start == node_name or e.finish == node_name ]
 
         """
+        Trial of local namespacing to guarantee service disjointness
+
         req.remappings = []
         for e in edges:
             fr = ''
@@ -289,10 +274,59 @@ class ConcertScheduler(object):
 
             req.remappings.append(rocon_std_msg.Remapping(fr,to))
         """
-        req.remappings = [ rocon_std_msg.Remapping(e.remap_from, e.remap_to) for e in edges if e.start == node_name or e.finish == node_name ]
 
         return req
 
+
+    def process_resource_status(self,req):
+        resp = concert_srv.ResourceStatusResponse()
+
+        self.lock.acquire()
+        
+        available = [ copy.deepcopy(self.clients[c]) for c in self.clients if not self.clients[c].gateway_name in self.inuse_clients]
+        inuse     = [ copy.deepcopy(self.clients[c]) for c in self.clients if self.clients[c].gateway_name in self.inuse_clients]
+
+        for a in available:
+            a.apps = []
+        for i in inuse:
+            i.apps = []
+
+        resp.available_clients = available
+        resp.inuse_clients     = inuse
+
+        resp.requested_resources = []
+        for s in self.services:
+            srp = concert_msg.ServiceResourcePair()
+                
+            srp.service_name = s
+
+            srp.resources = []
+            for n in self.services[s].dedicated_nodes:
+                for i in range(n.min):
+                    srp.resources.append(n.id )
+
+            resp.requested_resources.append(srp)
+
+
+        resp.engaged_pairs = []
+        for s in self.pairs:
+            
+            srp = concert_msg.ServiceResourcePair()
+            srp.service_name = s
+            
+            for pairs in self.pairs[s]:
+                nodes, client, gateway_name = pairs
+                platform,system, robot, app, node = nodes
+                
+                p = node + " - " + client + " - " + app
+
+                srp.resources.append(p)
+
+            resp.engaged_pairs.append(srp)
+
+        self.lock.release()
+
+        return resp
 
     def loginfo(self,msg):
         rospy.loginfo("Scheduler : " + str(msg))
