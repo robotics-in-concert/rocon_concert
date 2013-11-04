@@ -1,11 +1,6 @@
+<!-- Launch this as part of the greater concert. -->
 <launch>
-  <!-- ***************************** Concert Master ***************************** -->
-  <include file="$(find concert_master)/launch/concert_master.launch"/>
-
-  <!-- ****************************** Role Manager ****************************** -->
   <group ns="concert">
     <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
-    <node pkg="concert_roles" type="load_test_roles_and_apps" name="load_test_roles_and_apps"/>
-    <node pkg="concert_roles" type="attach_test_remocon" name="attach_test_remocon"/>
   </group>
 </launch>
