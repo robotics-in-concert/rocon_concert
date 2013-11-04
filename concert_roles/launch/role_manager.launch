@@ -3,5 +3,8 @@
   <include file="$(find concert_master)/launch/concert_master.launch"/>
 
   <!-- ****************************** Role Manager ****************************** -->
-  <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
+  <group ns="concert">
+    <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
+    <node pkg="concert_roles" type="load_test_roles_and_apps" name="load_test_roles_and_apps"/>
+  </group>
 </launch>
