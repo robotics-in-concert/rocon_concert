@@ -22,11 +22,11 @@ def linkgraph_to_msg(impl):
 
     lg = LinkGraph()
 
-    for node in impl['dedicated_nodes']:
+    for node in impl['nodes']:
         node['min'] = node['min'] if 'min' in node else 1
         node['max'] = node['max'] if 'max' in node else 1
 
-        lg.dedicated_nodes.append(LinkNode(node['id'],node['tuple'],node['min'],node['max']))
+        lg.nodes.append(LinkNode(node['id'],node['tuple'],node['min'],node['max'],False))
     for topic in impl['topics']:
         lg.topics.append(LinkConnection(topic['id'], topic['type']))
     for action in impl['actions']:

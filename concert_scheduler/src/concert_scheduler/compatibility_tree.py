@@ -4,9 +4,9 @@ import rospy
 import copy
 import concert_msgs.msg as concert_msg
 
-def resolve(dedicated_nodes,client_list): 
+def resolve(nodes,client_list): 
 
-    d_node = create_service_array(dedicated_nodes)
+    d_node = create_service_array(nodes)
 
     # create app indexed dict
     c_node = create_client_dict(client_list)

@@ -2,7 +2,7 @@ name: Teleop
 description: Picks a random turtlebot and starts telop
 author: YujinRobot
 linkgraph:
-  dedicated_nodes:
+  nodes:
     - id: robot
       tuple: linux.ros.turtlebot.turtlebot_core_apps/android_teleop
       min: 1

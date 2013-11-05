@@ -3,7 +3,7 @@ description: Turtlesim service
 author: Yujinrobot
 priority: 3
 linkgraph: 
-  dedicated_nodes:
+  nodes:
     - id: kobuki
       tuple: linux.ros.pc.turtle_concert/turtle_stroll
     - id: guimul

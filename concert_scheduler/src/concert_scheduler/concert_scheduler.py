@@ -184,7 +184,7 @@ class ConcertScheduler(object):
                 continue
 
             clients = self.get_available_clients()
-            status, message, app_pairs = compatibility_tree.resolve(linkgraph.dedicated_nodes,clients) 
+            status, message, app_pairs = compatibility_tree.resolve(linkgraph.nodes,clients) 
 
             self.loginfo(str(app_pairs))
 
@@ -301,7 +301,7 @@ class ConcertScheduler(object):
             srp.service_name = s
 
             srp.resources = []
-            for n in self.services[s].dedicated_nodes:
+            for n in self.services[s].nodes:
                 for i in range(n.min):
                     srp.resources.append(n.id )
 

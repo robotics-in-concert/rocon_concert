@@ -3,7 +3,7 @@ description: Chatting between agents
 author: YujinRobot
 priority: 1
 linkgraph:
-  dedicated_nodes:
+  nodes:
     - id: dudes
       tuple:  linux.ros.pc.rocon_apps/listener
       min: 2
