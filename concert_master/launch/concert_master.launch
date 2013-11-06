@@ -18,7 +18,7 @@
     <node pkg="concert_master" type="master.py" name="master"/>
 
     <!-- ***************************** Service Manager *************************** -->
-    <include file="$(find concert_servicemanager)/launch/servicemanager.launch"/>
+    <include file="$(find concert_service_manager)/launch/service_manager.launch"/>
 
     <!-- ****************************** Conductor ****************************** -->
     <include file="$(find concert_conductor)/launch/conductor.launch">

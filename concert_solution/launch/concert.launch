@@ -3,15 +3,15 @@
         <arg name="concert_name" value="Dude Concert"/>
     </include>
     <group ns="concert">
-        <node pkg="concert_servicemanager" name="add_service" type="add_service_from_file.py">
+        <node pkg="concert_service_manager" name="add_service" type="add_service_from_file.py">
             <param name="filename" value="$(find concert_service)/services/turtle.service"/>
         </node>
 
-        <node pkg="concert_servicemanager" name="add_service1" type="add_service_from_file.py">
+        <node pkg="concert_service_manager" name="add_service1" type="add_service_from_file.py">
             <param name="filename" value="$(find concert_service)/services/chatter2.service"/>
         </node>
 
-        <node pkg="concert_servicemanager" name="add_service2" type="add_service_from_file.py">
+        <node pkg="concert_service_manager" name="add_service2" type="add_service_from_file.py">
             <param name="filename" value="$(find concert_service)/services/chatter.service"/>
         </node>
     </group>

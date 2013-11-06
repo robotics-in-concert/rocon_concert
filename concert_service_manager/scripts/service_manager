@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import rospy
-from concert_servicemanager import *
+from concert_service_manager import *
 
 if __name__ == '__main__':
     rospy.init_node('service_manager')

@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="concert_service_manager" name="concert_service_manager" type="service_manager"></node>
+</launch>
