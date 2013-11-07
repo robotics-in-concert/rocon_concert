@@ -20,8 +20,8 @@ linkgraph:
     - start: chatter
       finish: dudes
       remap_from: chatter
-      remap_to: /conversation2/chatter
+      remap_to: /conversation/chatter
     - start: dudette
       finish: chatter
       remap_from: chatter
-      remap_to: /conversation2/chatter
+      remap_to: /conversation/chatter
