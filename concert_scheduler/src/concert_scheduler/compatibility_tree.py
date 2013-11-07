@@ -120,6 +120,20 @@ def _is_valid_pair(n, c):
     return True
 
 
+def _create_client_dict(client_list):
+    """
+        @param
+            client_list: list of concert_msg.ConcertClient
+    """
+    c_node = {}
+    for c in client_list:
+
+        apps = [a.name for a in c.apps]
+        c_node[c.name] = (c.os, c.version, c.system, c.platform, apps, c.gateway_name)
+
+    return c_node
+
+
 def print_dict(c_node):
     for c in c_node:
         rospy.loginfo(str(c) + " : " + str(c_node[c]))
@@ -128,13 +142,3 @@ def print_dict(c_node):
 def print_array(pair):
     for p in pair:
         rospy.loginfo(str(p))
-
-
-def _create_client_dict(client_list):
-    c_node = {}
-    for c in client_list:
-
-        apps = [a.name for a in c.apps]
-        c_node[c.name] = (c.os, c.version, c.system, c.platform, apps, c.gateway_name)
-
-    return c_node
