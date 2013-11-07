@@ -25,7 +25,6 @@ class ConcertScheduler(object):
     postfix_start_app = '/start_app'
     postfix_stop_app = '/stop_app'
 
-
     lock = None
 
     def __init__(self):
@@ -40,6 +39,9 @@ class ConcertScheduler(object):
 
     def process_list_concert_clients(self, msg):
         """
+            @param
+                msg : concert_msg.ConcertClients
+
             1. Stops services which client left.
             2. Rebuild client list
             3. Starts services which has all requested resources
@@ -59,6 +61,9 @@ class ConcertScheduler(object):
 
     def process_request_resources(self, msg):
         """
+            @param
+                msg : concert_msg.RequestResources
+
             1. enable : true. add service or update linkgraph
             2. enable : false. stop service. and remove service
             3. Starts services which has all requested resources
@@ -67,11 +72,14 @@ class ConcertScheduler(object):
         """
         self.lock.acquire()
 
-        if msg.enable == True:
+        if msg.enable is True:
             self.services[msg.service_name] = msg.linkgraph
         else:
-            self._stop_service(msg.service_name)
-            del self.services[msg.service_name]
+            if msg.service_name in self.services:
+                self._stop_service(msg.service_name)
+                del self.services[msg.service_name]
+            else:
+                self.loginfo("[" + str(msg.service_name) + "] does not exist. Available Service " + str(self.services.keys()))
 
         self._update_services_status()
 
@@ -79,6 +87,9 @@ class ConcertScheduler(object):
 
     def _stop_services_of_left_clients(self, clients):
         """
+            @param
+                clients : list of concert_msg.ConcertClient
+
             1. Get gateway_name of clients which left concert
             2. Check all pairs of services whether it is still valid.
             3. Stops services which left_clients are involved
@@ -95,6 +106,9 @@ class ConcertScheduler(object):
             self._stop_service(s, left_clients)
 
     def _is_service_still_valid(self, pairs, left_clients):
+        """
+            @param
+        """
         g_set = set([gateway for _1, _2, gateway in pairs])
         l_set = set(left_clients)
 
@@ -171,10 +185,12 @@ class ConcertScheduler(object):
 
             self.loginfo(str(app_pairs))
 
-            if status:
+            if status is concert_msg.ConcertService.READY:
                 self.pairs[s] = app_pairs
                 self._mark_clients_as_inuse(app_pairs)
                 self._start_apps(self.pairs[s], str(s), linkgraph)
+            else:
+                self.logwarn("Warning in service status. " + str(message))
 
     def _mark_clients_as_inuse(self, pairs):
         for p in pairs:
@@ -195,10 +211,10 @@ class ConcertScheduler(object):
             self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
 
             # Creates start app service
-            start_app_srv = self.get_start_client_app_service(client_gatewayname)
+            start_app_srv = self._get_start_client_app_service(client_gatewayname)
 
             # Create start app request object
-            req = self.create_startapp_request(app, node, linkgraph, service_name)
+            req = self._create_startapp_request(app, node, linkgraph, service_name)
 
             # Request client to start app
             self.loginfo("    Starting...")
@@ -293,7 +309,7 @@ class ConcertScheduler(object):
 
             for pairs in self.pairs[s]:
                 nodes, client, gateway_name = pairs
-                platform, system, robot, app, node = nodes
+                os, version, system, platform, app, node = nodes
 
                 p = node + " - " + client + " - " + app
 
