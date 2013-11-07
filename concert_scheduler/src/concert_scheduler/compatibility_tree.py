@@ -4,12 +4,21 @@ import rospy
 import copy
 import concert_msgs.msg as concert_msg
 
-def resolve(nodes,client_list): 
 
-    d_node = create_service_array(nodes)
+def resolve(nodes, client_list):
+    """
+        @param
+            nodes: list of service nodes.
+            client_list: list of client
+        @return
+            result: Whether it is successful or not.
+            message: Comment on result
+            pair: list of valid pair (service node, client node, client gateway name)
+    """
+    d_node = _create_service_array(nodes)
 
     # create app indexed dict
-    c_node = create_client_dict(client_list)
+    c_node = _create_client_dict(client_list)
 
 #    rospy.loginfo("=== Clients ===")
 #    print_dict(c_node)
@@ -17,7 +26,7 @@ def resolve(nodes,client_list):
 #    print_array(d_node)
 
     pair = []
-    result, message = get_app_client_pair(pair, d_node, c_node)
+    result, message = _get_app_client_pair(pair, d_node, c_node)
 
 #    rospy.loginfo("== Result")
 #    print_array(pair)
@@ -25,7 +34,13 @@ def resolve(nodes,client_list):
     return result, message, pair
 
 
-def create_service_array(nodes):
+def _create_service_array(nodes):
+    """
+        @param
+            nodes: list of concert_msg.LinkNode
+        @return
+            node: list of tuples of (os, version, system, platform, app, node id)
+    """
     node = []
     for n in nodes:
         os, version, system, platform, app = n.tuple.split(".")
@@ -34,23 +49,33 @@ def create_service_array(nodes):
     return node
 
 
-def get_app_client_pair(pair, n_node, c_node):
+def _get_app_client_pair(pair, n_node, c_node):
+    """
+        Simple backtracking to create pairs of service node and client
+        @param
+            pair: the list of currently created pair. It holds the full list of pairs after the full iteration
+            n_node: the list of service node has not assigned yet as pair
+            c_node: the list of client node has not assigned as pair
+        @return
+            result: constants in concert_msgs.ConcertService which indicates the status of pairing
+            message: comment string
+    """
     result = concert_msg.ConcertService.UNEXPECTED_ERROR
     message = "No iteration yet"
     if len(n_node) == 0:
-        return True, "Successful Match Making"
+        return concert_msg.ConcertService.READY, "Successful Match Making"
 
     if len(c_node) == 0:
         singles = [name for _n0, _n1, _n2, _n3, name in n_node]
-        return False, "No match for " + str(singles)
+        return concert_msg.ConcertService.INSUFFICIENT_CLIENTS, "No match for " + str(singles)
 
     nn_node = copy.deepcopy(n_node)
     cc_node = copy.deepcopy(c_node)
 
     for n in n_node:
         for c in c_node:
-            if is_valid_pair(n,c_node[c]):
-                _1,_2,_3, _4, _5, gatewayname = c_node[c]
+            if _is_valid_pair(n, c_node[c]):
+                _1, _2, _3, _4, _5, gatewayname = c_node[c]
                 p = (n, c, gatewayname)
 
                 # Prepare for next depth
@@ -59,8 +84,9 @@ def get_app_client_pair(pair, n_node, c_node):
                 del cc_node[c]
 
                 # Go to next depth
-                result, message = get_app_client_pair(pair,nn_node,cc_node)
-                if result == True:
+                result, message = _get_app_client_pair(pair, nn_node, cc_node)
+
+                if result is concert_msg.ConcertService.READY:
                     return result, message
 
                 # Return back to current depth
@@ -70,8 +96,17 @@ def get_app_client_pair(pair, n_node, c_node):
 
     return result, message
 
-def is_valid_pair(n,c):
-    client = node = [0,1,2,3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
+
+def _is_valid_pair(n, c):
+    """
+        Compatibility check. Check if client node 'c' can serve as service node 'n'
+        @param
+            n: service node (os.version.system.platform.app_name.node_name)
+            c: client node  (os.version.system.platform.app_list.gateway_name)
+    """
+
+    # 0 : os, 1: version, 2: system, 3: platform
+    client = node = [0, 1, 2, 3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
     node[0], node[1], node[2], node[3], app, name = n
     client[0], client[1], client[2], client[3], apps, gatewayname = c
 
@@ -81,25 +116,25 @@ def is_valid_pair(n,c):
 
     if not (app in apps):
         return False
-    
+
     return True
-            
+
 
 def print_dict(c_node):
     for c in c_node:
         rospy.loginfo(str(c) + " : " + str(c_node[c]))
+
 
 def print_array(pair):
     for p in pair:
         rospy.loginfo(str(p))
 
 
-def create_client_dict(client_list):
+def _create_client_dict(client_list):
     c_node = {}
     for c in client_list:
 
-        apps = [ a.name for a in c.apps]
-        c_node[c.name]= (c.os, c.version, c.system, c.platform, apps, c.gateway_name)
+        apps = [a.name for a in c.apps]
+        c_node[c.name] = (c.os, c.version, c.system, c.platform, apps, c.gateway_name)
 
     return c_node
-
