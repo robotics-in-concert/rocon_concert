@@ -91,12 +91,17 @@ class ServiceManager(object):
 
         success = False
         message = ""
-        if req.enable:
-            success, message = self.concert_services[name].enable()
-        else:
-            success, message = self.concert_services[name].disable()
 
-        self.update()
+        if name in self.concert_services:
+            if req.enable:
+                success, message = self.concert_services[name].enable()
+            else:
+                success, message = self.concert_services[name].disable()
+
+            self.update()
+        else:
+            service_names = self.concert_services.keys()
+            self.log("["+str(name) + "] does not exist. Available Services = " + str(service_names))
 
         return concert_srv.EnableConcertServiceResponse(success,message)
 
