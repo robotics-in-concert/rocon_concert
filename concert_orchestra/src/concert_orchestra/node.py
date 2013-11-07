@@ -9,6 +9,7 @@
 
 import re
 import concert_msgs.msg as concert_msgs
+import rocon_std_msgs.msg as rocon_std_msgs
 
 ##############################################################################
 # Classes
@@ -55,15 +56,17 @@ class Node(object):
         #print "%s-%s-%s-%s-%s" % (self.id, self.tuple, str(self.min), str(self.max), self.force_name_matching)
         #print concert_client.name + "-" + concert_client.platform + "." + concert_client.system + "." + concert_client.robot
         parts = self.tuple.split('.')
-        platform = parts[0]
-        system = parts[1]
-        robot = parts[2]
-        app_name = parts[3]
-        if platform != '*' and platform != concert_client.platform:
+        os = parts[0]
+        unused_version = parts[1]
+        system = parts[2]
+        platform = parts[3]
+        app_name = parts[4]
+        if os != rocon_std_msgs.PlatformInfo.OS_ANY and os != concert_client.os:
             return False
-        if system != '*' and system != concert_client.system:
+        # Don't worry about version for now.
+        if system != rocon_std_msgs.PlatformInfo.SYSTEM_ANY and system != concert_client.system:
             return False
-        if robot != '*' and robot != concert_client.robot:
+        if platform != rocon_std_msgs.PlatformInfo.PLATFORM_ANY and platform != concert_client.platform:
             return False
         # Check if we should match name prefixes (i.e. ignore trailing numericals)
         if self.force_name_matching and not re.match(self.id, re.sub('[0-9]*$', '', concert_client.name)):

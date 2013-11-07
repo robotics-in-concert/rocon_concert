@@ -111,7 +111,7 @@ class ConcertScheduler(object):
 
         for pairs in self.pairs[service_name]:
             nodes, client, gateway_name = pairs
-            _, __, ___, app, node = nodes
+            _, __, ___, ____, app, node = nodes
             self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
 
             if not gateway_name in left_clients:
@@ -210,7 +210,7 @@ class ConcertScheduler(object):
         self.loginfo("Starting apps for " + str(service_name))
 
         for nodes, client, client_gatewayname in pairs:
-            _, __, ___, app, node = nodes
+            _, __, ___, ____, app, node = nodes
             self.loginfo("Node : " + str(node) + "\tApp : " + str(app) + "\tClient : " + str(client))
 
             # Creates start app service

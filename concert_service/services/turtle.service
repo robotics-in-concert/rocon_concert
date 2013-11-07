@@ -5,11 +5,11 @@ priority: 3
 linkgraph: 
   nodes:
     - id: kobuki
-      tuple: linux.ros.pc.turtle_concert/turtle_stroll
+      tuple: linux.*.ros.pc.turtle_concert/turtle_stroll
     - id: guimul
-      tuple: linux.ros.pc.turtle_concert/turtle_stroll
+      tuple: linux.*.ros.pc.turtle_concert/turtle_stroll
     - id: turtlesim
-      tuple: linux.ros.pc.turtle_concert/turtle_stroll_sim
+      tuple: linux.*.ros.pc.turtle_concert/turtle_stroll_sim
   topics:
     - id: kobuki_cmd_vel
       type: geometry_msgs/Twist

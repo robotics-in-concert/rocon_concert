@@ -17,28 +17,25 @@ def resolve(nodes,client_list):
 #    print_array(d_node)
 
     pair = []
-    result, message = get_app_client_pair(pair,d_node,c_node)
+    result, message = get_app_client_pair(pair, d_node, c_node)
 
 #    rospy.loginfo("== Result")
 #    print_array(pair)
 #    rospy.loginfo("================")
     return result, message, pair
 
+
 def create_service_array(nodes):
     node = []
     for n in nodes:
-        platform, system, robot, app = n.tuple.split(".")
-                                                                   
-        for i in range(n.min):
-            node.append((platform, system, robot, app, n.id))
+        os, version, system, platform, app = n.tuple.split(".")
+        for unused_i in range(n.min):
+            node.append((os, version, system, platform, app, n.id))
     return node
 
 
-
-
-
-def get_app_client_pair(pair,n_node,c_node):
-    result = concert_msg.ConcertService.UNEXPECTED_ERROR 
+def get_app_client_pair(pair, n_node, c_node):
+    result = concert_msg.ConcertService.UNEXPECTED_ERROR
     message = "No iteration yet"
     if len(n_node) == 0:
         return True, "Successful Match Making"
@@ -53,7 +50,7 @@ def get_app_client_pair(pair,n_node,c_node):
     for n in n_node:
         for c in c_node:
             if is_valid_pair(n,c_node[c]):
-                _1,_2,_3, _4, gatewayname = c_node[c]
+                _1,_2,_3, _4, _5, gatewayname = c_node[c]
                 p = (n, c, gatewayname)
 
                 # Prepare for next depth
@@ -74,9 +71,9 @@ def get_app_client_pair(pair,n_node,c_node):
     return result, message
 
 def is_valid_pair(n,c):
-    client = node = [0,1,2]
-    node[0], node[1], node[2], app, name = n
-    client[0], client[1], client[2], apps, gatewayname = c
+    client = node = [0,1,2,3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
+    node[0], node[1], node[2], node[3], app, name = n
+    client[0], client[1], client[2], client[3], apps, gatewayname = c
 
     for i in range(3):
         if not (node[i] == client[i] or node[i] == '*'):
@@ -102,7 +99,7 @@ def create_client_dict(client_list):
     for c in client_list:
 
         apps = [ a.name for a in c.apps]
-        c_node[c.name]= (c.platform, c.system, c.robot,apps, c.gateway_name)
+        c_node[c.name]= (c.os, c.version, c.system, c.platform, apps, c.gateway_name)
 
     return c_node
 
