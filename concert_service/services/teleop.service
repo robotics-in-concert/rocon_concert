@@ -4,7 +4,7 @@ author: YujinRobot
 linkgraph:
   nodes:
     - id: robot
-      tuple: linux.ros.turtlebot.turtlebot_core_apps/android_teleop
+      tuple: linux.*.ros.turtlebot.turtlebot_core_apps/android_teleop
       min: 1
       max: 1
   topic:

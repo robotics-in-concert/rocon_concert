@@ -63,7 +63,7 @@ class Orchestration(object):
             # create a dictionary of concert client objects, keyed by the human consumable name
             self._concert_clients[concert_client.name] = copy.deepcopy(concert_client)
             rospy.loginfo("       Client: %s" % (concert_client.name))
-            rospy.loginfo("               %s.%s.%s" % (concert_client.platform, concert_client.system, concert_client.robot))
+            rospy.loginfo("               %s.%s.%s.%s" % (concert_client.os, concert_client.version, concert_client.system, concert_client.platform))
             rospy.loginfo("               %s" % concert_client.client_status)
         if not self._solution_running:
             self._compatibility_tree = create_compatibility_tree(self._implementation.nodes, self._concert_clients)
@@ -126,7 +126,7 @@ class Orchestration(object):
 
         rospy.loginfo("Orchestra : starting solution [%s]" % implementation.name)
         for branch in self._pruned_compatibility_tree.branches:
-            app_name = branch.node.tuple.split('.')[3]
+            app_name = branch.node.tuple.split('.')[4]
             node_name = branch.node.id
             remappings = []
             for edge in link_graph.edges:

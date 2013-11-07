@@ -1,31 +1,18 @@
 <launch>
-    <arg name="concert_name" value="solution_concert"/>
+    <include file="$(find concert_master)/launch/concert_master.launch">
+        <arg name="concert_name" value="Dude Concert"/>
+    </include>
     <group ns="concert">
-        <include file="$(find concert_conductor)/launch/conductor.launch">
-            <arg name="concert_name" value="solution_concert"/>
-        </include>
-        <include file="$(find concert_servicemanager)/launch/servicemanager.launch"/>
+        <node pkg="concert_service_manager" name="add_service" type="add_service_from_file.py">
+            <param name="filename" value="$(find concert_service)/services/turtle.service"/>
+        </node>
 
-        <node pkg="concert_scheduler" name="scheduler" type="scheduler" output="screen"/>
-
-				<node pkg="concert_servicemanager" name="add_service" type="add_service_from_file.py" output="screen">
-					<param name="filename" value="$(find concert_service)/services/turtle.service"/>
-				</node>
-
-        <node pkg="concert_servicemanager" name="add_service1" type="add_service_from_file.py" output="screen">
+        <node pkg="concert_service_manager" name="add_service1" type="add_service_from_file.py">
             <param name="filename" value="$(find concert_service)/services/chatter2.service"/>
         </node>
 
-        <node pkg="concert_servicemanager" name="add_service2" type="add_service_from_file.py" output="screen">
+        <node pkg="concert_service_manager" name="add_service2" type="add_service_from_file.py">
             <param name="filename" value="$(find concert_service)/services/chatter.service"/>
         </node>
     </group>
-
-    <node pkg="zeroconf_avahi" type="zeroconf" name="zeroconf_avahi" ns="zeroconf">
-      <rosparam param="services" subst_value="true">
-        [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "concert master" } ] 
-      </rosparam>
-    </node>
-
-    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>

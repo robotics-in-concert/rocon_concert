@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(concert_servicemanager)
+project(concert_service_manager)
 
 find_package(catkin REQUIRED)
 
@@ -10,7 +10,7 @@ catkin_package(
 )
 
 install(PROGRAMS
-  scripts/concert_servicemanager
+  scripts/service_manager
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
