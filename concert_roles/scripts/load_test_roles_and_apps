@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+#       
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_multimaster/master/rocon_gateway/LICENSE 
+#
+
+##############################################################################
+# Imports
+##############################################################################
+
+import sys
+import argparse
+import rospy
+import rocon_utilities.console as console
+import concert_msgs.msg as concert_msgs
+import concert_msgs.srv as concert_srvs
+import rocon_std_msgs.msg as rocon_std_msgs
+import rocon_utilities
+
+##############################################################################
+# Globals
+##############################################################################
+
+service_name = '/concert/set_roles_and_apps'
+hard_coded_roles = ['Admin', 'Dev', 'Guzzler']
+
+##############################################################################
+# Functions
+##############################################################################
+    
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Set a hardcoded list of roles and apps')
+    myargs = rospy.myargv(argv=sys.argv)
+    args = parser.parse_args(args=myargs[1:])
+    return args
+
+def android_platform_info():
+    platform_info = rocon_std_msgs.PlatformInfo(
+                    os=rocon_std_msgs.PlatformInfo.OS_ANDROID,
+                    version=rocon_std_msgs.PlatformInfo.VERSION_ANY,
+                    platform=rocon_std_msgs.PlatformInfo.PLATFORM_SMART_DEVICE,
+                    system=rocon_std_msgs.PlatformInfo.SYSTEM_ROSJAVA,
+                    name='*',  # Not relevant to this list
+                    )
+    return platform_info
+
+
+def setup_role_app_dictionary():
+    roles = {}
+    platform_info = android_platform_info()
+    for role in hard_coded_roles:
+        roles[role] = []
+    roles['Admin'].append(concert_msgs.RemoconApp(
+                              name="com.github.robotics_in_concert.rocon_android.SolutionManager",
+                              platform_info=platform_info,
+                              display_name="Solution Manager",
+                              description="Configuration manager for the concert",
+                              service_name="admin",
+                              remappings=[],
+                              parameters=[],
+                              )
+                   )
+    roles['Admin'].append(concert_msgs.RemoconApp(
+                              name="com.github.robotics_in_concert.rocon_android.SolutionMonitor",
+                              platform_info=platform_info,
+                              display_name="Solution Monitor",
+                              description="Monitors various aspects of the solution.",
+                              service_name="admin",
+                              remappings=[],
+                              parameters=[]
+                              )
+                   )
+    roles['Dev'].append(concert_msgs.RemoconApp(
+                              name="com.github.robotics_in_concert.rocon_android.Pizza",
+                              platform_info=platform_info,
+                              display_name="Pizza Delivery",
+                              description="Tantalises and tickles the taste buds with a virtual pizza.",
+                              service_name="spooning",
+                              remappings=[],
+                              parameters=[rocon_std_msgs.KeyValue('type', 'super supreme')]
+                              )
+                   )
+    roles['Guzzler'].append(concert_msgs.RemoconApp(
+                              name="com.github.robotics_in_concert.rocon_android.Beer",
+                              platform_info=platform_info,
+                              display_name="Beer",
+                              description="The super sopper.",
+                              service_name="leeching",
+                              remappings=[rocon_std_msgs.Remapping('/fosters', '/beer/leffe')],
+                              parameters=[]
+                              )
+                    )
+    roles['Guzzler'].append(concert_msgs.RemoconApp(
+                              name="com.github.robotics_in_concert.rocon_android_apps.map_annotation.MainActivity",
+                              platform_info=platform_info,
+                              display_name="Map Annotation",
+                              description="Add semantic information to a metric map",
+                              service_name="cafe_authoring",
+                              remappings=[rocon_std_msgs.Remapping('/fosters', '/beer/leffe'),
+                                          rocon_std_msgs.Remapping('/map', '/cafe/map')],
+                              parameters=[rocon_std_msgs.KeyValue('pickup_point', 'pickup')],
+                              icon=rocon_utilities.icon_resource_to_msg('concert_roles/map_annotation_icon.png')
+                              )
+                    )
+    return roles
+
+##############################################################################
+# Main
+##############################################################################
+
+if __name__ == '__main__':
+    
+    rospy.init_node('roles_and_apps')
+    args = parse_arguments()
+    set_roles_and_apps_proxy = rospy.ServiceProxy(service_name, concert_srvs.SetRolesAndApps)
+    try:
+        set_roles_and_apps_proxy.wait_for_service(timeout=2.0)
+    except rospy.ROSException as unused_e:
+        console.logerror("Timed out waiting for %s to become available, aborting." % service_name)
+        sys.exit(1)
+    except rospy.ROSInterruptException as unused_e:
+        console.logerror("ROS shutdown while waiting for %s to become available, aborting." % service_name)
+        sys.exit(1)
+    request = concert_srvs.SetRolesAndAppsRequest()
+    request.data = []
+    roles_and_apps = setup_role_app_dictionary()
+    for role in roles_and_apps.keys():
+        role_app_list = concert_msgs.RoleAppList()
+        role_app_list.role = role
+        role_app_list.remocon_apps = roles_and_apps[role]
+        request.data.append(role_app_list)
+    request.add = True
+    response = set_roles_and_apps_proxy(request)
