@@ -10,6 +10,7 @@
 import rospy
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import rocon_std_msgs.srv as rocon_std_srvs
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
@@ -90,7 +91,7 @@ class ConcertClient(object):
 
     def _init(self):
         # Platform_info
-        platform_info_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'platform_info'), rapp_manager_srvs.GetPlatformInfo)
+        platform_info_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'platform_info'), rocon_std_srvs.GetPlatformInfo)
         list_app_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'list_apps'), rapp_manager_srvs.GetAppList)
         # These are permanent
         self._status_service = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'status'), rapp_manager_srvs.Status)
@@ -104,9 +105,10 @@ class ConcertClient(object):
             raise e
         platform_info = platform_info_service().platform_info
         self.data.name = platform_info.name
-        self.data.platform = platform_info.platform
+        self.data.os = platform_info.os
+        self.data.version = platform_info.version
         self.data.system = platform_info.system
-        self.data.robot = platform_info.robot
+        self.data.platform = platform_info.platform
         # List Apps
         try:
             list_app_service.wait_for_service()
@@ -157,7 +159,6 @@ class ConcertClient(object):
         else:
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
-
 
     def invite(self, concert_gateway_name, client_local_name, ok_flag):
         '''
