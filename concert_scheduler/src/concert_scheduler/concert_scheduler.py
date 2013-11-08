@@ -193,7 +193,9 @@ class ConcertScheduler(object):
         return list(left_clients)
 
     def _update_services_status(self):
-        """
+        """ 
+            Brings up services which can start with currently available clients(or resources)
+
             For each service which needs to be started
             1. create (node, client) pair with already running clients.
             2. create (node, client) pair with available clients
