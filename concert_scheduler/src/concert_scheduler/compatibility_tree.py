@@ -7,11 +7,11 @@ import concert_msgs.msg as concert_msg
 
 def resolve(service_nodes, client_list):
     """
-        @param service_nodes: list of service nodes. 
+        @param service_nodes: list of service nodes.
         @type concert_msg.LinkNode[]
 
-        @param client_list: list of client. 
-        @type concert_msg.ConcertClient[] 
+        @param client_list: list of client.
+        @type concert_msg.ConcertClient[]
 
         @return result of pairing. message. list of valid pair (service node, client node)
         @rtype concert_msg.ConcertService.CONSTANT, string, [(LinkNode,ConcertClient)]
@@ -33,6 +33,7 @@ def resolve(service_nodes, client_list):
 #rospy.loginfo("==================")
     return result, message, pairs
 
+
 def _expand_min_nodes(nodes):
     """
         A multiple of same node may need. service description includes min-max value. Using min value it creates multiple instances.
@@ -50,7 +51,7 @@ def _expand_min_nodes(nodes):
             expanded_nodes.append(copy.deepcopy(n))
 
     return expanded_nodes
-        
+
 
 def _get_app_client_pair(pair, snodes, clients):
     """
@@ -65,7 +66,7 @@ def _get_app_client_pair(pair, snodes, clients):
         @param clients: list of remaining availalble clients
         @type concert_msgs.msg.ConcertClient[]
 
-        @return result : constants in concert_msgs.ConcertService which indicates the status of pairing. 
+        @return result : constants in concert_msgs.ConcertService which indicates the status of pairing.
         @rtype int16
 
         @return message : comment
@@ -90,7 +91,7 @@ def _get_app_client_pair(pair, snodes, clients):
             if _is_valid_pair(n, c):
 
 #                app = [ a for a in apps if a.name is app_name]
-#                app_share = app[0].share 
+#                app_share = app[0].share
                 p = (n, c)
 
                 # Prepare for next depth
@@ -115,19 +116,19 @@ def _get_app_client_pair(pair, snodes, clients):
 def _is_valid_pair(n, c):
     """
         Compatibility check. Check if client node 'c' can serve as service node 'n'
-        @param n : service node 
+        @param n : service node
         @type concert_msgs.msg.LinkNode
 
         @param c : client node
         @type concert_msgs.msg.ConcertClient
 
-        @return True if client node 'c' can serve as service node 'n' 
+        @return True if client node 'c' can serve as service node 'n'
         @rtype bool
     """
 
     # 0 : os, 1: version, 2: system, 3: platform
     client_tuple = node_tuple = [0, 1, 2, 3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
-    
+
     node_tuple[0], node_tuple[1], node_tuple[2], node_tuple[3], service_app_name = n.tuple.split(".")
 
     client_tuple[0] = c.os
@@ -156,9 +157,9 @@ def print_array(ary):
     for a in ary:
         rospy.loginfo(str(a))
 
+
 def print_pairs(pairs):
     for p in pairs:
         n, c = p
         node_name = n.id
         rospy.loginfo(str(n.id) + " - " + str(c.name))
-        
