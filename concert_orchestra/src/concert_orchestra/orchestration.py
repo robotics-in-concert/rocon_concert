@@ -166,7 +166,7 @@ class Orchestration(object):
         '''
           Used to start a single client. This is done when a client dynamically joins after the solution has started.
         '''
-        app_name = branch.node.tuple.split('.')[3]
+        app_name = branch.node.tuple.split('.')[4]
         node_name = branch.node.id
         remappings = []
         implementation = self._implementation.to_msg()
