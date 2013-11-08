@@ -1,9 +1,9 @@
 <concert>
     <launch title="concert:11311" package="concert_solution" name="concert.launch" port="11311"/>
+
     <launch title="dude:11312"    package="concert_solution" name="dude.launch" port="11312"/>
     <launch title="dude:11313"    package="concert_solution" name="dude.launch" port="11313"/>
     <launch title="dude:11314"    package="concert_solution" name="dude.launch" port="11314"/>
     <launch title="dude:11315"    package="concert_solution" name="dude.launch" port="11315"/>
     <launch title="dude:11316"    package="concert_solution" name="dude.launch" port="11316"/>
-    <launch title="dude:11317"    package="concert_solution" name="dude.launch" port="11317"/>
 </concert>
