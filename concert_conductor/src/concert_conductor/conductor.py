@@ -201,11 +201,14 @@ class Conductor(object):
         '''
         suffix = 'platform_info'
         visible_clients = []
-        remote_gateway_info = self._remote_gateway_info_service()
-        for remote_gateway in remote_gateway_info.gateways:
-            for rule in remote_gateway.public_interface:
-                if rule.name.endswith(suffix):
-                    visible_clients.append(rule.name[1:-(len(suffix) + 1)])  # escape the initial '/' and the trailing '/platform_info'
+        try:
+            remote_gateway_info = self._remote_gateway_info_service()
+            for remote_gateway in remote_gateway_info.gateways:
+                for rule in remote_gateway.public_interface:
+                    if rule.name.endswith(suffix):
+                        visible_clients.append(rule.name[1:-(len(suffix) + 1)])  # escape the initial '/' and the trailing '/platform_info'
+        except rospy.exceptions.ROSInterruptException:  # ros shutdown
+            pass
         return visible_clients
 
     def _prune_client_list(self, new_clients):
