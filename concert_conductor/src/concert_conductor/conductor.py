@@ -12,6 +12,7 @@ import rospy
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import gateway_msgs.msg as gateway_msgs
+import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
 import rocon_utilities
 import xmlrpclib
@@ -65,14 +66,19 @@ class Conductor(object):
     def invite(self, concert_name, clientnames, ok_flag):
         for name in clientnames:
             try:
-                unused_resp = self._concert_clients[name].invite(concert_name, name, ok_flag)
-                rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
-                self._invited_clients[name] = ok_flag
+                # rapp_manager_srvs.InviteResponse
+                response = self._concert_clients[name].invite(concert_name, name, ok_flag)
+                if response.result:
+                    rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
+                    self._invited_clients[name] = ok_flag
+                elif response.error_code == rapp_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY:
+                    pass  # quietly....shouldn't actually get here if we tell the conductor not to pull adverts for these.
+                    return False
+                else:
+                    rospy.logerr("Conductor : failed to invite concert client [%s][%s]" % (response.message, name))
+                    return False
             except KeyError:  # raised when name is not in the self._concert_clients keys
                 rospy.logerr("Conductor : tried to invite unknown concert client [%s]" % name)
-                return False
-            except Exception as e:
-                rospy.logerr("Conductor : failed to invite concert client [%s]" % str(e))
                 return False
         return True
 
@@ -86,7 +92,7 @@ class Conductor(object):
 
             # Grep list of remote clients from gateway
             # Grep list of local clients.
-            # Prune unavailable clients. 
+            # Prune unavailable clients.
 
             # For each new clients
             #   Resolve human friendly index
@@ -96,7 +102,7 @@ class Conductor(object):
             #   Invite all available clients
             # If there is a change in the list, update the topic
 
-            
+
             gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
             local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
             visible_clients = gateway_clients + local_clients

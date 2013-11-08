@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_concert/concert_conductor/LICENSE
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 ##############################################################################
 # Imports
@@ -168,6 +168,9 @@ class ConcertClient(object):
           @param concert_gateway_name : have to let the client know the concert gateway name
                                         so they can flip us topics...
           @type str
+
+          @return result of the invitation
+          @rtype rapp_manager_srvs.InviteResponse
         '''
         req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, not ok_flag)
         resp = self._invite_service(req)
@@ -175,7 +178,8 @@ class ConcertClient(object):
         if resp.result == True:
             self._setup_service_proxies()
         else:
-            raise Exception(str("Invitation Failed : " + self.name))
+            pass
+        return resp
 
     def start_app(self, app_name, remappings):
         '''
