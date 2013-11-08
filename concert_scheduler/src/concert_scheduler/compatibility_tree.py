@@ -47,7 +47,7 @@ def _expand_min_nodes(nodes):
     expanded_nodes = copy.deepcopy(nodes)
 
     for n in nodes:
-        for unused_i in range((n.min-1)):
+        for unused_i in range((n.min - 1)):
             expanded_nodes.append(copy.deepcopy(n))
 
     return expanded_nodes

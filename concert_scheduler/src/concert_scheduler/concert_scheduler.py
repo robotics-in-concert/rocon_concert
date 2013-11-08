@@ -68,7 +68,7 @@ class ConcertScheduler(object):
             TODO: Current implementation expects service_name to be unique.
             TODO: it does not rearrange clients if only linkgraph get changed.
 
-            @param : msg 
+            @param : msg
             @type concert_msg.RequestResources
         """
         self.lock.acquire()
@@ -112,7 +112,7 @@ class ConcertScheduler(object):
             @param pair: list of pair (service node, client node)
             @type [(concert_msg.LinkNode, concert_msg.ConcertClient)]
 
-            @param left_clients: list of concert client gateways who recently left 
+            @param left_clients: list of concert client gateways who recently left
             @type string[]
         """
         g_set = set([client_node.gateway_name for _1, client_node in pairs])
@@ -135,11 +135,11 @@ class ConcertScheduler(object):
             _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
 
             self.loginfo("Node : " + str(service_node_name) + "\tApp : " + str(service_app_name) + "\tClient : " + str(client_node.name))
-            
+
             is_need_to_stop = self._unmark_client_as_inuse(client_node.gateway_name)
 
             if not client_node.gateway_name in left_client_gateways:
-                if is_need_to_stop: # only if nobody is using the client
+                if is_need_to_stop:  # only if nobody is using the client
                     # Creates stop app service
                     stop_app_srv = self._get_stop_client_app_service(client_node.gateway_name)
 
@@ -157,7 +157,6 @@ class ConcertScheduler(object):
                         self.loginfo("    Done")
             else:
                 self.loginfo(str(client_node.name) + " has already left")
-
 
         del self.pairs[service_name]
         self.loginfo(str(service_name) + " has been stopped")
@@ -183,7 +182,7 @@ class ConcertScheduler(object):
             @type concert_msg.ConcertClient[]
 
             @return left_clients: list of concert client gateway_name who recently left
-            @rtype list of string 
+            @rtype list of string
         """
 
         inuse_gateways = self._get_inuse_gateways()
@@ -196,7 +195,7 @@ class ConcertScheduler(object):
     def _update_services_status(self):
         """
             For each service which needs to be started
-            1. create (node, client) pair with already running clients. 
+            1. create (node, client) pair with already running clients.
             2. create (node, client) pair with available clients
             3. If all pairs are successfully made, starts service
 
@@ -213,30 +212,34 @@ class ConcertScheduler(object):
             nodes = copy.deepcopy(linkgraph.nodes)
             app_pairs = []
 
-            paired_nodes, reused_client_app_pairs = self._pairs_with_running_clients(nodes,linkgraph)
-
+            # Check if any node can be paired with already running client
+            paired_nodes, reused_client_app_pairs = self._pairs_with_running_clients(nodes, linkgraph)
             compatibility_tree.print_pairs(reused_client_app_pairs)
 
-            # Check if any node can be paired with already running client
+            # More client is required?
             remaining_nodes = [n for n in nodes if not n in paired_nodes]
 
+            # Clients who are not running yet
             available_clients = self._get_available_clients()
-
-            cname = [ c.name for c in available_clients]
+            cname = [c.name for c in available_clients]
             self.loginfo("Avaialble client " + str(cname))
+
+            # Pair between remaining node and free cleints
             status, message, new_app_pairs = compatibility_tree.resolve(remaining_nodes, available_clients)
 
             app_pairs.extend(reused_client_app_pairs)
             app_pairs.extend(new_app_pairs)
 
+            # Starts service if it is ready
             if status is concert_msg.ConcertService.READY:
                 self.pairs[s] = app_pairs
-                self._mark_clients_as_inuse(app_pairs,linkgraph)
+                self._mark_clients_as_inuse(app_pairs, linkgraph)
                 self._start_service(new_app_pairs, str(s), linkgraph)
             else:
+                # if not, do nothing
                 self.logwarn("Warning in [" + str(s) + "] status. " + str(message))
 
-    def _pairs_with_running_clients(self, service_nodes,linkgraph):
+    def _pairs_with_running_clients(self, service_nodes, linkgraph):
         """
             Check if clients already running can be resued for another service nope
             To be compatibile, it should have the same remapping rules, and available slot.
@@ -247,7 +250,7 @@ class ConcertScheduler(object):
             @param linkgraph: implementation of service
             @type concert_msg.LinkGraph
 
-            @return paired_node: which can reuse inuse client 
+            @return paired_node: which can reuse inuse client
             @type concert_msg.LinkNode[]
 
             @return new_app_pair: new pair
@@ -261,10 +264,10 @@ class ConcertScheduler(object):
             _1, _2, _3, _4, service_app_name = n.tuple.split(".")
 
             if service_app_name in self.inuse:
-                service_remappings = self._get_match_remappings(service_node_name,linkgraph.edges)
+                service_remappings = self._get_match_remappings(service_node_name, linkgraph.edges)
 
                 for client_name, tup in self.inuse[service_app_name].items():
-                    client_node, remappings, max_share, count  = tup
+                    client_node, remappings, max_share, count = tup
 
                     if remappings == service_remappings and count < max_share:
                         paired_node.append(n)
@@ -272,9 +275,9 @@ class ConcertScheduler(object):
 
         return paired_node, new_app_pairs
 
-    def _mark_clients_as_inuse(self, pairs,linkgraph):
+    def _mark_clients_as_inuse(self, pairs, linkgraph):
         """
-            store the paired client in inuse_clients 
+            store the paired client in inuse_clients
 
             @param pair: list of pair (service node, client node)
             @type : list of (concert_msg.LinkNode, concert_msg.ConcertClient)
@@ -289,12 +292,12 @@ class ConcertScheduler(object):
             service_node, client_node = p
 
             _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
-            remappings = self._get_match_remappings(service_node.id,linkgraph.edges)
+            remappings = self._get_match_remappings(service_node.id, linkgraph.edges)
 
             if not service_app_name in self.inuse:
                 self.inuse[service_app_name] = {}
 
-            app = [a for a in client_node.apps if a.name == service_app_name][0] # must be only one
+            app = [a for a in client_node.apps if a.name == service_app_name][0]  # must be only one
 
             if client_node.name in self.inuse[service_app_name]:
                 c, r, m, count = self.inuse[service_app_name][client_node.name]
@@ -306,7 +309,7 @@ class ConcertScheduler(object):
         """
             mark that client is not inuse.
 
-            @param client_gateway_name 
+            @param client_gateway_name
             @type string
 
             @return True if no service is using this client. so it stops the app
@@ -333,7 +336,7 @@ class ConcertScheduler(object):
             @return list of available clients
             @rtype concert_msg.ConcertClient[]
         """
-        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msg.Constants.CONCERT_CLIENT_STATUS_CONNECTED] # and self.clients[c].app_status == concert_msg.Constants.APP_STATUS_STOPPED]
+        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msg.Constants.CONCERT_CLIENT_STATUS_CONNECTED]  # and self.clients[c].app_status == concert_msg.Constants.APP_STATUS_STOPPED]
         inuse_gateways = self._get_inuse_gateways()
         free_clients = [c for c in clients if not (c.gateway_name in inuse_gateways)]
 
@@ -346,16 +349,14 @@ class ConcertScheduler(object):
             @return list of gateway_name
             @rtype string[]
         """
-        inuse_gateways = [] 
+        inuse_gateways = []
 
-        for client_node_dict in self.inuse.values(): 
+        for client_node_dict in self.inuse.values():
             for client_node, remapping, max_share, count in client_node_dict.values():
                 if count > 0:
                     inuse_gateways.append(client_node.gateway_name)
 
         return inuse_gateways
-                
-
 
     def _start_service(self, pairs, service_name, linkgraph):
         """
@@ -371,7 +372,7 @@ class ConcertScheduler(object):
             @type concert_msg.LinkGraph
         """
         self.loginfo("Starting apps for " + str(service_name))
-    
+
         for p in pairs:
             service_node, client_node = p
 
@@ -415,7 +416,7 @@ class ConcertScheduler(object):
 
     def _create_startapp_request(self, service_app_name, service_node_name, linkgraph, service_name):
         """
-            creates startapp request instance 
+            creates startapp request instance
 
             @param service_app_name: name of app to start in client
             @type string
@@ -435,7 +436,7 @@ class ConcertScheduler(object):
 
         # Remappings
         edges = linkgraph.edges
-        req.remappings = self._get_match_remappings(service_node_name,edges)
+        req.remappings = self._get_match_remappings(service_node_name, edges)
 
         return req
 
@@ -464,8 +465,8 @@ class ConcertScheduler(object):
         inuse_gateways = self._get_inuse_gateways()
         available = [c for c in self.clients if not self.clients[c].gateway_name in inuse_gateways]
 
-        inuse = [] 
-        for client_node_dict in self.inuse.values(): 
+        inuse = []
+        for client_node_dict in self.inuse.values():
             for client_node, remapping, max_share, count in client_node_dict.values():
                 s = client_node.name + " - " + str(count) + "(" + str(max_share) + ")"
                 inuse.append(s)

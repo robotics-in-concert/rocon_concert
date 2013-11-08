@@ -4,5 +4,6 @@
 class FailedToLockClientsException(Exception):
     pass
 
+
 class FailedToStartAppsException(Exception):
     pass
