@@ -3,7 +3,8 @@
 import rospy
 import traceback
 import threading
-import concert_service
+
+from .concert_service_instance import ConcertServiceInstance
 
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
@@ -21,7 +22,7 @@ class ServiceManager(object):
     sub = {}
 
     def __init__(self):
-        self.log("in init")
+        self.loginfo("in init")
         self.setup_ros_api()
 
         self.lock = threading.Lock()
@@ -44,7 +45,7 @@ class ServiceManager(object):
                 success = False
                 message = "Already registered service"
             else:
-                cs = concert_service.ConcertServiceInstance(req.service)
+                cs = ConcertServiceInstance(service_description=req.service, update_callback=self.update)
                 self.concert_services[req.service.name] = cs
                 self.update()
                 success = True
@@ -53,10 +54,10 @@ class ServiceManager(object):
             tb = traceback.format_exc()
             success = False
             message = "Unexpected Error while loading service"
-            self.log("\n" + str(tb))
+            self.loginfo("\n" + str(tb))
         self.lock.release()
 
-        self.log(message)
+        self.loginfo(message)
 
         return concert_srv.AddConcertServiceResponse(success, message)
 
@@ -82,7 +83,6 @@ class ServiceManager(object):
             success = False
             message = str(e)
         self.lock.release()
-        self.log(message)
 
         return concert_srv.RemoveConcertServiceResponse(success, message)
 
@@ -90,18 +90,16 @@ class ServiceManager(object):
         name = req.concertservice_name
 
         success = False
-        message = ""
+        message = "Not Implemented"
 
         if name in self.concert_services:
             if req.enable:
                 success, message = self.concert_services[name].enable()
             else:
                 success, message = self.concert_services[name].disable()
-
-            self.update()
         else:
             service_names = self.concert_services.keys()
-            self.log("["+str(name) + "] does not exist. Available Services = " + str(service_names))
+            self.loginfo("["+str(name) + "] does not exist. Available Services = " + str(service_names))
 
         return concert_srv.EnableConcertServiceResponse(success, message)
 
@@ -109,9 +107,9 @@ class ServiceManager(object):
         rs = [v.to_msg() for unused_k, v in self.concert_services.items()]
         self.pub['list_service'].publish(rs)
 
-    def log(self, msg):
+    def loginfo(self, msg):
         rospy.loginfo("Serivce Manager : " + str(msg))
 
     def spin(self):
-        self.log("in spin")
+        self.loginfo("in spin")
         rospy.spin()

@@ -14,8 +14,9 @@ def load_service_from_file(filename):
         rs.name = yaml_data['name']
         rs.description = yaml_data['description']
         rs.author = yaml_data['author']
-        rs.linkgraph = linkgraph_to_msg(yaml_data['linkgraph'])
         rs.priority = yaml_data['priority']
+        rs.launcher = yaml_data['launcher']
+#rs.linkgraph = linkgraph_to_msg(yaml_data['linkgraph'])
 
     return rs
 
