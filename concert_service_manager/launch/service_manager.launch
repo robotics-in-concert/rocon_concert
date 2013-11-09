@@ -1,11 +1,3 @@
 <launch>
-  <node pkg="concert_service_manager" name="concert_service_manager" type="service_manager"></node>
-
-  <node pkg="concert_service_manager" name="add_service" type="add_service_from_file.py">
-     <param name="filename" value="$(find concert_service)/services/turtle.service"/>
-  </node>
-
-  <node pkg="concert_service_manager" name="add_service2" type="add_service_from_file.py">
-     <param name="filename" value="$(find concert_service)/services/chatter.service"/>
-  </node>
+  <node pkg="concert_service_manager" name="concert_service_manager" type="service_manager"/>
 </launch>
