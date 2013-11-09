@@ -14,9 +14,21 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>rospy</run_depend>
-  <run_depend>rocon_utilities</run_depend>
+  <run_depend>rocon_gateway</run_depend>
+  <run_depend>rocon_hub</run_depend>
+  <run_depend>concert_orchestra</run_depend>
+  <run_depend>concert_service</run_depend>
+  <run_depend>concert_manager</run_depend>
+  <run_depend>concert_conductor</run_depend>
+  <run_depend>concert_roles</run_depend>
+  <run_depend>concert_scheduler</run_depend>
   <run_depend>concert_msgs</run_depend>
-  <run_depend>python-qt-bindings</run_depend>
+  <!-- 
+    Hardcode this dependency for now since we only test it on linux 
+    Ideally, I wouldn't hardcode the zeroconf implementation though.
+    even if it does appeal to us ubuntu eggheads.
+  -->
+  <run_depend>zeroconf_avahi</run_depend>
   <export>
     <rosdoc config="rosdoc.yaml"/>
   </export>
