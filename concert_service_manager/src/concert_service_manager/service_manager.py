@@ -1,13 +1,24 @@
 #!/usr/bin/env python
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+##############################################################################
+# Imports
+##############################################################################
 
 import rospy
 import traceback
 import threading
-
-from .concert_service_instance import ConcertServiceInstance
-
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
+
+# Local imports
+from .concert_service_instance import ConcertServiceInstance
+
+
+##############################################################################
+# ServiceManager
+##############################################################################
 
 
 class ServiceManager(object):
@@ -22,9 +33,7 @@ class ServiceManager(object):
     sub = {}
 
     def __init__(self):
-        self.loginfo("in init")
         self.setup_ros_api()
-
         self.lock = threading.Lock()
 
     def setup_ros_api(self):
@@ -99,7 +108,7 @@ class ServiceManager(object):
                 success, message = self.concert_services[name].disable()
         else:
             service_names = self.concert_services.keys()
-            self.loginfo("["+str(name) + "] does not exist. Available Services = " + str(service_names))
+            self.loginfo("[" + str(name) + "] does not exist. Available Services = " + str(service_names))
 
         return concert_srv.EnableConcertServiceResponse(success, message)
 
@@ -111,5 +120,4 @@ class ServiceManager(object):
         rospy.loginfo("Serivce Manager : " + str(msg))
 
     def spin(self):
-        self.loginfo("in spin")
         rospy.spin()

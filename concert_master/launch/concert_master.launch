@@ -45,13 +45,12 @@
       <param name="hub_whitelist" value="$(arg concert_hub_uri)"/>
       <param name="disable_uuids" value="$(arg disable_uuids)"/>
     </node>
-  <!-- ****************************** Zeroconf ******************************* -->
-  <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
-    <rosparam param="services" subst_value="true">
+    <!-- ****************************** Zeroconf ******************************* -->
+    <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
+      <rosparam param="services" subst_value="true">
           [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "$(arg concert_description)" } ] 
-    </rosparam>
-  </node>
-
+      </rosparam>
+    </node>
   </group>
 
 </launch>
