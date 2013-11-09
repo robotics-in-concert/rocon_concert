@@ -23,7 +23,7 @@ class ConcertServiceInstance(object):
             service_desciption : ConcertService.msg
         '''
         # Setting description(msg)
-        self.description      = service_description
+        self.description      = service_description  #@IgnorePep8
         self.description.uuid = unique_id.toMsg(unique_id.fromRandom())
         self.loginfo("UUID = " + str(self.description.uuid))
 
@@ -36,8 +36,7 @@ class ConcertServiceInstance(object):
         self.shutdown()
 
     def setup_ros_api(self):
-        self.pub['request_resources'] = rospy.Publisher('request_resources',concert_msg.RequestResources)
-
+        self.pub['request_resources'] = rospy.Publisher('request_resources', concert_msg.RequestResources)
 
     def shutdown(self):
         self.loginfo("Destroying...")
@@ -55,16 +54,15 @@ class ConcertServiceInstance(object):
 
         self.description.enabled = True
 
-        # Request to allocate resource 
+        # Request to allocate resource
         msg = concert_msg.RequestResources()
         msg.service_name = self.description.name
         msg.linkgraph = self.description.linkgraph
         msg.enable = True
 
         self.pub['request_resources'].publish(msg)
-        
-        return True, ""
 
+        return True, ""
 
     def disable(self):
         self.loginfo("Disabled")
@@ -74,7 +72,7 @@ class ConcertServiceInstance(object):
 
         self.description.enabled = False
 
-        # Request to cancel resource 
+        # Request to cancel resource
         msg = concert_msg.RequestResources()
         msg.service_name = self.description.name
         msg.linkgraph = self.description.linkgraph
@@ -84,9 +82,8 @@ class ConcertServiceInstance(object):
 
         return True, ""
 
-
     def to_msg(self):
         return self.description
-        
-    def loginfo(self,msg):
-        rospy.loginfo("Service["+str(self.description.name)+"] : " + str(msg))
+
+    def loginfo(self, msg):
+        rospy.loginfo("Service[" + str(self.description.name) + "] : " + str(msg))

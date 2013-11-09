@@ -101,7 +101,7 @@ class ServiceManager(object):
             self.update()
         else:
             service_names = self.concert_services.keys()
-            self.log("["+str(name) + "] does not exist. Available Services = " + str(service_names))
+            self.log("[" + str(name) + "] does not exist. Available Services = " + str(service_names))
 
         return concert_srv.EnableConcertServiceResponse(success, message)
 
