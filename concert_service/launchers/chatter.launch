@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="concert_service" name="dummy" type="dummy.py">
+  </node>
+</launch>
