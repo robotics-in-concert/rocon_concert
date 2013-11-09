@@ -4,7 +4,7 @@
 -->
 <launch>
   <!-- ***************************** Concert Master ***************************** -->
-  <include file="$(find concert_master)/launch/concert_master.launch"/>
+  <node pkg="concert_master" type="master.py" name="master"/>
 
   <!-- ****************************** Role Manager ****************************** -->
   <group ns="concert">
