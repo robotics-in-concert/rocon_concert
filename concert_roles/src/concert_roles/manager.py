@@ -151,7 +151,7 @@ class RoleManager(object):
             for app in role_app_list.remocon_apps:
                 if not remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role]):
                     self.role_and_app_table[role].append(app)
-                    rospy.loginfo("Role Manager : adding app to the app list [%s][%s]" % (role, app.name))
+                    rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
         response = concert_srvs.SetRolesAndAppsResponse()
         response.result = True
         return response
