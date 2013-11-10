@@ -8,6 +8,7 @@
 import rospy
 import traceback
 import threading
+import roslaunch.pmon
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
 import concert_roles
@@ -36,6 +37,8 @@ class ServiceManager(object):
         self.setup_ros_api()
         self.lock = threading.Lock()
         self._role_app_loader = concert_roles.RoleAppLoader()
+
+        roslaunch.pmon._init_signal_handlers()
 
     def setup_ros_api(self):
         # Service
