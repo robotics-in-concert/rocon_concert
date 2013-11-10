@@ -77,7 +77,7 @@ def setup_role_app_dictionary():
                               description="Tantalises and tickles the taste buds with a virtual pizza.",
                               service_name="spooning",
                               remappings=[],
-                              parameters=[rocon_std_msgs.KeyValue('type', 'super supreme')]
+                              parameters='{type: super_supreme}'
                               )
                    )
     roles['Guzzler'].append(concert_msgs.RemoconApp(
@@ -98,7 +98,7 @@ def setup_role_app_dictionary():
                               service_name="cafe_authoring",
                               remappings=[rocon_std_msgs.Remapping('/fosters', '/beer/leffe'),
                                           rocon_std_msgs.Remapping('/map', '/cafe/map')],
-                              parameters=[rocon_std_msgs.KeyValue('pickup_point', 'pickup')],
+                              parameters='{pickup_point: pickup}',
                               icon=rocon_utilities.icon_resource_to_msg('concert_roles/map_annotation_icon.png')
                               )
                     )
