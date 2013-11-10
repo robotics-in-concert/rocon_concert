@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # License: BSD
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
@@ -11,6 +10,7 @@ import traceback
 import threading
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
+import concert_roles
 
 # Local imports
 from .concert_service_instance import ConcertServiceInstance
@@ -35,12 +35,13 @@ class ServiceManager(object):
     def __init__(self):
         self.setup_ros_api()
         self.lock = threading.Lock()
+        self._role_app_loader = concert_roles.RoleAppLoader()
 
     def setup_ros_api(self):
         # Service
-        self.srv['add_service'] = rospy.Service('service/add', concert_srv.AddConcertService, self.process_add_concertservice)
-        self.srv['remove_service'] = rospy.Service('service/remove', concert_srv.RemoveConcertService, self.process_remove_concertservice)
-        self.srv['enable_service'] = rospy.Service('service/enable', concert_srv.EnableConcertService, self.process_enable_concertservice)
+        self.srv['add_service'] = rospy.Service('~add', concert_srv.AddConcertService, self.process_add_concertservice)
+        self.srv['remove_service'] = rospy.Service('~remove', concert_srv.RemoveConcertService, self.process_remove_concertservice)
+        self.srv['enable_service'] = rospy.Service('~enable', concert_srv.EnableConcertService, self.process_enable_concertservice)
 
         # Publisher
         self.pub['list_service'] = rospy.Publisher('list_concert_services', concert_msg.ListConcertService, latch=True)
@@ -103,12 +104,12 @@ class ServiceManager(object):
 
         if name in self.concert_services:
             if req.enable:
-                success, message = self.concert_services[name].enable()
+                success, message = self.concert_services[name].enable(self._role_app_loader)
             else:
-                success, message = self.concert_services[name].disable()
+                success, message = self.concert_services[name].disable(self._role_app_loader)
         else:
             service_names = self.concert_services.keys()
-            self.loginfo("[" + str(name) + "] does not exist. Available Services = " + str(service_names))
+            self.loginfo("'" + str(name) + "' does not exist. Available Services = " + str(service_names))
 
         return concert_srv.EnableConcertServiceResponse(success, message)
 
@@ -117,7 +118,7 @@ class ServiceManager(object):
         self.pub['list_service'].publish(rs)
 
     def loginfo(self, msg):
-        rospy.loginfo("Serivce Manager : " + str(msg))
+        rospy.loginfo("Service Manager : " + str(msg))
 
     def spin(self):
         rospy.spin()

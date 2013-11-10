@@ -23,7 +23,7 @@ from .exceptions import InvalidRoleAppYaml
 def load_role_apps_from_yaml(role_app_yaml_resource, service_name):
     role_app_lists = []
     try:
-        yaml_filename = rocon_utilities.find_resource_from_string(role_app_yaml_resource)
+        yaml_filename = rocon_utilities.find_resource_from_string(role_app_yaml_resource, extension='interactions')
     except IOError as e:  # resource not found.
         raise rocon_utilities.exceptions.ResourceNotFoundException(str(e))
     with open(yaml_filename) as f:
@@ -116,3 +116,4 @@ class RoleAppLoader(object):
         except InvalidRoleAppYaml as e:
             raise e
         unused_response = self._set_roles_and_apps_proxy(request)
+        # Should check the response here and return some sort of true/false result.

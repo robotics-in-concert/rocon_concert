@@ -1,7 +1,12 @@
-#!/usr/bin/env python
+#
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+##############################################################################
+# Imports
+##############################################################################
 
 import rospy
-import traceback
 import threading
 import os
 import subprocess
@@ -10,9 +15,17 @@ import unique_id
 import uuid_msgs.msg as uuid_msg
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
+import rocon_utilities
+import concert_roles
+
+##############################################################################
+# Methods
+##############################################################################
+
 
 def dummy_cb():
     pass
+
 
 class ConcertServiceInstance(object):
 
@@ -22,6 +35,10 @@ class ConcertServiceInstance(object):
     thread = None
 
     def __init__(self, service_description=None, env=os.environ, update_callback=dummy_cb):
+        '''
+          @param service_description :
+          @type concert_msgs.msg.ConcertService
+        '''
         self.data = service_description
         self.data.uuid = unique_id.toMsg(unique_id.fromRandom())
 
@@ -31,33 +48,43 @@ class ConcertServiceInstance(object):
     def __del__(self):
         self.proc.kill()
 
-
     def is_enabled(self):
         return self.data.enabled
 
-    def enable(self):
+    def enable(self, role_app_loader):
+        '''
+        @param role_app_loader : used to load role-app configurations on the role manager
+        @type concert_roles.RoleAppLoader
+        '''
         success = False
         message = "Not implemented"
 
         try:
             self.thread = threading.Thread(target=self.run)
             self.thread.start()
-            
+
             while not self.data.enabled and not rospy.is_shutdown():
                 self.loginfo("Waiting service to be enabled")
                 rospy.sleep(1)
 
                 if self.enable_error:
                     raise Exception(self.enable_error_message)
-
+            rospy.logwarn("Service Manager : %s" % self.data.interactions)
+            if self.data.interactions != '':
+                # Can raise ResourceNotFoundException, InvalidRoleAppYaml
+                role_app_loader.load(self.data.interactions, service_name=self.data.name, load=True)
             success = True
             message = "Success"
-        except Exception as e:
+        except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
             success = False
             message = "Error while enabling service : " + str(e)
-        return success, message 
+        return success, message
 
-    def disable(self):
+    def disable(self, role_app_loader):
+        '''
+        @param role_app_loader : used to load role-app configurations on the role manager
+        @type concert_roles.RoleAppLoader
+        '''
         success = False
         message = "Not implemented"
 
@@ -68,23 +95,25 @@ class ConcertServiceInstance(object):
 
         try:
             self.proc.terminate()
-            
+
             count = 0
             force_kill = False
             while self.data.enabled and not rospy.is_shutdown():
-                count = count + 1 
+                count = count + 1
                 rospy.sleep(1)
 
-                if count == 10: # if service does not terminate for 10 secs, force kill
+                if count == 10:  # if service does not terminate for 10 secs, force kill
                     self.loginfo("Waited too long. Force killing..")
                     self.proc.kill()
                     force_kill = True
+            if self.data.interactions != '':
+                # Can raise ResourceNotFoundException, InvalidRoleAppYaml
+                role_app_loader.load(self.data.interactions, service_name=self.data.name, load=False)
             success = True
             message = "Force Killed" if force_kill else "Terminated"
-        except Exception as e:
+        except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
             success = False
             message = "Error while disabling : " + str(e)
-            
         return success, message
 
     def run(self):
@@ -112,7 +141,7 @@ class ConcertServiceInstance(object):
             self.enable_error = True
             self.enable_error_message = str(e)
 
-    def _wait_until_terminates(self): 
+    def _wait_until_terminates(self):
         while not rospy.is_shutdown() and self.proc.poll() is None:
             rospy.sleep(3)
 

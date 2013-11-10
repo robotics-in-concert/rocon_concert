@@ -11,18 +11,10 @@
 import sys
 import argparse
 import rospy
-#import re
-#import itertools
-#import rocon_utilities
+import concert_roles
 import rocon_utilities.console as console
 import concert_msgs.srv as concert_srvs
 import rocon_std_msgs.msg as rocon_std_msgs
-
-##############################################################################
-# Globals
-##############################################################################
-
-service_name = '/concert/get_roles_and_apps'
 
 ##############################################################################
 # Functions
@@ -42,7 +34,7 @@ if __name__ == '__main__':
     
     rospy.init_node('roles_and_apps')
     args = parse_arguments()
-    get_roles_and_apps = rospy.ServiceProxy(service_name, concert_srvs.GetRolesAndApps)
+    get_roles_and_apps = rospy.ServiceProxy(concert_roles.names.topics.get_roles_and_apps, concert_srvs.GetRolesAndApps)
     request = concert_srvs.GetRolesAndAppsRequest()
     request.roles = []
     request.platform_info = rocon_std_msgs.PlatformInfo(

@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+#
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+##############################################################################
+# Imports
+##############################################################################
 
 import rospy
 import yaml
@@ -16,28 +23,8 @@ def load_service_from_file(filename):
         rs.author = yaml_data['author']
         rs.priority = yaml_data['priority']
         rs.launcher = yaml_data['launcher']
-#rs.linkgraph = linkgraph_to_msg(yaml_data['linkgraph'])
-
+        rs.interactions = yaml_data['interactions'] if yaml_data.has_key('interactions') else '' 
     return rs
-
-
-def linkgraph_to_msg(impl):
-
-    lg = LinkGraph()
-
-    for node in impl['nodes']:
-        node['min'] = node['min'] if 'min' in node else 1
-        node['max'] = node['max'] if 'max' in node else 1
-
-        lg.nodes.append(LinkNode(node['id'], node['tuple'], node['min'], node['max'], False))
-    for topic in impl['topics']:
-        lg.topics.append(LinkConnection(topic['id'], topic['type']))
-    for action in impl['actions']:
-        lg.actions.append(LinkConnection(action['id'], action['type']))
-    for edge in impl['edges']:
-        lg.edges.append(LinkEdge(edge['start'], edge['finish'], edge['remap_from'], edge['remap_to']))
-
-    return lg
 
 rospy.init_node('add_srv')
 
@@ -45,8 +32,7 @@ filename = rospy.get_param('~filename')
 
 rs = load_service_from_file(filename)
 
-rospy.wait_for_service('service/add')
-srv = rospy.ServiceProxy('service/add', AddConcertService)
+rospy.wait_for_service('services/add')
+srv = rospy.ServiceProxy('services/add', AddConcertService)
 
 r = srv(rs)
-#rospy.loginfo(str(r))
