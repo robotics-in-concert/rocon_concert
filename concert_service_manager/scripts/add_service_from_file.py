@@ -18,6 +18,13 @@ def load_service_from_file(filename):
         rs.launcher = yaml_data['launcher']
 #rs.linkgraph = linkgraph_to_msg(yaml_data['linkgraph'])
 
+        t = yaml_data.get('launcher_type', 'custom')
+
+        if t == 'roslaunch':
+            rs.launcher_type = ConcertService.TYPE_ROSLAUNCH
+        else:
+            rs.launcher_type = ConcertService.TYPE_CUSTOM
+
     return rs
 
 

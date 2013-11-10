@@ -2,4 +2,5 @@ name: Chatter
 description: Chatting between agents 
 author: YujinRobot
 priority: 2
-launcher: 'roslaunch concert_service chatter.launch'
+launcher_type: roslaunch
+launcher: concert_service/chatter
