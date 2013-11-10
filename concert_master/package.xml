@@ -18,7 +18,7 @@
   <run_depend>rocon_hub</run_depend>
   <run_depend>concert_orchestra</run_depend>
   <run_depend>concert_service</run_depend>
-  <run_depend>concert_manager</run_depend>
+  <run_depend>concert_service_manager</run_depend>
   <run_depend>concert_conductor</run_depend>
   <run_depend>concert_roles</run_depend>
   <run_depend>concert_scheduler</run_depend>
