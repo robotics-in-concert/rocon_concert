@@ -4,3 +4,4 @@ author: YujinRobot
 priority: 2
 launcher_type: roslaunch
 launcher: concert_service/chatter
+human_interactions: concert_tutorial/chatter

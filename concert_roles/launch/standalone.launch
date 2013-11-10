@@ -3,13 +3,24 @@
    of the concert infrastructure.
 -->
 <launch>
-  <!-- ***************************** Concert Master ***************************** -->
-  <node pkg="concert_master" type="master.py" name="master"/>
+  <!-- ******************************* Arguments ******************************* -->
+  <arg name="concert_name" default="Pirate Concert"/>
+  <arg name="concert_icon" default="concert_master/rocon_text.png"/>
+  <arg name="concert_description" default="Pirates in concert."/>
 
-  <!-- ****************************** Role Manager ****************************** -->
   <group ns="concert">
+    <!-- ****************************** Parameters ***************************** -->
+    <param name="name" value="$(arg concert_name)"/>
+    <param name="description" value="$(arg concert_description)"/>
+    <param name="icon" value="$(arg concert_icon)"/>
+  
+    <!-- ******************************** Master ******************************* -->
+    <node pkg="concert_master" type="master.py" name="master"/>
+
+    <!-- ****************************** Role Manager ****************************** -->
     <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
-    <node pkg="concert_roles" type="load_test_roles_and_apps" name="load_test_roles_and_apps"/>
+    <node pkg="concert_roles" type="load_roles_and_apps" name="load_roles_and_apps" args="concert_roles test_roles_and_apps"/>
     <node pkg="concert_roles" type="attach_test_remocon" name="attach_test_remocon"/>
   </group>
 </launch>
+

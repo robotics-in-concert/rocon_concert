@@ -1,0 +1,58 @@
+# A set of test roles and apps.
+
+- role: 'Admin'
+  remocon_apps:
+    - name: com.github.robotics_in_concert.rocon_android.SolutionManager
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Solution Manager
+      description: Configuration manager for the concert
+      max: -1
+    - name: com.github.robotics_in_concert.rocon_android.SolutionMonitor
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Solution Monitor
+      description: Monitors various aspects of the solution
+      max: -1
+- role: 'Dev'
+  remocon_apps:
+    - name: com.github.robotics_in_concert.rocon_android.Pizza
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Pizza Delivery
+      description: Tantalises and tickles the taste buds with a virtual pizza
+      parameters: "{type: super_supreme}"
+- role: 'Pirate'
+  remocon_apps:
+    - name: com.github.robotics_in_concert.rocon_android.Beer
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Beer
+      description: The super sopper
+      remappings:
+        - remap_from: /fosters
+        - remap_to: /beer/leffe
+    - name: com.github.robotics_in_concert.rocon_android_apps.map_annotation.MainActivity
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Map Annotation
+      description: Add semantic information to a metric map
+      icon:
+        resource_name: concert_roles/map_annotation_icon.png
+      parameters: "{pickup_point: pickup}"
+      max: 1

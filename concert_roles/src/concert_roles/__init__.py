@@ -8,3 +8,5 @@
 ##############################################################################
 
 from .manager import RoleManager
+from .role_app_loader import RoleAppLoader
+import names
