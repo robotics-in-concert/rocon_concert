@@ -3,3 +3,4 @@ description: Chatting between agents
 author: YujinRobot
 priority: 2
 launcher: 'roslaunch concert_service chatter.launch'
+human_interactions: concert_tutorial/chatter

@@ -22,14 +22,14 @@ import concert_roles
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Load a list of roles and apps from yaml')
     parser.add_argument('package', type=str, help="package containing the yaml file")
-    parser.add_argument('yaml', type=str, help="yaml filename")
+    parser.add_argument('yaml', type=str, help="interactions configuration yaml (.interactions)")
     parser.add_argument('-s', '--service-name', action='store',
                    default='Cybernetic Piracy',
                    help='service that is loading the role-app table [Cybernetic Piracy]')
     myargs = rospy.myargv(argv=sys.argv)
     args = parser.parse_args(args=myargs[1:])
     if os.path.splitext(args.yaml)[-1] == '':  # no ext given
-        args.yaml = args.yaml + ".yaml"
+        args.yaml = args.yaml + ".interactions"
     return args
 
 ##############################################################################
