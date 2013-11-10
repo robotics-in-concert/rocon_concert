@@ -57,7 +57,7 @@ def setup_role_app_dictionary():
                               description="Configuration manager for the concert",
                               service_name="admin",
                               remappings=[],
-                              parameters=[],
+                              parameters='',
                               )
                    )
     roles['Admin'].append(concert_msgs.RemoconApp(
@@ -67,7 +67,7 @@ def setup_role_app_dictionary():
                               description="Monitors various aspects of the solution.",
                               service_name="admin",
                               remappings=[],
-                              parameters=[]
+                              parameters=''
                               )
                    )
     roles['Dev'].append(concert_msgs.RemoconApp(
@@ -87,7 +87,7 @@ def setup_role_app_dictionary():
                               description="The super sopper.",
                               service_name="leeching",
                               remappings=[rocon_std_msgs.Remapping('/fosters', '/beer/leffe')],
-                              parameters=[]
+                              parameters=''
                               )
                     )
     roles['Guzzler'].append(concert_msgs.RemoconApp(
