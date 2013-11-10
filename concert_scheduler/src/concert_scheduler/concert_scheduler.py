@@ -71,6 +71,7 @@ class ConcertScheduler(object):
             @param : msg
             @type concert_msg.RequestResources
         """
+        self.loginfo("Received request")
         self.lock.acquire()
 
         if msg.enable is True:

@@ -114,7 +114,6 @@ class ConcertServiceInstance(object):
 
     def _wait_until_terminates(self): 
         while not rospy.is_shutdown() and self.proc.poll() is None:
-            self.loginfo("In service")
             rospy.sleep(3)
 
     def to_msg(self):
