@@ -7,6 +7,7 @@
 ##############################################################################
 
 import rospy
+import traceback
 import threading
 import os
 import subprocess
@@ -28,7 +29,6 @@ import concert_roles
 
 def dummy_cb():
     pass
-
 
 class ConcertServiceInstance(object):
 
@@ -93,7 +93,7 @@ class ConcertServiceInstance(object):
         success = False
         message = "Not implemented"
 
-        if self.data.enabled == False:
+        if self.data.enabled is False:
             success = True
             message = "Already disabled"
             return success, message
@@ -108,13 +108,13 @@ class ConcertServiceInstance(object):
 
             if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
                 self.proc.terminate()
-                
+
                 count = 0
                 while self.data.enabled and not rospy.is_shutdown():
-                    count = count + 1 
+                    count = count + 1
                     rospy.sleep(1)
 
-                    if count == 10: # if service does not terminate for 10 secs, force kill
+                    if count == 10:  # if service does not terminate for 10 secs, force kill
                         self.loginfo("Waited too long. Force killing..")
                         self.proc.kill()
                         force_kill = True
@@ -177,7 +177,7 @@ class ConcertServiceInstance(object):
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
             temp.write(launch_text)
             temp.close()
-            
+
             self.roslaunch = roslaunch.parent.ROSLaunchParent(rospy.get_param('/run_id'), [temp.name], is_core=False, process_listeners=(), force_screen=force_screen)
             self.roslaunch._load_config()
             self.roslaunch.start()
@@ -194,7 +194,7 @@ class ConcertServiceInstance(object):
 
         return launch_text
 
-    def _wait_until_terminates(self): 
+    def _wait_until_terminates(self):
 
         launcher_type = self.data.launcher_type
 
@@ -204,7 +204,7 @@ class ConcertServiceInstance(object):
         elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
             while self.roslaunch.pm and not self.roslaunch.pm.done:
                 rospy.sleep(3)
-            
+
     def to_msg(self):
         return self.data
 
