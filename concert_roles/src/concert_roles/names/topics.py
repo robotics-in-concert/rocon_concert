@@ -10,5 +10,5 @@
 # Global names for the concert
 ##############################################################################
 
-get_roles_and_apps = "/concert/interactions/get_roles_and_apps"
-set_roles_and_apps = "/concert/interactions/set_roles_and_apps"
+get_roles_and_apps = "/concert/role_manager/get_roles_and_apps"
+set_roles_and_apps = "/concert/role_manager/set_roles_and_apps"
