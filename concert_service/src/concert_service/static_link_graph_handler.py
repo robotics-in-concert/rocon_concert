@@ -30,8 +30,6 @@ class StaticLinkGraphHandler(object):
         msg.linkgraph = self.linkgraph
         msg.enable = enable 
 
-        rospy.loginfo(str(msg))
-
         self.pub['request_resources'].publish(msg)
         rospy.loginfo("Here")
         
