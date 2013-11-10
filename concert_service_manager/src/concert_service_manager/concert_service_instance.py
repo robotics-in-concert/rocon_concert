@@ -14,8 +14,10 @@ import uuid_msgs.msg as uuid_msg
 import concert_msgs.msg as concert_msg
 import concert_msgs.srv as concert_srv
 
+
 def dummy_cb():
     pass
+
 
 class ConcertServiceInstance(object):
 
@@ -36,7 +38,6 @@ class ConcertServiceInstance(object):
     def __del__(self):
         self.proc.kill()
 
-
     def is_enabled(self):
         return self.data.enabled
 
@@ -47,7 +48,7 @@ class ConcertServiceInstance(object):
         try:
             self.thread = threading.Thread(target=self.run)
             self.thread.start()
-            
+
             while not self.data.enabled and not rospy.is_shutdown():
                 self.loginfo("Waiting service to be enabled")
                 rospy.sleep(1)
@@ -60,13 +61,13 @@ class ConcertServiceInstance(object):
         except Exception as e:
             success = False
             message = "Error while enabling service : " + str(e)
-        return success, message 
+        return success, message
 
     def disable(self):
         success = False
         message = "Not implemented"
 
-        if self.data.enabled == False:
+        if self.data.enabled is False:
             success = True
             message = "Already disabled"
             return success, message
@@ -77,13 +78,13 @@ class ConcertServiceInstance(object):
 
             if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
                 self.proc.terminate()
-                
+
                 count = 0
                 while self.data.enabled and not rospy.is_shutdown():
-                    count = count + 1 
+                    count = count + 1
                     rospy.sleep(1)
 
-                    if count == 10: # if service does not terminate for 10 secs, force kill
+                    if count == 10:  # if service does not terminate for 10 secs, force kill
                         self.loginfo("Waited too long. Force killing..")
                         self.proc.kill()
                         force_kill = True
@@ -92,13 +93,13 @@ class ConcertServiceInstance(object):
 
                 while self.data.enabled and not rospy.is_shutdown():
                     rospy.sleep(1)
-                    
+
             success = True
             message = "Force Killed" if force_kill else "Terminated"
         except Exception as e:
             success = False
             message = "Error while disabling : " + str(e)
-            
+
         return success, message
 
     def run(self):
@@ -148,7 +149,7 @@ class ConcertServiceInstance(object):
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
             temp.write(launch_text)
             temp.close()
-            
+
             self.roslaunch = roslaunch.parent.ROSLaunchParent(rospy.get_param('/run_id'), [temp.name], is_core=False, process_listeners=(), force_screen=force_screen)
             self.roslaunch._load_config()
             self.roslaunch.start()
@@ -165,7 +166,7 @@ class ConcertServiceInstance(object):
 
         return launch_text
 
-    def _wait_until_terminates(self): 
+    def _wait_until_terminates(self):
 
         launcher_type = self.data.launcher_type
 
@@ -175,7 +176,6 @@ class ConcertServiceInstance(object):
         elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
             while self.roslaunch.pm and not self.roslaunch.pm.done:
                 rospy.sleep(3)
-            
 
     def to_msg(self):
         return self.data
