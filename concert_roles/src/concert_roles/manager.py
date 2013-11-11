@@ -178,10 +178,10 @@ class RoleManager(object):
             if count < max:
                 return response
             else:
-                response.error_code = concert_msgs.ErrorCodes.QUOTA_REACHED
-                response.message = concert_msgs.ErrorCodes.MSG_QUOTA_REACHED
+                response.error_code = concert_msgs.ErrorCodes.ROLE_APP_QUOTA_REACHED
+                response.message = concert_msgs.ErrorCodes.MSG_ROLE_APP_QUOTA_REACHED
         else:
-            response.error_code = concert_msgs.ErrorCodes.UNAVAILABLE
-            response.message = concert_msgs.ErrorCodes.MSG_UNAVAILABLE
+            response.error_code = concert_msgs.ErrorCodes.ROLE_APP_UNAVAILABLE
+            response.message = concert_msgs.ErrorCodes.MSG_ROLE_APP_UNAVAILABLE
         response.result = False
         return response
