@@ -23,7 +23,7 @@ class ConcertScheduler(object):
         self.lock = threading.Lock()
         rospy.on_shutdown(self.shutdown)
 
-    def init_variables(self):
+    def _init_variables(self):
         """
             Initialize variables
         """
