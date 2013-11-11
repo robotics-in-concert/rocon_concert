@@ -1,15 +1,12 @@
 <?xml version="1.0"?>
 <package>
-  <name>concert_service_handlers</name>
+  <name>concert_service_roslaunch</name>
   <version>0.5.5</version>
-  <description>The concert_service_handlers package</description>
+  <description>The concert_service_roslaunch package</description>
 
   <maintainer email="jihoonl@yujinrobot.com">Jihoon Lee</maintainer>
 
   <license>BSD</license>
-
-  <!-- <url type="website">http://ros.org/wiki/concert_service</url> -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>rospy</build_depend>
