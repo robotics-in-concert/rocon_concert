@@ -20,7 +20,7 @@ class StaticLinkGraphHandler(object):
         self.sub = {}
 
     def setup_ros_api(self):
-        self.pub['request_resources'] = rospy.Publisher(conert_msg.Strings.REQUEST_RESOURCES, concert_msg.RequestResources)
+        self.pub['request_resources'] = rospy.Publisher(concert_msg.Strings.REQUEST_RESOURCES, concert_msg.RequestResources)
 
     def request_resources(self, enable):
 

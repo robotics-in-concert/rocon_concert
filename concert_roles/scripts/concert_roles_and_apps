@@ -13,6 +13,7 @@ import argparse
 import rospy
 import concert_roles
 import rocon_utilities.console as console
+import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_std_msgs.msg as rocon_std_msgs
 
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     
     rospy.init_node('roles_and_apps')
     args = parse_arguments()
-    get_roles_and_apps = rospy.ServiceProxy(concert_roles.names.topics.get_roles_and_apps, concert_srvs.GetRolesAndApps)
+    get_roles_and_apps = rospy.ServiceProxy(concert_msgs.Strings.GET_ROLES_AND_APPS, concert_srvs.GetRolesAndApps)
     request = concert_srvs.GetRolesAndAppsRequest()
     request.roles = []
     request.platform_info = rocon_std_msgs.PlatformInfo(
@@ -54,5 +55,4 @@ if __name__ == '__main__':
             print(console.cyan + "    Service" + console.reset + "      : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
             for remapping in remocon_app.remappings:
                 print(console.cyan + "    Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
-            for parameter in remocon_app.parameters:
-                print(console.cyan + "    Parameter" + console.reset + "    : " + console.yellow + "[%s, %s]" % (parameter.key, parameter.value) + console.reset)
+            print(console.cyan + "    Parameters" +  console.reset + "  : " + console.yellow + "%s" % remocon_app.parameters + console.reset)
