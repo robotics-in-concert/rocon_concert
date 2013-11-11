@@ -1,6 +1,0 @@
-<!-- Launch this as part of the greater concert. -->
-<launch>
-  <group ns="concert">
-    <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
-  </group>
-</launch>

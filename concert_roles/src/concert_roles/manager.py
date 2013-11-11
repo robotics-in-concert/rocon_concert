@@ -81,7 +81,7 @@ class RoleManager(object):
           namespace.
         '''
         publishers = {}
-        publishers['roles'] = rospy.Publisher('roles', concert_msgs.Roles, latch=True)
+        publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
         return publishers
 
     def _setup_services(self):
@@ -90,13 +90,13 @@ class RoleManager(object):
           namespace.
         '''
         services = {}
-        services['get_roles_and_apps'] = rospy.Service('get_roles_and_apps',
+        services['get_roles_and_apps'] = rospy.Service('~get_roles_and_apps',
                                                        concert_srvs.GetRolesAndApps,
                                                        self._ros_service_filter_roles_and_apps)
-        services['set_roles_and_apps'] = rospy.Service('set_roles_and_apps',
+        services['set_roles_and_apps'] = rospy.Service('~set_roles_and_apps',
                                                        concert_srvs.SetRolesAndApps,
                                                        self._ros_service_set_roles_and_apps)
-        services['request_interaction'] = rospy.Service('request_interaction',
+        services['request_interaction'] = rospy.Service('~request_interaction',
                                                        concert_srvs.RequestInteraction,
                                                        self._ros_service_request_interaction)
         return services

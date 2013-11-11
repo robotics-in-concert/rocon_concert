@@ -18,7 +18,7 @@
     <node pkg="concert_master" type="master.py" name="master"/>
 
     <!-- ****************************** Role Manager ****************************** -->
-    <node pkg="concert_roles" type="role_manager.py" name="role_manager"/>
+    <node pkg="concert_roles" type="role_manager.py" name="interactions"/>
     <node pkg="concert_roles" type="load_roles_and_apps" name="load_roles_and_apps" args="concert_roles test_roles_and_apps"/>
     <node pkg="concert_roles" type="attach_test_remocon" name="attach_test_remocon"/>
   </group>

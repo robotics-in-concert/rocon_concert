@@ -28,6 +28,9 @@
     <!-- ****************************** Scheduler ****************************** -->
     <node pkg="concert_scheduler" name="scheduler" type="scheduler" output="screen"/>
 
+    <!-- **************************** Role Manager ***************************** -->
+    <node pkg="concert_roles" type="role_manager.py" name="interactions"/>
+
     <!-- ******************************** Hub ********************************** -->
     <include file="$(find rocon_hub)/launch/hub.launch">
       <arg name="hub_name" value="$(arg concert_name)" />
