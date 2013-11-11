@@ -30,9 +30,9 @@ import concert_roles
 def dummy_cb():
     pass
 
+
 class ConcertServiceInstance(object):
 
-    data = None
     proc = None
     env = None
     thread = None
@@ -43,9 +43,8 @@ class ConcertServiceInstance(object):
           @param service_description :
           @type concert_msgs.msg.ConcertService
         '''
-        self.data = service_description
-        self.data.uuid = unique_id.toMsg(unique_id.fromRandom())
-        self.namespace = '/' + str(self.data.name)
+        self._description = service_description
+        self.namespace = '/' + str(self._description.name)
 
         self.env = os.environ
         self.update_callback = update_callback
@@ -54,7 +53,7 @@ class ConcertServiceInstance(object):
         self.proc.kill()
 
     def is_enabled(self):
-        return self.data.enabled
+        return self._description.enabled
 
     def enable(self, role_app_loader):
         '''
@@ -68,16 +67,15 @@ class ConcertServiceInstance(object):
             self.thread = threading.Thread(target=self.run)
             self.thread.start()
 
-            while not self.data.enabled and not rospy.is_shutdown():
-                self.loginfo("Waiting service to be enabled")
+            while not self._description.enabled and not rospy.is_shutdown():
+                self.loginfo("waiting for service to be enabled")
                 rospy.sleep(1)
-
                 if self.enable_error:
                     raise Exception(self.enable_error_message)
-            self.logwarn("%s" % self.data.interactions)
-            if self.data.interactions != '':
+            self.logwarn("%s" % self._description.interactions)
+            if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
-                role_app_loader.load(self.data.interactions, service_name=self.data.name, load=True)
+                role_app_loader.load(self._description.interactions, service_name=self._description.name, load=True)
             success = True
             message = "Success"
         except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
@@ -93,24 +91,24 @@ class ConcertServiceInstance(object):
         success = False
         message = "Not implemented"
 
-        if self.data.enabled is False:
+        if self._description.enabled is False:
             success = True
             message = "Already disabled"
             return success, message
 
         try:
-            if self.data.interactions != '':
+            if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
-                role_app_loader.load(self.data.interactions, service_name=self.data.name, load=False)
+                role_app_loader.load(self._description.interactions, service_name=self._description.name, load=False)
 
-            launcher_type = self.data.launcher_type
+            launcher_type = self._description.launcher_type
             force_kill = False
 
             if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
                 self.proc.terminate()
 
                 count = 0
-                while self.data.enabled and not rospy.is_shutdown():
+                while self._description.enabled and not rospy.is_shutdown():
                     count = count + 1
                     rospy.sleep(1)
 
@@ -121,7 +119,7 @@ class ConcertServiceInstance(object):
             elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
                 self.roslaunch.shutdown()
 
-                while self.data.enabled and not rospy.is_shutdown():
+                while self._description.enabled and not rospy.is_shutdown():
                     rospy.sleep(1)
             success = True
             message = "Force Killed" if force_kill else "Terminated"
@@ -133,12 +131,11 @@ class ConcertServiceInstance(object):
     def run(self):
         self._enabling()
 
-        self
-        if self.data.enabled:
+        if self._description.enabled:
             self.update_callback()
             self._wait_until_terminates()
-            self.loginfo("Disabled")
-            self.data.enabled = False
+            self.loginfo("disabled")
+            self._description.enabled = False
             self.update_callback()
 
     def _enabling(self):
@@ -146,20 +143,20 @@ class ConcertServiceInstance(object):
         try:
             self.enable_error = False
             self._start()
-            self.data.enabled = True
+            self._description.enabled = True
             rospy.sleep(1)
             self.loginfo("Enabled")
         except Exception as e:
-            self.loginfo(str(e))
+            self.loginfo("failed to enable %s" % str(e))
             self.enable_error = True
             self.enable_error_message = str(e)
 
     def _start(self):
 
-        launcher_type = self.data.launcher_type
+        launcher_type = self._description.launcher_type
 
         if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
-            launcher = self.data.launcher
+            launcher = self._description.launcher
             launcher = launcher.split(" ")
             self.proc = subprocess.Popen(launcher, env=self.env)
         elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
@@ -170,8 +167,9 @@ class ConcertServiceInstance(object):
 
     def _start_roslaunch(self):
         try:
+            rospy.logwarn("Start roslaunch")
             force_screen = True
-            launch_file = self.data.launcher + '.launch'
+            launch_file = self._description.launcher + '.launch'
             roslaunch_file_path = rocon_utilities.find_resource_from_string(launch_file)
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
@@ -182,6 +180,8 @@ class ConcertServiceInstance(object):
             self.roslaunch._load_config()
             self.roslaunch.start()
         except Exception as e:
+            import sys
+            traceback.print_exc(file=sys.stdout)
             message = "Error while roslaunching.. " + str(e)
             raise Exception(message)
         finally:
@@ -196,7 +196,7 @@ class ConcertServiceInstance(object):
 
     def _wait_until_terminates(self):
 
-        launcher_type = self.data.launcher_type
+        launcher_type = self._description.launcher_type
 
         if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
             while not rospy.is_shutdown() and self.proc.poll() is None:
@@ -206,13 +206,13 @@ class ConcertServiceInstance(object):
                 rospy.sleep(3)
 
     def to_msg(self):
-        return self.data
+        return self._description
 
     def loginfo(self, msg):
-        rospy.loginfo(str(self.data.name) + " : " + str(msg))
+        rospy.loginfo(str(self._description.name) + " : " + str(msg))
 
     def logerr(self, msg):
-        rospy.logerr(str(self.data.name) + " : " + str(msg))
+        rospy.logerr(str(self._description.name) + " : " + str(msg))
 
     def logwarn(self, msg):
-        rospy.logwarn(str(self.data.name) + " : " + str(msg))
+        rospy.logwarn(str(self._description.name) + " : " + str(msg))

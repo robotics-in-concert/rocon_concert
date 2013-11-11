@@ -1,12 +1,18 @@
 <launch>
   <!-- ******************************* Arguments ******************************* -->
+  <!-- Concert -->
   <arg name="concert_name" default="Pirate Concert"/>
   <arg name="concert_icon" default="concert_master/rocon_text.png"/>
   <arg name="concert_description" default="Pirates in concert."/>
+  <!-- Gateways -->
   <arg name="concert_hub_uri" default="http://localhost:6380"/>
-  <arg name="concert_auto_invite" default="true"/>
   <arg name="gateway_watch_loop_period" default="2"/> <!-- Polling period for multimaster advertising/flipping -->
   <arg name="disable_uuids" default="false"/> <!-- manage unique naming of multiple gateways yourself -->
+  <!-- Conductor -->
+  <arg name="concert_auto_invite" default="true"/>
+  <!-- Service Manager -->
+  <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
+  <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
@@ -18,7 +24,10 @@
     <node pkg="concert_master" type="master.py" name="master"/>
 
     <!-- ***************************** Service Manager *************************** -->
-    <include file="$(find concert_service_manager)/launch/service_manager.launch"/>
+    <include file="$(find concert_service_manager)/launch/service_manager.launch">
+      <arg name="service_lists" value="$(arg service_lists)" />
+      <arg name="auto_enable_services" value="$(arg auto_enable_services" />
+    </include>
 
     <!-- ****************************** Conductor ****************************** -->
     <include file="$(find concert_conductor)/launch/conductor.launch">

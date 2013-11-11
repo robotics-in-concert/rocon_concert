@@ -1,3 +1,9 @@
 <launch>
-  <node pkg="concert_service_manager" name="services" type="service_manager" output="screen"/>
+  <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
+  <arg name="auto_enable_services" default="false"/> <!-- autoenable services, e.g. true/false -->
+
+  <node pkg="concert_service_manager" name="services" type="service_manager">
+    <param name="service_lists" value="$(arg service_lists)"/>
+    <param name="auto_enable_services" value="$(arg auto_enable_services)"/>
+  </node>
 </launch>
