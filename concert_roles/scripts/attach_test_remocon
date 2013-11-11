@@ -59,5 +59,6 @@ if __name__ == '__main__':
     status = concert_msgs.RemoconStatus()
     status.platform_info = remocon_platform_info()
     status.running_app = False
+    status.uuid = key.hex
     publisher.publish(status)
     rospy.spin()
