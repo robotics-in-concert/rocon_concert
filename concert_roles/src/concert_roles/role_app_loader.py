@@ -81,7 +81,7 @@ class RoleAppLoader(object):
         Don't do any loading here, just set up infrastructure and overrides from
         the solution.
         '''
-        self._set_roles_and_apps_proxy = rospy.ServiceProxy(concert_msgs.Strings.set_roles_and_apps, concert_srvs.SetRolesAndApps)
+        self._set_roles_and_apps_proxy = rospy.ServiceProxy(concert_msgs.Strings.SET_ROLES_AND_APPS, concert_srvs.SetRolesAndApps)
         try:
             self._set_roles_and_apps_proxy.wait_for_service(5.0)
         except rospy.exceptions.ROSException:
