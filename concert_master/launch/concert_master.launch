@@ -13,6 +13,8 @@
   <!-- Service Manager -->
   <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
+  <!-- Role Manager -->
+  <arg name="concert_roles_and_apps" default="concert_roles test_roles_and_apps"/>
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
@@ -39,6 +41,7 @@
 
     <!-- **************************** Role Manager ***************************** -->
     <node pkg="concert_roles" type="role_manager.py" name="interactions"/>
+    <node pkg="concert_roles" type="load_roles_and_apps" name="load_roles_and_apps" args="$(arg concert_roles_and_apps)"/>
 
     <!-- ******************************** Hub ********************************** -->
     <include file="$(find rocon_hub)/launch/hub.launch">
