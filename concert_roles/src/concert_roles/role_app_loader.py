@@ -12,7 +12,6 @@ import concert_msgs.srv as concert_srvs
 import rocon_utilities
 import yaml
 
-from .names import topics
 from .exceptions import InvalidRoleAppYaml
 
 ##############################################################################
@@ -82,7 +81,7 @@ class RoleAppLoader(object):
         Don't do any loading here, just set up infrastructure and overrides from
         the solution.
         '''
-        self._set_roles_and_apps_proxy = rospy.ServiceProxy(topics.set_roles_and_apps, concert_srvs.SetRolesAndApps)
+        self._set_roles_and_apps_proxy = rospy.ServiceProxy(concert_msgs.Strings.set_roles_and_apps, concert_srvs.SetRolesAndApps)
         try:
             self._set_roles_and_apps_proxy.wait_for_service(5.0)
         except rospy.exceptions.ROSException:
