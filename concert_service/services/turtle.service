@@ -1,6 +1,0 @@
-name: Turtle
-description: Turtlesim service 
-author: Yujinrobot
-priority: 3
-launcher_type: roslaunch
-launcher: concert_service_handlers/turtle
