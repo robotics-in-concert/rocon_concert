@@ -24,7 +24,7 @@ def parse_arguments():
     parser.add_argument('package', type=str, help="package containing the yaml file")
     parser.add_argument('yaml', type=str, help="interactions configuration yaml (.interactions)")
     parser.add_argument('-s', '--service-name', action='store',
-                   default='Cybernetic Piracy',
+                   default='cybernetic_piracy',
                    help='service that is loading the role-app table [Cybernetic Piracy]')
     myargs = rospy.myargv(argv=sys.argv)
     args = parser.parse_args(args=myargs[1:])
