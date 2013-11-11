@@ -236,7 +236,7 @@ class ConcertScheduler(object):
 
             # Check if any node can be paired with already running client
             paired_nodes, reused_client_app_pairs = self._pairs_with_running_clients(nodes, linkgraph)
-            compatibility_tree.print_pairs(reused_client_app_pairs)
+#compatibility_tree.print_pairs(reused_client_app_pairs)
 
             # More client is required?
             remaining_nodes = [n for n in nodes if not n in paired_nodes]
