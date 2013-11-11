@@ -169,8 +169,7 @@ class ConcertServiceInstance(object):
         try:
             rospy.logwarn("Start roslaunch")
             force_screen = True
-            launch_file = self._description.launcher + '.launch'
-            roslaunch_file_path = rocon_utilities.find_resource_from_string(launch_file)
+            roslaunch_file_path = rocon_utilities.find_resource_from_string(self._description.launcher, extension='launch', rospack=rospack)
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
             temp.write(launch_text)
@@ -209,10 +208,10 @@ class ConcertServiceInstance(object):
         return self._description
 
     def loginfo(self, msg):
-        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))
+        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self._description.name)))
 
     def logerr(self, msg):
-        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))
+        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self._description.name)))
 
     def logwarn(self, msg):
-        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))
+        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self._description.name)))
