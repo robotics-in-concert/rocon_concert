@@ -11,6 +11,7 @@ import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
 import compatibility_tree
 from .exceptions import *
 
+
 class ConcertScheduler(object):
 
     POSTFIX_START_APP = '/start_app'
@@ -43,9 +44,10 @@ class ConcertScheduler(object):
 
     def shutdown(self):
         """
-            to clean up concert scheduler. It stops all clients' app 
+            to clean up concert scheduler. It stops all clients' app
         """
-        pass
+        for service_name in self.pairs:
+            self._stop_service(service_name)
 
     def process_list_concert_clients(self, msg):
         """
@@ -204,7 +206,7 @@ class ConcertScheduler(object):
         return list(left_clients)
 
     def _update_services_status(self):
-        """ 
+        """
             Brings up services which can start with currently available clients(or resources)
 
             For each service which needs to be started
@@ -225,12 +227,11 @@ class ConcertScheduler(object):
             nodes = copy.deepcopy(linkgraph.nodes)
             app_pairs = []
 
-
             available_clients = self._get_available_clients()
             cname = [c.name for c in available_clients]
             self.loginfo("Avaialble client : " + str(cname))
 
-            rn = [(n.id, n.tuple) for n in nodes] 
+            rn = [(n.id, n.tuple) for n in nodes]
             self.loginfo("Remaining node : " + str(rn))
 
             # Check if any node can be paired with already running client
@@ -245,7 +246,7 @@ class ConcertScheduler(object):
             cname = [c.name for c in available_clients]
             self.loginfo("Avaialble client : " + str(cname))
 
-            rn = [n.id for n in remaining_nodes] 
+            rn = [n.id for n in remaining_nodes]
             self.loginfo("Remaining node : " + str(rn))
 
             # Pair between remaining node and free cleints
