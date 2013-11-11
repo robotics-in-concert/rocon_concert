@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(concert_service_handlers)
+project(concert_service_roslaunch)
 
 find_package(catkin REQUIRED COMPONENTS rospy)
 
