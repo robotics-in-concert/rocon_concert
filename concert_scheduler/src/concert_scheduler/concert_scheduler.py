@@ -256,7 +256,7 @@ class ConcertScheduler(object):
             app_pairs.extend(new_app_pairs)
 
             # Starts service if it is ready
-            if status is concert_msg.ConcertService.READY:
+            if status is concert_msg.ErrorCodes.SUCCESS:
                 self.pairs[s] = app_pairs
                 self._mark_clients_as_inuse(app_pairs, linkgraph)
                 self._start_service(new_app_pairs, str(s), linkgraph)
