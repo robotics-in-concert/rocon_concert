@@ -30,17 +30,18 @@ class StaticLinkGraphHandler(object):
         msg.linkgraph = self.linkgraph
         msg.enable = enable 
 
-        rospy.loginfo(str(msg))
-
         self.pub['request_resources'].publish(msg)
         rospy.loginfo("Here")
+
+    def shutdown(self):
+        self.request_resources(False)
         
     def spin(self):
         rospy.sleep(3)
         self.request_resources(True)
         rospy.loginfo("Requested")
+        rospy.on_shutdown(self.shutdown) # shutdown hook
         rospy.spin()
 
         rospy.loginfo("Hola!")
-        self.request_resources(False)
         rospy.sleep(3)

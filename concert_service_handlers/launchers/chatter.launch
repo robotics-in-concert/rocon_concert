@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="concert_service_handlers" name="chatter" type="static_link_graph_service.py" output="screen">
+    <param name="filename" value="$(find chatter_concert)/yaml/implementation.yaml"/>
+  </node>
+</launch>

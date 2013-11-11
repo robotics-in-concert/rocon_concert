@@ -74,7 +74,7 @@ class ConcertServiceInstance(object):
 
                 if self.enable_error:
                     raise Exception(self.enable_error_message)
-            rospy.logwarn("Service Manager : %s" % self.data.interactions)
+            self.logwarn("%s" % self.data.interactions)
             if self.data.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self.data.interactions, service_name=self.data.name, load=True)
@@ -213,3 +213,6 @@ class ConcertServiceInstance(object):
 
     def logerr(self, msg):
         rospy.logerr(str(self.data.name) + " : " + str(msg))
+
+    def logwarn(self, msg):
+        rospy.logwarn(str(self.data.name) + " : " + str(msg))

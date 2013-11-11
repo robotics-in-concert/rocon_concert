@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import yaml
-import concert_service
+import concert_service_handlers
 
 from concert_msgs.srv import *
 from concert_msgs.msg import *
@@ -37,5 +37,5 @@ if __name__ == '__main__':
 
     name, impl = load_linkgraph_from_file(filename)
 
-    sgsh =  concert_service.StaticLinkGraphHandler(name, impl)
+    sgsh =  concert_service_handlers.StaticLinkGraphHandler(name, impl)
     sgsh.spin()

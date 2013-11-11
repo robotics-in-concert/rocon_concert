@@ -215,6 +215,14 @@ class ConcertScheduler(object):
             nodes = copy.deepcopy(linkgraph.nodes)
             app_pairs = []
 
+
+            available_clients = self._get_available_clients()
+            cname = [c.name for c in available_clients]
+            self.loginfo("Avaialble client : " + str(cname))
+
+            rn = [(n.id, n.tuple) for n in nodes] 
+            self.loginfo("Remaining node : " + str(rn))
+
             # Check if any node can be paired with already running client
             paired_nodes, reused_client_app_pairs = self._pairs_with_running_clients(nodes, linkgraph)
             compatibility_tree.print_pairs(reused_client_app_pairs)
@@ -225,7 +233,10 @@ class ConcertScheduler(object):
             # Clients who are not running yet
             available_clients = self._get_available_clients()
             cname = [c.name for c in available_clients]
-            self.loginfo("Avaialble client " + str(cname))
+            self.loginfo("Avaialble client : " + str(cname))
+
+            rn = [n.id for n in remaining_nodes] 
+            self.loginfo("Remaining node : " + str(rn))
 
             # Pair between remaining node and free cleints
             status, message, new_app_pairs = compatibility_tree.resolve(remaining_nodes, available_clients)
