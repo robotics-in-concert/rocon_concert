@@ -209,10 +209,10 @@ class ConcertServiceInstance(object):
         return self._description
 
     def loginfo(self, msg):
-        rospy.loginfo(str(self._description.name) + " : " + str(msg))
+        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))
 
     def logerr(self, msg):
-        rospy.logerr(str(self._description.name) + " : " + str(msg))
+        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))
 
     def logwarn(self, msg):
-        rospy.logwarn(str(self._description.name) + " : " + str(msg))
+        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.data.name)))

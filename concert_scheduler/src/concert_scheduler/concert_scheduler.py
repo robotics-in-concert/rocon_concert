@@ -14,28 +14,40 @@ from .exceptions import *
 
 class ConcertScheduler(object):
 
-    sub = {}
-    srv = {}
-
-    services = {}
-    clients = {}
-    inuse = {}
-    pairs = {}
-
-    postfix_start_app = '/start_app'
-    postfix_stop_app = '/stop_app'
-
-    lock = None
+    POSTFIX_START_APP = '/start_app'
+    POSTFIX_STOP_APP = '/stop_app'
 
     def __init__(self):
-        self.lock = threading.Lock()
+        self._init_variables()
         self.setup_ros_api()
+        self.lock = threading.Lock()
+        rospy.on_shutdown(self.shutdown)
+
+    def init_variables(self):
+        """
+            Initialize variables
+        """
+        self.sub = {}
+        self.srv = {}
+
+        self.services = {}
+        self.clients = {}
+        self.inuse = {}
+        self.pairs = {}
+        self.lock = None
 
     def setup_ros_api(self):
         self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msg.ConcertClients, self.process_list_concert_clients)
         self.sub['request_resources'] = rospy.Subscriber('request_resources', concert_msg.RequestResources, self.process_request_resources)
 
         self.srv['resource_status'] = rospy.Service('resource_status', concert_srv.ResourceStatus, self.process_resource_status)
+
+    def shutdown(self):
+        """
+            to clean up concert scheduler. It stops all clients' app
+        """
+        for service_name in self.pairs:
+            self._stop_service(service_name)
 
     def process_list_concert_clients(self, msg):
         """
@@ -170,7 +182,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to stop app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gatewayname + self.postfix_stop_app
+        srv_name = '/' + gatewayname + ConcertScheduler.POSTFIX_STOP_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StopApp)
@@ -194,7 +206,7 @@ class ConcertScheduler(object):
         return list(left_clients)
 
     def _update_services_status(self):
-        """ 
+        """
             Brings up services which can start with currently available clients(or resources)
 
             For each service which needs to be started
@@ -215,12 +227,11 @@ class ConcertScheduler(object):
             nodes = copy.deepcopy(linkgraph.nodes)
             app_pairs = []
 
-
             available_clients = self._get_available_clients()
             cname = [c.name for c in available_clients]
             self.loginfo("Avaialble client : " + str(cname))
 
-            rn = [(n.id, n.tuple) for n in nodes] 
+            rn = [(n.id, n.tuple) for n in nodes]
             self.loginfo("Remaining node : " + str(rn))
 
             # Check if any node can be paired with already running client
@@ -235,7 +246,7 @@ class ConcertScheduler(object):
             cname = [c.name for c in available_clients]
             self.loginfo("Avaialble client : " + str(cname))
 
-            rn = [n.id for n in remaining_nodes] 
+            rn = [n.id for n in remaining_nodes]
             self.loginfo("Remaining node : " + str(rn))
 
             # Pair between remaining node and free cleints
@@ -245,7 +256,7 @@ class ConcertScheduler(object):
             app_pairs.extend(new_app_pairs)
 
             # Starts service if it is ready
-            if status is concert_msg.ConcertService.READY:
+            if status is concert_msg.ErrorCodes.SUCCESS:
                 self.pairs[s] = app_pairs
                 self._mark_clients_as_inuse(app_pairs, linkgraph)
                 self._start_service(new_app_pairs, str(s), linkgraph)
@@ -421,7 +432,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to start app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gateway_name + self.postfix_start_app
+        srv_name = '/' + gateway_name + ConcertScheduler.POSTFIX_START_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StartApp)

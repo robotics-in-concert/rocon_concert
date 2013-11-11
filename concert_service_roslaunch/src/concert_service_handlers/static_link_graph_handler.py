@@ -6,20 +6,21 @@ import std_msgs
 import concert_msgs.msg as concert_msg
 
 class StaticLinkGraphHandler(object):
-    linkgraph = None
 
-    pub = {}
-    sub = {}
 
     def __init__(self, name, linkgraph):
+        self.init_variables(name,linkgraph)
+        self.setup_ros_api()
+
+    def init_variables(self, name, linkgraph):
         self.name = name
         self.linkgraph = linkgraph
 
-        self.setup_ros_api()
+        self.pub = {}
+        self.sub = {}
 
     def setup_ros_api(self):
-        self.pub['request_resources'] = rospy.Publisher('/concert/request_resources', concert_msg.RequestResources)
-        self.pub['test'] = rospy.Publisher('test',std_msgs.msg.String)
+        self.pub['request_resources'] = rospy.Publisher(conert_msg.Strings.REQUEST_RESOURCES, concert_msg.RequestResources)
 
     def request_resources(self, enable):
 

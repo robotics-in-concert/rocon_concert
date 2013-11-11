@@ -14,7 +14,7 @@ def resolve(service_nodes, client_list):
         @type concert_msg.ConcertClient[]
 
         @return result of pairing. message. list of valid pair (service node, client node)
-        @rtype concert_msg.ConcertService.CONSTANT, string, [(LinkNode,ConcertClient)]
+        @rtype concert_msg.ErrorCodes.CONSTANT, string, [(LinkNode,ConcertClient)]
     """
 #    rospy.loginfo("=== Clients ===")
 #    print_dict(c_node)
@@ -66,20 +66,20 @@ def _get_app_client_pair(pair, snodes, clients):
         @param clients: list of remaining availalble clients
         @type concert_msgs.msg.ConcertClient[]
 
-        @return result : constants in concert_msgs.ConcertService which indicates the status of pairing.
+        @return result : constants in concert_msgs.ErrorCodeswhich indicates the status of pairing.
         @rtype int16
 
         @return message : comment
         @rtype string
     """
-    result = concert_msg.ConcertService.UNEXPECTED_ERROR
+    result = concert_msg.ErrorCodes.SERVICE_UNEXPECTED_ERROR
     message = "No iteration yet"
     if len(snodes) == 0:
-        return concert_msg.ConcertService.READY, "Successful Match Making"
+        return concert_msg.ErrorCodes.SUCCESS, "Successful Match Making"
 
     if len(clients) == 0:
         singles = [n.id for n in snodes]
-        return concert_msg.ConcertService.INSUFFICIENT_CLIENTS, "No match for " + str(singles)
+        return concert_msg.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "No match for " + str(singles)
 
     snodes_copy = copy.deepcopy(snodes)
     clients_copy = copy.deepcopy(clients)
@@ -102,7 +102,7 @@ def _get_app_client_pair(pair, snodes, clients):
                 # Go to next depth
                 result, message = _get_app_client_pair(pair, snodes_copy, clients_copy)
 
-                if result is concert_msg.ConcertService.READY:
+                if result is concert_msg.ErrorCodes.SUCCESS:
                     return result, message
 
                 # Return back to current depth
