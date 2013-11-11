@@ -33,11 +33,6 @@ def dummy_cb():
 
 class ConcertServiceInstance(object):
 
-    proc = None
-    env = None
-    thread = None
-    namespace = None
-
     def __init__(self, service_description=None, env=os.environ, update_callback=dummy_cb):
         '''
           @param service_description :
@@ -46,6 +41,8 @@ class ConcertServiceInstance(object):
         self._description = service_description
         self.namespace = '/' + str(self._description.name)
 
+        self.proc = None
+        self.thread = None
         self.env = os.environ
         self.update_callback = update_callback
 
@@ -169,8 +166,7 @@ class ConcertServiceInstance(object):
         try:
             rospy.logwarn("Start roslaunch")
             force_screen = True
-            launch_file = self._description.launcher + '.launch'
-            roslaunch_file_path = rocon_utilities.find_resource_from_string(launch_file)
+            roslaunch_file_path = rocon_utilities.find_resource_from_string(self._description.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
             temp.write(launch_text)
