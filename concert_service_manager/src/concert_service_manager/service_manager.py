@@ -12,6 +12,7 @@ import roslaunch.pmon
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import concert_roles
+import unique_id
 
 # Local imports
 from .concert_service_instance import ConcertServiceInstance
@@ -45,6 +46,7 @@ class ServiceManager(object):
         for service_description in service_descriptions:
             self._concert_services[service_description.name] = ConcertServiceInstance(service_description=service_description,
                                                                                       update_callback=self.update)
+            self._setup_service_parameters(service_description)
         self.lock.release()
         if self._param['auto_enable_services']:
             for service in self._concert_services.values():
@@ -56,6 +58,19 @@ class ServiceManager(object):
         self._param = {}
         self._param['service_lists']        = [x for x in rospy.get_param('~service_lists', '').split(';') if x != '']  #@IgnorePep8
         self._param['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
+
+    def _setup_service_parameters(self, service_description):
+        '''
+          Dump some important information for the services to self-introspect on in the namespace in which
+          they will be started.
+
+          @param service_description : entity with the configured fields for a service
+          @type concert_msgs.ConcertService
+        '''
+        namespace = '/services/' + service_description.name
+        rospy.set_param(namespace + "/name", service_description.name)
+        rospy.set_param(namespace + "/description", service_description.description)
+        rospy.set_param(namespace + "/uuid", unique_id.toHexString(service_description.uuid))
 
     def _setup_ros_api(self):
         self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self.process_enable_concertservice)
