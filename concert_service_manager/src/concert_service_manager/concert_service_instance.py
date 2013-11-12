@@ -68,8 +68,9 @@ class ConcertServiceInstance(object):
                 self.loginfo("waiting for service to be enabled")
                 rospy.rostime.wallsleep(0.5)
                 if self.enable_error:
+                    self.logwarn("failed to enable service [%s]" % self.enable_error_message)
                     raise Exception(self.enable_error_message)
-            self.logwarn("%s" % self._description.interactions)
+            self.loginfo("service enabled")
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self._description.interactions, service_name=self._description.name, load=True)
