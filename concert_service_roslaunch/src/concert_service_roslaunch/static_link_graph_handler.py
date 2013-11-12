@@ -32,7 +32,6 @@ class StaticLinkGraphHandler(object):
         msg.enable = enable 
 
         self.pub['request_resources'].publish(msg)
-        rospy.loginfo("Here")
 
     def shutdown(self):
         self.request_resources(False)
