@@ -73,3 +73,35 @@
           remap_to: annotations/columns
         - remap_from: walls
           remap_to: annotations/walls
+    - name: http://www.google.com
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Google
+      description: Our beloved Google browser
+      icon:
+        resource_name: concert_roles/google_icon.png
+      parameters: "{pickup_point: pickup, map_frame: /map}"
+      remappings:
+        - remap_from: /fosters
+          remap_to: /beer/leffe
+        - remap_from: /kk
+          remap_to: /pedo
+    - name: http://chimek.yujinrobot.com/dorothy/dorothy_web_menu.html
+      platform_info:
+        os: android
+        version: "*"
+        system: ros
+        platform: smart_device
+      display_name: Cafe Dorothy
+      description: Cafe Dorothy web menu
+      icon:
+        resource_name: concert_roles/coffee_icon.png
+      parameters: "{'masterip':'192.168.10.233','bridgeport':9090,'tableid':3}"
+      remappings:
+        - remap_from: /fosters
+          remap_to: /beer/leffe
+        - remap_from: /kk
+          remap_to: /pedo

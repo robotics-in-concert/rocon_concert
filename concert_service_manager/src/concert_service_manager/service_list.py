@@ -82,14 +82,18 @@ def load_service_descriptions_from_service_lists(service_lists):
             service_description = concert_msgs.ConcertService()
             service_yaml = yaml.load(f)
             genpy.message.fill_message_args(service_description, service_yaml)
+            # Validation
             if service_description.launcher_type != concert_msgs.ConcertService.TYPE_ROSLAUNCH and \
                service_description.launcher_type != concert_msgs.ConcertService.TYPE_CUSTOM:
                 rospy.logwarn("Service Manager : invalid service description [%s]" % (filename))
                 continue
+            # Fill in missing fields or modify correctly some values
             service_description.uuid = unique_id.toMsg(unique_id.fromRandom())
+            # We need to make sure the service description name is a valid rosgraph namespace name
+            # @todo Actually call the rosgraph function to validate this (do they have converters?)
+            service_description.name = service_description.name.lower().replace(" ", "_")
             if service_description.name in service_descriptions.keys():
                 rospy.logwarn("Service Manager : service description with this name already present, not adding [%s]" % service_description.name)
             else:
-                #rospy.logwarn("Service Description: \n%s" % service_description)
                 service_descriptions[service_description.name] = service_description
     return service_descriptions.values()
