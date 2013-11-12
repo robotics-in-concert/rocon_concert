@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+##############################################################################
+# Imports
+##############################################################################
 
 import rospy
 import threading
@@ -9,7 +14,10 @@ import rocon_std_msgs.msg as rocon_std_msg
 import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
 
 import compatibility_tree
-from .exceptions import *
+
+##############################################################################
+# Classes
+##############################################################################
 
 
 class ConcertScheduler(object):
@@ -21,7 +29,7 @@ class ConcertScheduler(object):
         self._init_variables()
         self.setup_ros_api()
         self.lock = threading.Lock()
-        rospy.on_shutdown(self.shutdown)
+        rospy.on_shutdown(self._shutdown)
 
     def _init_variables(self):
         """
@@ -36,18 +44,28 @@ class ConcertScheduler(object):
         self.pairs = {}
         self.lock = None
 
+        self._shutting_down = False  # Used to protect self.pairs when shutting down.
+
     def setup_ros_api(self):
         self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msg.ConcertClients, self.process_list_concert_clients)
         self.sub['request_resources'] = rospy.Subscriber('request_resources', concert_msg.RequestResources, self.process_request_resources)
 
         self.srv['resource_status'] = rospy.Service('resource_status', concert_srv.ResourceStatus, self.process_resource_status)
 
-    def shutdown(self):
+    def _shutdown(self):
         """
-            to clean up concert scheduler. It stops all clients' app
+            To clean up concert scheduler. It stops all clients' app. This is called if
+            the ros system receives a shutdown signal.
         """
-        for service_name in self.pairs:
+        # ros system is shutting down here...use the lock just in case we are inside the update loop
+        # which is adding to the pairs.
+        self.lock.acquire()
+        self.loginfo("shutting down.")
+        pairs = copy.deepcopy(self.pairs)
+        for service_name in pairs:
+            # In the stop service, we actually remove pairs one by one.
             self._stop_service(service_name)
+        self.lock.release()
 
     def process_list_concert_clients(self, msg):
         """
@@ -83,22 +101,24 @@ class ConcertScheduler(object):
             @param : msg
             @type concert_msg.RequestResources
         """
-        self.loginfo("Received request")
         self.lock.acquire()
+        self.loginfo("received request for resources.")
 
         if msg.enable is True:
             self.services[msg.service_name] = msg.linkgraph
         else:
+            self.loginfo("disabling")
             if msg.service_name in self.pairs:
                 self._stop_service(msg.service_name)
             if msg.service_name in self.services:
                 del self.services[msg.service_name]
             else:
-                self.loginfo("[" + str(msg.service_name) + "] does not exist. Available Service " + str(self.services.keys()))
+                self.loginfo("'" + str(msg.service_name) + "' does not exist [%s]" % str(self.services.keys()))
 
         self._update_services_status()
 
         self.lock.release()
+        self.loginfo("received request released.")
 
     def _stop_services_of_left_clients(self, clients):
         """
@@ -147,8 +167,6 @@ class ConcertScheduler(object):
             service_node_name = service_node.id
             _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
 
-            self.loginfo("Node : " + str(service_node_name) + "\tApp : " + str(service_app_name) + "\tClient : " + str(client_node.name))
-
             is_need_to_stop = self._unmark_client_as_inuse(client_node.gateway_name)
 
             if not client_node.gateway_name in left_client_gateways:
@@ -160,7 +178,7 @@ class ConcertScheduler(object):
                     req = rapp_mamanager_srvs.StopAppRequest()
 
                     # Request
-                    self.loginfo("    stopping...")
+                    self.loginfo(" stopping client app [%s][%s][%s]" % (str(service_node_name), str(service_app_name), str(client_node.name)))
                     resp = stop_app_srv(req)
 
                     if not resp.stopped:
@@ -394,7 +412,7 @@ class ConcertScheduler(object):
             @param linkgraph: for service remapping
             @type concert_msg.LinkGraph
         """
-        self.loginfo("Starting apps for " + str(service_name))
+        self.loginfo("starting apps for " + str(service_name))
 
         for p in pairs:
             service_node, client_node = p
@@ -418,7 +436,7 @@ class ConcertScheduler(object):
             if not resp.started:
                 message = resp.message
                 raise FailedToStartAppsException(message)
-        self.loginfo(str(service_name) + " has been started")
+        self.loginfo("'" + str(service_name) + "' has been started")
 
     def _get_start_client_app_service(self, gateway_name):
         """
