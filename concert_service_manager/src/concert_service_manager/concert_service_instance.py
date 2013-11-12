@@ -39,7 +39,7 @@ class ConcertServiceInstance(object):
           @type concert_msgs.msg.ConcertService
         '''
         self._description = service_description
-        self.namespace = '/' + str(self._description.name)
+        self.namespace = '/services/' + str(self._description.name)
 
         self.proc = None
         self.thread = None
