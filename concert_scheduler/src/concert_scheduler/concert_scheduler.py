@@ -160,14 +160,12 @@ class ConcertScheduler(object):
                     req = rapp_mamanager_srvs.StopAppRequest()
 
                     # Request
-                    self.loginfo("    Stopping...")
+                    self.loginfo("    stopping...")
                     resp = stop_app_srv(req)
 
                     if not resp.stopped:
                         message = "Failed to stop[" + str(service_app_name) + "] in [" + str(client_node.name) + "]"
                         raise Exception(message)
-                    else:
-                        self.loginfo("    Done")
             else:
                 self.loginfo(str(client_node.name) + " has already left")
 
@@ -420,8 +418,6 @@ class ConcertScheduler(object):
             if not resp.started:
                 message = resp.message
                 raise FailedToStartAppsException(message)
-            else:
-                self.loginfo("    Done")
         self.loginfo(str(service_name) + " has been started")
 
     def _get_start_client_app_service(self, gateway_name):

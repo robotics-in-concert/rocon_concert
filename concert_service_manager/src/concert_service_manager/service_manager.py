@@ -24,9 +24,6 @@ from .service_list import load_service_descriptions_from_service_lists
 
 class ServiceManager(object):
 
-    last_list_concert_client = []
-    lock = None
-
     def __init__(self):
         self._param = {}
         self._services = {}
@@ -41,7 +38,7 @@ class ServiceManager(object):
 
     def _initialise_concert_services(self):
         '''
-          Currently only called at the end of construction.
+          Currently only called at the end of service manager construction.
         '''
         self.lock.acquire()
         service_descriptions = load_service_descriptions_from_service_lists(self._param['service_lists'])

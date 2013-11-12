@@ -29,18 +29,17 @@ class StaticLinkGraphHandler(object):
         msg = concert_msg.RequestResources()
         msg.service_name = self.name
         msg.linkgraph = self.linkgraph
-        msg.enable = enable 
+        msg.enable = enable
 
         self.pub['request_resources'].publish(msg)
 
     def shutdown(self):
         self.request_resources(False)
-        
+
     def spin(self):
         rospy.sleep(3)
         self.request_resources(True)
-        rospy.loginfo("Requested")
-        rospy.on_shutdown(self.shutdown) # shutdown hook
+        rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
 
         rospy.loginfo("Hola!")
