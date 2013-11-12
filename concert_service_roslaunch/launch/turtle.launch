@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="concert_service_handlers" name="turtle" type="static_link_graph_service.py" output="screen">
+  <node pkg="concert_service_roslaunch" name="turtle" type="static_link_graph_service.py" output="screen">
     <param name="filename" value="$(find turtle_concert)/yaml/implementation.yaml"/>
   </node>
 </launch>
