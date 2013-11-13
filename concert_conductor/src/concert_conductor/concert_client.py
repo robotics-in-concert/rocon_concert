@@ -173,8 +173,11 @@ class ConcertClient(object):
           @rtype rapp_manager_srvs.InviteResponse
         '''
         req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, not ok_flag)
-        resp = self._invite_service(req)
-
+        try:
+            resp = self._invite_service(req)
+        except rospy.service.ServiceException:
+            # Couldn't get any data from sender's service provider (something wrong with the client)
+            resp.result = False
         if resp.result == True:
             self._setup_service_proxies()
         else:

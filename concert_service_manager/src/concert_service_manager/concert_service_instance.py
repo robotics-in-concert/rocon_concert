@@ -39,7 +39,7 @@ class ConcertServiceInstance(object):
           @type concert_msgs.msg.ConcertService
         '''
         self._description = service_description
-        self.namespace = '/' + str(self._description.name)
+        self.namespace = '/services/' + str(self._description.name)
 
         self.proc = None
         self.thread = None
@@ -66,10 +66,11 @@ class ConcertServiceInstance(object):
 
             while not self._description.enabled and not rospy.is_shutdown():
                 self.loginfo("waiting for service to be enabled")
-                rospy.sleep(1)
+                rospy.rostime.wallsleep(0.5)
                 if self.enable_error:
+                    self.logwarn("failed to enable service [%s]" % self.enable_error_message)
                     raise Exception(self.enable_error_message)
-            self.logwarn("%s" % self._description.interactions)
+            self.loginfo("service enabled")
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self._description.interactions, service_name=self._description.name, load=True)
@@ -142,7 +143,6 @@ class ConcertServiceInstance(object):
             self._start()
             self._description.enabled = True
             rospy.sleep(1)
-            self.loginfo("Enabled")
         except Exception as e:
             self.loginfo("failed to enable %s" % str(e))
             self.enable_error = True

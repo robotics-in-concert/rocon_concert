@@ -1,15 +1,25 @@
 #!/usr/bin/env python
+#
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+##############################################################################
+# Imports
+##############################################################################
 
 import rospy
 
-import std_msgs
-import concert_msgs.msg as concert_msg
+import concert_msgs.msg as concert_msgs
+
+##############################################################################
+# Classes
+##############################################################################
+
 
 class StaticLinkGraphHandler(object):
 
-
     def __init__(self, name, linkgraph):
-        self.init_variables(name,linkgraph)
+        self.init_variables(name, linkgraph)
         self.setup_ros_api()
 
     def init_variables(self, name, linkgraph):
@@ -20,28 +30,25 @@ class StaticLinkGraphHandler(object):
         self.sub = {}
 
     def setup_ros_api(self):
-        self.pub['request_resources'] = rospy.Publisher(concert_msg.Strings.REQUEST_RESOURCES, concert_msg.RequestResources)
+        self.pub['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources)
 
     def request_resources(self, enable):
 
-        rospy.loginfo("Enable : " + str(enable))
+        rospy.loginfo("enable : " + str(enable))
 
-        msg = concert_msg.RequestResources()
+        msg = concert_msgs.RequestResources()
         msg.service_name = self.name
         msg.linkgraph = self.linkgraph
-        msg.enable = enable 
+        msg.enable = enable
 
         self.pub['request_resources'].publish(msg)
 
     def shutdown(self):
         self.request_resources(False)
-        
+
     def spin(self):
         rospy.sleep(3)
         self.request_resources(True)
-        rospy.loginfo("Requested")
-        rospy.on_shutdown(self.shutdown) # shutdown hook
+        rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
-
-        rospy.loginfo("Hola!")
         rospy.sleep(3)
