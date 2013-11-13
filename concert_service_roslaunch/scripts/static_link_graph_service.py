@@ -38,7 +38,8 @@ if __name__ == '__main__':
 
     filename = rospy.get_param('~filename')
 
-    name, impl = load_linkgraph_from_file(filename)
+    impl_name, impl = load_linkgraph_from_file(filename)
+    name = rospy.get_param("name",impl_name)
 
     sgsh =  concert_service_roslaunch.StaticLinkGraphHandler(name, impl)
     sgsh.spin()
