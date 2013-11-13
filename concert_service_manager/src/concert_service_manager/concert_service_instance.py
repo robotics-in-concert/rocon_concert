@@ -108,7 +108,7 @@ class ConcertServiceInstance(object):
                 count = 0
                 while self._description.enabled and not rospy.is_shutdown():
                     count = count + 1
-                    rospy.wallsleep(1)
+                    rospy.rostime.wallsleep(1)
 
                     if count == 10:  # if service does not terminate for 10 secs, force kill
                         self.loginfo("Waited too long. Force killing..")
@@ -118,7 +118,7 @@ class ConcertServiceInstance(object):
                 self.roslaunch.shutdown()
 
                 while self._description.enabled and not rospy.is_shutdown():
-                    rospy.wallsleep(1)
+                    rospy.rostime.wallsleep(1)
             success = True
             message = "Force Killed" if force_kill else "Terminated"
         except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
@@ -142,7 +142,7 @@ class ConcertServiceInstance(object):
             self.enable_error = False
             self._start()
             self._description.enabled = True
-            rospy.wallsleep(1)
+            rospy.rostime.wallsleep(1)
         except Exception as e:
             self.loginfo("failed to enable %s" % str(e))
             self.enable_error = True
@@ -196,10 +196,10 @@ class ConcertServiceInstance(object):
 
         if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
             while not rospy.is_shutdown() and self.proc.poll() is None:
-                rospy.wallsleep(3)
+                rospy.rostime.wallsleep(3)
         elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
             while self.roslaunch.pm and not self.roslaunch.pm.done:
-                rospy.wallsleep(3)
+                rospy.rostime.wallsleep(3)
 
     def to_msg(self):
         return self._description
