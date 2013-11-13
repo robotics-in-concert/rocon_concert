@@ -47,7 +47,7 @@ class StaticLinkGraphHandler(object):
         self.request_resources(False)
 
     def spin(self):
-        rospy.wallsleep(3)
+        rospy.rostime.wallsleep(3)
         self.request_resources(True)
         rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
