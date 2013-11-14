@@ -30,7 +30,7 @@ class StaticLinkGraphHandler(object):
         self.sub = {}
 
     def setup_ros_api(self):
-        self.pub['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources)
+        self.pub['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)
 
     def request_resources(self, enable):
 
@@ -47,7 +47,6 @@ class StaticLinkGraphHandler(object):
         self.request_resources(False)
 
     def spin(self):
-        rospy.rostime.wallsleep(3)
         self.request_resources(True)
         rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
