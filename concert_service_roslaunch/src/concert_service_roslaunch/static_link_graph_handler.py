@@ -21,6 +21,7 @@ class StaticLinkGraphHandler(object):
     def __init__(self, name, linkgraph):
         self.init_variables(name, linkgraph)
         self.setup_ros_api()
+        rospy.on_shutdown(self.shutdown)  # shutdown hook
 
     def init_variables(self, name, linkgraph):
         self.name = name
@@ -48,5 +49,4 @@ class StaticLinkGraphHandler(object):
 
     def spin(self):
         self.request_resources(True)
-        rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
