@@ -33,6 +33,7 @@ class StaticLinkGraphHandler(object):
         self.linkgraph = linkgraph
         self.pub = {}
         self._setup_ros_api()
+        rospy.on_shutdown(self.shutdown)  # shutdown hook
 
     def _setup_ros_api(self):
         self.pub['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)
@@ -46,7 +47,7 @@ class StaticLinkGraphHandler(object):
         msg.enable = enable
 
         self.pub['request_resources'].publish(msg)
-        rospy.on_shutdown(self.shutdown)  # shutdown hook
+
 
     def shutdown(self):
         self.request_resources(False)

@@ -173,6 +173,7 @@ class ConcertClient(object):
           @rtype rapp_manager_srvs.InviteResponse
         '''
         req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, not ok_flag)
+        resp = rapp_manager_srvs.InviteResponse()
         try:
             resp = self._invite_service(req)
         except rospy.service.ServiceException:
