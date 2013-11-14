@@ -17,23 +17,27 @@ import concert_msgs.msg as concert_msgs
 
 
 class StaticLinkGraphHandler(object):
+    __slots__ = [
+        'name',
+        'description',
+        'uuid',
+        'linkgraph',
+        'pub',
+        'sub'
+    ]
 
-    def __init__(self, name, linkgraph):
-        self.init_variables(name, linkgraph)
-        self.setup_ros_api()
-
-    def init_variables(self, name, linkgraph):
+    def __init__(self, name, description, uuid, linkgraph):
         self.name = name
+        self.description = description
+        self.uuid = uuid
         self.linkgraph = linkgraph
-
         self.pub = {}
-        self.sub = {}
+        self._setup_ros_api()
 
-    def setup_ros_api(self):
+    def _setup_ros_api(self):
         self.pub['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)
 
     def request_resources(self, enable):
-
         rospy.loginfo("enable : " + str(enable))
 
         msg = concert_msgs.RequestResources()
@@ -42,11 +46,11 @@ class StaticLinkGraphHandler(object):
         msg.enable = enable
 
         self.pub['request_resources'].publish(msg)
+        rospy.on_shutdown(self.shutdown)  # shutdown hook
 
     def shutdown(self):
         self.request_resources(False)
 
     def spin(self):
         self.request_resources(True)
-        rospy.on_shutdown(self.shutdown)  # shutdown hook
         rospy.spin()
