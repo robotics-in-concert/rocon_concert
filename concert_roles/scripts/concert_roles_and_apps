@@ -53,6 +53,11 @@ if __name__ == '__main__':
             print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
             print(console.cyan + "    Platform Info" + console.reset + ": " + console.yellow + "%s.%s.%s.%s" % (remocon_app.platform_info.os, remocon_app.platform_info.version, remocon_app.platform_info.platform, remocon_app.platform_info.system) + console.reset)
             print(console.cyan + "    Service" + console.reset + "      : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
+            if remocon_app.max == -1:
+                print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset)
+            else:
+                print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "%s" % remocon_app.max + console.reset)
             for remapping in remocon_app.remappings:
                 print(console.cyan + "    Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
-            print(console.cyan + "    Parameters" +  console.reset + "  : " + console.yellow + "%s" % remocon_app.parameters + console.reset)
+            print(console.cyan + "    Parameters" +  console.reset + "   : " + console.yellow + "%s" % remocon_app.parameters + console.reset)
+            print(console.cyan + "    Hash" + console.reset + "         : " + console.yellow + "%s" % remocon_app.hash + console.reset)

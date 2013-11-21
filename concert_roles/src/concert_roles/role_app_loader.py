@@ -11,6 +11,7 @@ import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_utilities
 import yaml
+import zlib  # crc32
 
 from .exceptions import InvalidRoleAppYaml
 
@@ -20,6 +21,15 @@ from .exceptions import InvalidRoleAppYaml
 
 
 def load_role_apps_from_yaml(role_app_yaml_resource, service_name):
+    '''
+      @param role_app_yaml_resource : location of the yaml configuration in rocon resource format (e.g. 'rocon_gateway/icon.png')
+      @type str
+
+      @param service_name : guaranteed to be unique, this ensures app a is
+                            registered differently if there are multiple instances
+                            of a service
+      @type str
+    '''
     role_app_lists = []
     try:
         yaml_filename = rocon_utilities.find_resource_from_string(role_app_yaml_resource, extension='interactions')
@@ -45,6 +55,12 @@ def _finalise_role_app_list(role_app_list, service_name):
         - validate the role_app_list
         - check if non-compulsory fields have been set, if not set defaults
         - extract the icon from a resource name
+
+      @param role_app_list
+      @type : concert_msgs.RoleAppList
+
+      @param service_name : unique name for the service
+      @type str
     '''
     # Validate
     for remocon_app in role_app_list.remocon_apps:
@@ -57,6 +73,11 @@ def _finalise_role_app_list(role_app_list, service_name):
             remocon_app.icon.resource_name = 'concert_master/rocon_text.png'
         remocon_app.icon = rocon_utilities.icon_resource_to_msg(remocon_app.icon.resource_name)
         remocon_app.service_name = service_name
+        # Give it a hash id unqiuely corresponding to the unique service_name-role-name triple.
+        # Might be worth checking here http://docs.python.org/2.7/library/zlib.html#zlib.crc32 if
+        # this doesn't produce the same hash on all platforms.
+        remocon_app.hash = zlib.crc32(remocon_app.service_name + "-" + role_app_list.role + "-" + remocon_app.name)
+        remocon_app.role = role_app_list.role
     return role_app_list
 
 

@@ -131,6 +131,19 @@ class RoleManager(object):
         #print 'roles_and_apps service result: %s' % roles_and_apps
         return roles_and_apps
 
+    def _ros_service_get_app(self, request):
+        '''
+          Handle incoming requests for a single app.
+        '''
+        response = concert_srvs.GetAppResponse()
+        for role in self.role_and_app_table.keys():
+            for app in self.role_and_app_table[role]:
+                if request.hash == app.hash:
+                    if remocon_app_utils.is_runnable(app, request.platform_info):
+                        response.app = app
+                        break
+        return response
+
     def _ros_service_set_roles_and_apps(self, request):
         '''
           Add or remove role-app entries from the role-app table.
