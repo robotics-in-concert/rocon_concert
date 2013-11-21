@@ -93,6 +93,9 @@ class RoleManager(object):
         services['get_roles_and_apps'] = rospy.Service('~get_roles_and_apps',
                                                        concert_srvs.GetRolesAndApps,
                                                        self._ros_service_filter_roles_and_apps)
+        services['get_app'] = rospy.Service('~get_app',
+                                                       concert_srvs.GetApp,
+                                                       self._ros_service_get_app)
         services['set_roles_and_apps'] = rospy.Service('~set_roles_and_apps',
                                                        concert_srvs.SetRolesAndApps,
                                                        self._ros_service_set_roles_and_apps)
