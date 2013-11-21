@@ -139,11 +139,13 @@ class RoleManager(object):
           Handle incoming requests for a single app.
         '''
         response = concert_srvs.GetAppResponse()
+        response.result = False
         for role in self.role_and_app_table.keys():
             for app in self.role_and_app_table[role]:
                 if request.hash == app.hash:
                     if remocon_app_utils.is_runnable(app, request.platform_info):
                         response.app = app
+                        response.result = True
                         break
         return response
 
