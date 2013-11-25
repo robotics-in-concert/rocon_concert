@@ -29,7 +29,6 @@ class ConcertScheduler(object):
         self._init_variables()
         self.setup_ros_api()
         self.lock = threading.Lock()
-        rospy.on_shutdown(self._shutdown)
 
     def _init_variables(self):
         """
@@ -51,21 +50,6 @@ class ConcertScheduler(object):
         self.sub['request_resources'] = rospy.Subscriber('request_resources', concert_msg.RequestResources, self.process_request_resources)
 
         self.srv['resource_status'] = rospy.Service('resource_status', concert_srv.ResourceStatus, self.process_resource_status)
-
-    def _shutdown(self):
-        """
-            To clean up concert scheduler. It stops all clients' app. This is called if
-            the ros system receives a shutdown signal.
-        """
-        # ros system is shutting down here...use the lock just in case we are inside the update loop
-        # which is adding to the pairs.
-        self.lock.acquire()
-        self.loginfo("shutting down.")
-        pairs = copy.deepcopy(self.pairs)
-        for service_name in pairs:
-            # In the stop service, we actually remove pairs one by one.
-            self._stop_service(service_name)
-        self.lock.release()
 
     def process_list_concert_clients(self, msg):
         """
@@ -116,9 +100,7 @@ class ConcertScheduler(object):
                 self.loginfo("'" + str(msg.service_name) + "' does not exist [%s]" % str(self.services.keys()))
 
         self._update_services_status()
-
         self.lock.release()
-        self.loginfo("received request released.")
 
     def _stop_services_of_left_clients(self, clients):
         """
