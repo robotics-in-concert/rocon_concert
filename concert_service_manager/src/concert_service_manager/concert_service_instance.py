@@ -58,7 +58,7 @@ class ConcertServiceInstance(object):
         @type concert_roles.RoleAppLoader
         '''
         success = False
-        message = "Not implemented"
+        message = "Unknown error"
 
         try:
             self.thread = threading.Thread(target=self.run)
@@ -81,17 +81,20 @@ class ConcertServiceInstance(object):
             message = "Error while enabling service : " + str(e)
         return success, message
 
-    def disable(self, role_app_loader):
+    def disable(self, role_app_loader, unload_resources):
         '''
         @param role_app_loader : used to load role-app configurations on the role manager
         @type concert_roles.RoleAppLoader
+
+        @param unload_resources callback to the scheduler's request resource which will unload all resources for that service.
+        @type _foo_(service_name)
         '''
         success = False
-        message = "Not implemented"
+        message = "Unknown error"
 
         if self._description.enabled is False:
             success = True
-            message = "Already disabled"
+            message = "already disabled"
             return success, message
 
         try:
@@ -111,19 +114,19 @@ class ConcertServiceInstance(object):
                     rospy.rostime.wallsleep(1)
 
                     if count == 10:  # if service does not terminate for 10 secs, force kill
-                        self.loginfo("Waited too long. Force killing..")
+                        self.loginfo("waited too long, force killing..")
                         self.proc.kill()
                         force_kill = True
             elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
+                rospy.loginfo("shutting down roslaunched concert service [%s]" % self._description.name)
                 self.roslaunch.shutdown()
-
-                while self._description.enabled and not rospy.is_shutdown():
-                    rospy.rostime.wallsleep(1)
+            # contact the scheduler and request it to unload all resources
+            unload_resources(self._description.name)
             success = True
-            message = "Force Killed" if force_kill else "Terminated"
+            message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
         except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
             success = False
-            message = "Error while disabling : " + str(e)
+            message = "error while disabling [%s]" % str(e)
         return success, message
 
     def run(self):

@@ -73,23 +73,36 @@ class ServiceManager(object):
         rospy.set_param(namespace + "/uuid", unique_id.toHexString(service_description.uuid))
 
     def _setup_ros_api(self):
-        self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self.process_enable_concertservice)
+        self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self._ros_service_enable_concert_service)
         self._publishers['list_concert_services'] = rospy.Publisher('list_concert_services', concert_msgs.ConcertServices, latch=True)
+        self._publishers['request_resources']     = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)  #@IgnorePep8
 
-    def process_enable_concertservice(self, req):
+    def _unload_resources(self, service_name):
+        request_resources = concert_msgs.RequestResources()
+        request_resources.service_name = service_name
+        request_resources.enable = False
+        self._publishers['request_resources'].publish(request_resources)
+
+    def _ros_service_enable_concert_service(self, req):
         name = req.concertservice_name
 
         success = False
-        message = "Not Implemented"
+        message = "unknown error"
 
+        if req.enable:
+            self.loginfo("serving request to enable '%s'" % name)
+        else:
+            self.loginfo("serving request to disable '%s'" % name)
         if name in self._concert_services:
             if req.enable:
                 success, message = self._concert_services[name].enable(self._role_app_loader)
             else:
-                success, message = self._concert_services[name].disable(self._role_app_loader)
+                success, message = self._concert_services[name].disable(self._role_app_loader, self._unload_resources)
         else:
             service_names = self._concert_services.keys()
-            self.loginfo("'" + str(name) + "' does not exist. Available Services = " + str(service_names))
+            message = "'" + str(name) + "' does not exist " + str(service_names)
+            self.logwarn(message)
+            success = False
 
         return concert_srvs.EnableConcertServiceResponse(success, message)
 
@@ -99,6 +112,9 @@ class ServiceManager(object):
 
     def loginfo(self, msg):
         rospy.loginfo("Service Manager : " + str(msg))
+
+    def logwarn(self, msg):
+        rospy.logwarn("Service Manager : " + str(msg))
 
     def spin(self):
         rospy.spin()
