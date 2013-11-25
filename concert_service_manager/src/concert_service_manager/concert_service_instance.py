@@ -101,7 +101,6 @@ class ConcertServiceInstance(object):
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self._description.interactions, service_name=self._description.name, load=False)
-
             launcher_type = self._description.launcher_type
             force_kill = False
 

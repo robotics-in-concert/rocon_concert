@@ -169,6 +169,9 @@ class ConcertClient(object):
                                         so they can flip us topics...
           @type str
 
+          @param client_local_name : this configures the default namespace used by the client
+          @type str
+
           @return result of the invitation
           @rtype rapp_manager_srvs.InviteResponse
         '''

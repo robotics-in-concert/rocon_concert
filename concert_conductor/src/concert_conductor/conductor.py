@@ -44,12 +44,13 @@ class Conductor(object):
             self._remote_gateway_info_service.wait_for_service()
         except rospy.ServiceException, e:
             raise e
+        rospy.on_shutdown(self._shutdown)
 
         ##################################
         # Variables
         ##################################
         # Keys are client human friendly names, values the client class themselves
-        self._concert_clients = {}  # List of concert_clients, both visible and out of range
+        self._concert_clients = {}  # Dict of name : conductor.ConcertClient, both visible and out of range
         self._invited_clients = {}  # Clients that have previously been invited, but disappeared
         # List of gateway names identifying bad clients
         self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
@@ -101,7 +102,6 @@ class Conductor(object):
             # If auto_invite is true
             #   Invite all available clients
             # If there is a change in the list, update the topic
-
 
             gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
             local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
@@ -157,6 +157,19 @@ class Conductor(object):
             if number_of_pruned_clients != 0 or number_of_new_clients != 0:
                 self._publish_discovered_concert_clients()
             rospy.rostime.wallsleep(self._watcher_period)  # human time
+
+    def _shutdown(self):
+        """
+            Last thing to do as a concert is shutting down - send an uninvite
+            to all concert clients which will stop any apps currently running.
+        """
+        for client_name, unused_client in self._concert_clients.iteritems():
+            rospy.logwarn("uninviting client [%s]" % client_name)
+            unused_response = self._concert_clients[client_name].invite(self._concert_name, client_name, False)
+#            if response.result:
+#                rospy.logwarn("  uninvited")
+#            else:
+#                rospy.logwarn("  failed to uninvite")
 
     ###########################################################################
     # Ros Callbacks
