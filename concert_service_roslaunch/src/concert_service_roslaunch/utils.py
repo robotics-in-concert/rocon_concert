@@ -7,10 +7,14 @@
 # Imports
 ##############################################################################
 
-import rospy
 import yaml
 
 from concert_msgs.msg import *
+
+##############################################################################
+# Methods
+##############################################################################
+
 
 def load_linkgraph_from_file(filename):
     """
@@ -18,20 +22,20 @@ def load_linkgraph_from_file(filename):
 
         @param filename - yaml file
         @type str
-        
+
         @return name - name of linkgraph
         @rtype str
-        @return linkgraph 
+        @return linkgraph
         @rtype concert_msgs.msg.LinkGraph
     """
 
-    lg = LinkGraph() 
+    lg = LinkGraph()
     name = "None"
 
     with open(filename) as f:
         impl = yaml.load(f)
-        name = impl['name'] 
-        
+        name = impl['name']
+
         for node in impl['nodes']:
             node['min'] = node['min'] if 'min' in node else 1
             node['max'] = node['max'] if 'max' in node else 1
