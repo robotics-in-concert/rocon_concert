@@ -59,8 +59,16 @@ def matches(remocon_app_a, remocon_app_b):
 def is_app_in_app_list(remocon_app, remocon_app_list):
     '''
       Checks for a matching listing of the app in the app list.
+
+      @param remocon_app
+      @type concert_msgs.RemoconApp
+      @param remocon_app_list
+      @type concert_msgs.RemoconApp[]
+
+      @return matching app or None if not found.
+      @rtype concert_msgs.RemoconApp
     '''
     for app in remocon_app_list:
         if matches(remocon_app, app):
-            return True
-    return False
+            return app
+    return None

@@ -160,16 +160,25 @@ class RoleManager(object):
           @type concert_srvs.SetRolesAndAppsRequest
         '''
         role_app_lists = request.data  # concert_msgs.RoleAppList[]
-        for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
-            role = role_app_list.role
-            if not role in self.role_and_app_table.keys():
-                rospy.loginfo("Role Manager : creating a new role [%s]" % role)
-                self.role_and_app_table[role] = []
-                self.publishers['roles'].publish(concert_msgs.Roles(self.role_and_app_table.keys()))
-            for app in role_app_list.remocon_apps:
-                if not remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role]):
-                    self.role_and_app_table[role].append(app)
-                    rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
+        if request.add:
+            for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
+                role = role_app_list.role
+                if not role in self.role_and_app_table.keys():
+                    rospy.loginfo("Role Manager : creating a new role [%s]" % role)
+                    self.role_and_app_table[role] = []
+                    self.publishers['roles'].publish(concert_msgs.Roles(self.role_and_app_table.keys()))
+                for app in role_app_list.remocon_apps:
+                    if remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role]) is None:
+                        self.role_and_app_table[role].append(app)
+                        rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
+        else: # clean
+            for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
+                role = role_app_list.role
+                for app in role_app_list.remocon_apps:
+                    if role in self.role_and_app_table.keys():
+                        app = remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role])
+                        if app is not None:
+                            self.role_and_app_table[role].remove(app)
         response = concert_srvs.SetRolesAndAppsResponse()
         response.result = True
         return response
