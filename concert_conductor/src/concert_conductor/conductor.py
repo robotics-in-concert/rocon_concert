@@ -38,7 +38,7 @@ class Conductor(object):
         # efficient latched publisher, put in the public concert namespace.
         self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
-        self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.Invite, self._process_invitation_request)
+        self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.BatchInvite, self._process_invitation_request)
         # service clients
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
