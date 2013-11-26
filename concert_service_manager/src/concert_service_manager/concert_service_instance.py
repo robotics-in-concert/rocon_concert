@@ -137,8 +137,7 @@ class ConcertServiceInstance(object):
 
     def _start_roslaunch(self):
         try:
-            # use the concert/screen param instead of this.
-            force_screen = True
+            force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
             roslaunch_file_path = rocon_utilities.find_resource_from_string(self._description.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
@@ -148,11 +147,12 @@ class ConcertServiceInstance(object):
             self.roslaunch._load_config()
             self.roslaunch.start()
         # handle properly case by case instead of using the catchall technique
-        #except Exception as e:
-        #    import sys
-        #    traceback.print_exc(file=sys.stdout)
-        #    message = "Error while roslaunching.. " + str(e)
-        #    raise Exception(message)
+#        except Exception as e:
+#            import sys
+#            import traceback
+#            traceback.print_exc(file=sys.stdout)
+#            message = "Error while roslaunching.. " + str(e)
+#            raise Exception(message)
         finally:
             if temp:
                 os.unlink(temp.name)
