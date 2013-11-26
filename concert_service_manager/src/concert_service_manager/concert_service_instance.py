@@ -7,8 +7,6 @@
 ##############################################################################
 
 import rospy
-import traceback
-import threading
 import os
 import subprocess
 import unique_id
@@ -16,9 +14,7 @@ import roslaunch
 import rocon_utilities
 import tempfile
 
-import uuid_msgs.msg as uuid_msg
-import concert_msgs.msg as concert_msg
-import concert_msgs.srv as concert_srv
+import concert_msgs.msg as concert_msgs
 import rocon_utilities
 import concert_roles
 
@@ -54,32 +50,29 @@ class ConcertServiceInstance(object):
 
     def enable(self, role_app_loader):
         '''
+        We don't need particularly complicated error codes and messages here as we don't do
+        any decision making (yet) on the result. Just true/false.
+
         @param role_app_loader : used to load role-app configurations on the role manager
         @type concert_roles.RoleAppLoader
         '''
-        success = False
-        message = "Unknown error"
-
+        if self._description.enabled:
+            return False, "already enabled"
+        # Should mutex lock the enabling process
         try:
-            self.thread = threading.Thread(target=self.run)
-            self.thread.start()
-
-            while not self._description.enabled and not rospy.is_shutdown():
-                self.loginfo("waiting for service to be enabled")
-                rospy.rostime.wallsleep(0.5)
-                if self.enable_error:
-                    self.logwarn("failed to enable service [%s]" % self.enable_error_message)
-                    raise Exception(self.enable_error_message)
-            self.loginfo("service enabled")
+            self._start()
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self._description.interactions, service_name=self._description.name, load=True)
-            success = True
-            message = "Success"
-        except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
-            success = False
-            message = "Error while enabling service : " + str(e)
-        return success, message
+            # if there's a failure point, it will have thrown an exception before here.
+            self._description.enabled = True
+            self.update_callback()
+            self.loginfo("service enabled [%s]" % self._description.name)
+            message = "success"
+        except (rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
+            message = "failed to enable service [%s][%s]" % (self._description.name, str(e))
+            self.logwarn(message)
+        return self._description.enabled, message
 
     def disable(self, role_app_loader, unload_resources):
         '''
@@ -90,13 +83,12 @@ class ConcertServiceInstance(object):
         @type _foo_(service_name)
         '''
         success = False
-        message = "Unknown error"
+        message = "unknown error"
 
-        if self._description.enabled is False:
-            success = True
-            message = "already disabled"
-            return success, message
+        if not self._description.enabled:
+            return False, "already disabled"
 
+        # Should mutex lock the enabling process
         try:
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
@@ -104,83 +96,63 @@ class ConcertServiceInstance(object):
             launcher_type = self._description.launcher_type
             force_kill = False
 
-            if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
+            if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
                 self.proc.terminate()
-
                 count = 0
-                while self._description.enabled and not rospy.is_shutdown():
-                    count = count + 1
-                    rospy.rostime.wallsleep(1)
-
-                    if count == 10:  # if service does not terminate for 10 secs, force kill
+                while not rospy.is_shutdown() and self.proc.poll() is None:
+                    rospy.rostime.wallsleep(0.5)
+                    if count == 20:  # if service does not terminate for 10 secs, force kill
                         self.loginfo("waited too long, force killing..")
                         self.proc.kill()
                         force_kill = True
-            elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
+                        break
+                    count = count + 1
+            elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
                 rospy.loginfo("shutting down roslaunched concert service [%s]" % self._description.name)
                 self.roslaunch.shutdown()
-            # contact the scheduler and request it to unload all resources
+                while self.roslaunch.pm and not self.roslaunch.pm.done:
+                    rospy.rostime.wallsleep(0.5)
+            self._description.enabled = False
             unload_resources(self._description.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
-        except (Exception, rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
+        except (rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
             success = False
-            message = "error while disabling [%s]" % str(e)
+            message = "error while disabling [%s][%s]" % (self._description.name, str(e))
         return success, message
-
-    def run(self):
-        self._enabling()
-
-        if self._description.enabled:
-            self.update_callback()
-            self._wait_until_terminates()
-            self.loginfo("disabled")
-            self._description.enabled = False
-            self.update_callback()
-
-    def _enabling(self):
-        ## Enabling
-        try:
-            self.enable_error = False
-            self._start()
-            self._description.enabled = True
-            rospy.rostime.wallsleep(1)
-        except Exception as e:
-            self.loginfo("failed to enable %s" % str(e))
-            self.enable_error = True
-            self.enable_error_message = str(e)
 
     def _start(self):
 
         launcher_type = self._description.launcher_type
 
-        if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
+        if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
             launcher = self._description.launcher
             launcher = launcher.split(" ")
             self.proc = subprocess.Popen(launcher, env=self.env)
-        elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
+        elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
             self._start_roslaunch()
         else:
-            message = "Unrecognizable launcher type"
-            raise Exception(message)
+            # Don't care - load_service_descriptions_from_service_lists will have validated the service description file.
+            pass
 
     def _start_roslaunch(self):
         try:
+            # use the concert/screen param instead of this.
             force_screen = True
             roslaunch_file_path = rocon_utilities.find_resource_from_string(self._description.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self.namespace)
             temp.write(launch_text)
             temp.close()
-
-            self.roslaunch = roslaunch.parent.ROSLaunchParent(rospy.get_param('/run_id'), [temp.name], is_core=False, process_listeners=(), force_screen=force_screen)
+            self.roslaunch = roslaunch.parent.ROSLaunchParent(rospy.get_param('/run_id'), [temp.name], is_core=False, process_listeners=[], force_screen=force_screen)
             self.roslaunch._load_config()
             self.roslaunch.start()
-        except Exception as e:
-            import sys
-            traceback.print_exc(file=sys.stdout)
-            message = "Error while roslaunching.. " + str(e)
-            raise Exception(message)
+        # handle properly case by case instead of using the catchall technique
+        #except Exception as e:
+        #    import sys
+        #    traceback.print_exc(file=sys.stdout)
+        #    message = "Error while roslaunching.. " + str(e)
+        #    raise Exception(message)
         finally:
             if temp:
                 os.unlink(temp.name)
@@ -190,17 +162,6 @@ class ConcertServiceInstance(object):
         launch_text += '</include>\n</launch>\n'
 
         return launch_text
-
-    def _wait_until_terminates(self):
-
-        launcher_type = self._description.launcher_type
-
-        if launcher_type == concert_msg.ConcertService.TYPE_CUSTOM:
-            while not rospy.is_shutdown() and self.proc.poll() is None:
-                rospy.rostime.wallsleep(3)
-        elif launcher_type == concert_msg.ConcertService.TYPE_ROSLAUNCH:
-            while self.roslaunch.pm and not self.roslaunch.pm.done:
-                rospy.rostime.wallsleep(3)
 
     def to_msg(self):
         return self._description
