@@ -9,7 +9,7 @@
   <url type="website">http://www.ros.org/wiki/concert_service_manager</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
-  <author email="d.stonier@gmail.com">Daniel Stonier</author> -->
+  <author email="d.stonier@gmail.com">Daniel Stonier</author>
   <author email="jihoonlee.in@gmail.com">Jihoon Lee</author>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -17,6 +17,6 @@
   <run_depend>concert_msgs</run_depend>
   <run_depend>concert_roles</run_depend>
   <run_depend>genpy</run_depend>
-  <run_depend>rospkg</run_depend>
+  <run_depend>python-rospkg</run_depend>
 
 </package>

@@ -166,7 +166,6 @@ class ConcertServiceInstance(object):
 
     def _start_roslaunch(self):
         try:
-            rospy.logwarn("Start roslaunch")
             force_screen = True
             roslaunch_file_path = rocon_utilities.find_resource_from_string(self._description.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)

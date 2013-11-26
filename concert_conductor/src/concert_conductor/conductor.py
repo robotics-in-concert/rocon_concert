@@ -14,6 +14,7 @@ import concert_msgs.srv as concert_srvs
 import gateway_msgs.msg as gateway_msgs
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
+import std_srvs.srv as std_srvs
 import rocon_utilities
 import xmlrpclib
 
@@ -164,12 +165,16 @@ class Conductor(object):
             to all concert clients which will stop any apps currently running.
         """
         for client_name, unused_client in self._concert_clients.iteritems():
-            rospy.logwarn("uninviting client [%s]" % client_name)
-            unused_response = self._concert_clients[client_name].invite(self._concert_name, client_name, False)
-#            if response.result:
-#                rospy.logwarn("  uninvited")
-#            else:
-#                rospy.logwarn("  failed to uninvite")
+            response = self._concert_clients[client_name].invite(self._concert_name, client_name, False)
+            if not response.result:
+                rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
+        try:
+            rospy.loginfo("Conductor : sending shutdown request [gateway]")
+            response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
+            rospy.loginfo("Conductor : sending shutdown request [hub]")
+            response = rospy.ServiceProxy(concert_msgs.Strings.HUB_SHUTDOWN, std_srvs.Empty)()
+        except rospy.ServiceException as e:
+            rospy.logerr("failed to externally shut down gateway/hub [%s]" % e)
 
     ###########################################################################
     # Ros Callbacks
