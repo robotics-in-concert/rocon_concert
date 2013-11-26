@@ -44,6 +44,7 @@
     <include file="$(find rocon_hub)/launch/hub.launch">
       <arg name="hub_name" value="$(arg concert_name)" />
       <arg name="hub_port" value="6380" />
+      <arg name="external_shutdown" value="true"/> <!-- let the conductor shut it down -->
     </include>
 
     <!-- ******************************** Gateway ******************************** -->
@@ -56,6 +57,7 @@
       <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
       <param name="hub_whitelist" value="$(arg concert_hub_uri)"/>
       <param name="disable_uuids" value="$(arg disable_uuids)"/>
+      <param name="external_shutdown" value="true"/> <!-- let the conductor shut it down -->
     </node>
     <!-- ****************************** Zeroconf ******************************* -->
     <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
