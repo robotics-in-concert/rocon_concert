@@ -91,7 +91,6 @@ class Conductor(object):
         '''
         master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])
         while not rospy.is_shutdown():
-
             # Grep list of remote clients from gateway
             # Grep list of local clients.
             # Prune unavailable clients.
@@ -103,7 +102,6 @@ class Conductor(object):
             # If auto_invite is true
             #   Invite all available clients
             # If there is a change in the list, update the topic
-
             gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
             local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
             visible_clients = gateway_clients + local_clients
@@ -143,10 +141,11 @@ class Conductor(object):
                     # re-invitation of clients that disappeared and came back
                     if concert_name in self._invited_clients:
                         self.invite(self._concert_name, [concert_name], True)
+                except rospy.exceptions.ROSInterruptException:  # ros is shutting down, ignore
+                    break
                 except Exception as e:
                     self._bad_clients.append(gateway_name)
                     rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
-
             if self._param['config']['auto_invite']:
                 client_list = [client for client in self._concert_clients
                                      if (client not in self._invited_clients)
@@ -163,7 +162,11 @@ class Conductor(object):
         """
             Last thing to do as a concert is shutting down - send an uninvite
             to all concert clients which will stop any apps currently running.
+
+            This is usually done as a rospy shutdown hook.
         """
+        # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
+        # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
         for client_name, unused_client in self._concert_clients.iteritems():
             response = self._concert_clients[client_name].invite(self._concert_name, client_name, False)
             if not response.result:
