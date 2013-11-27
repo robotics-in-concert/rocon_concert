@@ -242,14 +242,21 @@ class Conductor(object):
 
     def _publish_discovered_concert_clients(self, list_concert_clients_publisher=None):
         '''
-            Provide a list of currently discovered clients. This goes onto a
-            latched publisher, so subscribers will always have the latest
-            without the need to poll a service.
+            Provide a list of currently discovered clients. This gets called to provide
+            input to both a latched publisher for state change updates as well as a periodic
+            publisher to provide continuous updates with connection statistics.
+
+            Currently we just publish invited clients - could also publish busy or blocking
+            clients, but we don't have a use case yet for that information.
+
+            @param list_concert_clients_publisher : the publisher to use (otherwise the default latched publisher)
+            @type rospy.Publisher
         '''
         discovered_concert = concert_msgs.ConcertClients()
-        for unused_client, client_info in self._concert_clients.iteritems():
+        for unused_client_name, client in self._concert_clients.iteritems():
             try:
-                discovered_concert.clients.append(client_info.to_msg_format())
+                if client.is_invited:
+                    discovered_concert.clients.append(client.to_msg_format())
             except ConcertClientException:
                 # service was broken, quietly do not add it
                 # (it will be deleted from client list next pass)
