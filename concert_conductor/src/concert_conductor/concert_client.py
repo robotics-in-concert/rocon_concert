@@ -192,34 +192,35 @@ class ConcertClient(object):
         try:
             resp = self._invite_service(req)
         except rospy.service.ServiceException:
-            # Couldn't get any data from sender's service provider (something wrong with the client)
             resp.result = False
+            resp.error_code = rapp_manager_msgs.ErrorCodes.CLIENT_CONNECTION_DISRUPTED
+            resp.message = "message sent, but not received"
         if resp.result == True:
             self.is_invited = not cancel
             self.is_invited_elsewhere = False
             self.is_blocking = False
             if self.is_invited:
-                rospy.loginfo("Conductor : invited [%s]" % self.gateway_name)
+                rospy.loginfo("Conductor : invited [%s][%s]" % (self.name, self.gateway_name))
                 self._setup_service_proxies()
             else:
-                rospy.loginfo("Conductor : uninvited [%s]" % self.gateway_name)
+                rospy.loginfo("Conductor : uninvited [%s]" % self.name)
         elif not cancel:
             if (
                 resp.error_code == rapp_manager_msgs.ErrorCodes.INVITING_CONTROLLER_NOT_WHITELISTED or
                 resp.error_code == rapp_manager_msgs.ErrorCodes.INVITING_CONTROLLER_BLACKLISTED or
                 resp.error_code == rapp_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY
                ):
-                rospy.loginfo("Conductor : invitation to %s was blocked [%s]" % (self.gateway_name, resp.message))
+                rospy.loginfo("Conductor : invitation to %s was blocked [%s]" % (self.name, resp.message))
                 self.is_blocking = True
             elif resp.error_code == rapp_manager_msgs.ErrorCodes.ALREADY_REMOTE_CONTROLLED:
                 if not self.is_invited_elsewhere:
                     self.is_invited_elsewhere = True
                     # only provide debug logging when this actually flips to True (don't spam)
-                    rospy.loginfo("Conductor : invitation to %s was refused [%s]" % (self.gateway_name, resp.message))
+                    rospy.loginfo("Conductor : invitation to %s was refused [%s]" % (self.name, resp.message))
             else:
-                rospy.logerr("Conductor : invitation to %s failed [%s]" % (self.gateway_name, resp.message))
+                rospy.logwarn("Conductor : invitation to %s failed [%s]" % (self.name, resp.message))
         else:
-            rospy.logerr("Conductor : invitation to %s failed [%s]" % (self.gateway_name, resp.message))
+            rospy.logwarn("Conductor : failed to uninvite %s [%s]" % (self.name, resp.message))
         return resp.result
 
     def start_app(self, app_name, remappings):

@@ -166,8 +166,7 @@ class Conductor(object):
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
         for client_name, client in self._concert_clients.iteritems():
-            if not client.invite(self._concert_name, client_name, cancel=True):
-                rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
+            client.invite(self._concert_name, client_name, cancel=True)
         try:
             rospy.loginfo("Conductor : sending shutdown request [gateway]")
             unused_response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
