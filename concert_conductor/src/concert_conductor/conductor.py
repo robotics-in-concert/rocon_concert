@@ -75,25 +75,14 @@ class Conductor(object):
         '''
         for name in client_names:
             try:
-                if self._param['local_clients_only']:
-                    if not self._concert_clients[name].is_local_client:
-                        rospy.loginfo("Conductor : local concert clients only permitted [%s]" % name)
-                        return False
-                # rapp_manager_srvs.InviteResponse
-                response = self._concert_clients[name].invite(concert_name, name, cancel=False)
-                if response.result:
-                    rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
+                # quiet abort checks
+                if self._param['local_clients_only'] and not self._concert_clients[name].is_local_client:
+                    continue
+                # on with the invitation - rapp_manager_srvs.InviteResponse
+                if self._concert_clients[name].invite(concert_name, name, cancel=False):
                     self._invited_clients[name] = True
-                elif response.error_code == rapp_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY:
-                    pass  # quietly....shouldn't actually get here if we tell the conductor not to pull adverts for these.
-                    return False
-                else:
-                    rospy.logerr("Conductor : failed to invite concert client [%s][%s]" % (response.message, name))
-                    return False
             except KeyError:  # raised when name is not in the self._concert_clients keys
                 rospy.logerr("Conductor : tried to invite unknown concert client [%s]" % name)
-                return False
-        return True
 
     def spin(self):
         '''
@@ -177,15 +166,13 @@ class Conductor(object):
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
         for client_name, client in self._concert_clients.iteritems():
-            if client.is_invited:
-                response = client.invite(self._concert_name, client_name, cancel=True)
-                if not response.result:
-                    rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
+            if not client.invite(self._concert_name, client_name, cancel=True):
+                rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
         try:
             rospy.loginfo("Conductor : sending shutdown request [gateway]")
-            response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
+            unused_response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
             rospy.loginfo("Conductor : sending shutdown request [hub]")
-            response = rospy.ServiceProxy(concert_msgs.Strings.HUB_SHUTDOWN, std_srvs.Empty)()
+            unused_response = rospy.ServiceProxy(concert_msgs.Strings.HUB_SHUTDOWN, std_srvs.Empty)()
         except rospy.ServiceException as e:
             rospy.logerr("failed to externally shut down gateway/hub [%s]" % e)
 

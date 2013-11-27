@@ -54,6 +54,8 @@ class ConcertClient(object):
         self.name = client_name  # usually name (+ index), a more human consumable name
         self.is_local_client = is_local_client
         self.is_invited = False
+        self.is_blocking = False  # happens if we are remote and it accepts local only, ain't in its whitelist, or in its blacklist
+        self.is_invited_elsewhere = False  # someone else already invited it.
 
         self.platform_info = None
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
@@ -178,8 +180,13 @@ class ConcertClient(object):
           @type boolean
 
           @return result of the invitation
-          @rtype rapp_manager_srvs.InviteResponse
+          @rtype boolean
         '''
+        # quiet abort checks
+        if cancel and not self.is_invited:
+            return True  # kind of an automatic success
+        if not cancel and self.is_blocking:
+            return False
         req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, cancel)
         resp = rapp_manager_srvs.InviteResponse()
         try:
@@ -189,10 +196,31 @@ class ConcertClient(object):
             resp.result = False
         if resp.result == True:
             self.is_invited = not cancel
-            self._setup_service_proxies()
+            self.is_invited_elsewhere = False
+            self.is_blocking = False
+            if self.is_invited:
+                rospy.loginfo("Conductor : invited [%s]" % self.gateway_name)
+                self._setup_service_proxies()
+            else:
+                rospy.loginfo("Conductor : uninvited [%s]" % self.gateway_name)
+        elif not cancel:
+            if (
+                resp.error_code == rapp_manager_msgs.ErrorCodes.INVITING_CONTROLLER_NOT_WHITELISTED or
+                resp.error_code == rapp_manager_msgs.ErrorCodes.INVITING_CONTROLLER_BLACKLISTED or
+                resp.error_code == rapp_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY
+               ):
+                rospy.loginfo("Conductor : invitation to %s was blocked [%s]" % (self.gateway_name, resp.message))
+                self.is_blocking = True
+            elif resp.error_code == rapp_manager_msgs.ErrorCodes.ALREADY_REMOTE_CONTROLLED:
+                if not self.is_invited_elsewhere:
+                    self.is_invited_elsewhere = True
+                    # only provide debug logging when this actually flips to True (don't spam)
+                    rospy.loginfo("Conductor : invitation to %s was refused [%s]" % (self.gateway_name, resp.message))
+            else:
+                rospy.logerr("Conductor : invitation to %s failed [%s]" % (self.gateway_name, resp.message))
         else:
-            pass
-        return resp
+            rospy.logerr("Conductor : invitation to %s failed [%s]" % (self.gateway_name, resp.message))
+        return resp.result
 
     def start_app(self, app_name, remappings):
         '''
