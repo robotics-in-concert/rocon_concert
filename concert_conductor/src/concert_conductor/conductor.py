@@ -9,7 +9,6 @@
 
 import rospy
 import concert_msgs.msg as concert_msgs
-import concert_msgs.srv as concert_srvs
 import gateway_msgs.msg as gateway_msgs
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
@@ -177,10 +176,11 @@ class Conductor(object):
         """
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
-        for client_name, unused_client in self._concert_clients.iteritems():
-            response = self._concert_clients[client_name].invite(self._concert_name, client_name, cancel=True)
-            if not response.result:
-                rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
+        for client_name, client in self._concert_clients.iteritems():
+            if client.is_invited:
+                response = client.invite(self._concert_name, client_name, cancel=True)
+                if not response.result:
+                    rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
         try:
             rospy.loginfo("Conductor : sending shutdown request [gateway]")
             response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
