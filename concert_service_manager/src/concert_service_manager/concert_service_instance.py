@@ -32,7 +32,7 @@ class ConcertServiceInstance(object):
             '_description',  # concert_msgs.ConcertService fixed configuration and variable parameters
             '_update_callback',  # used to trigger an external callback (service manager publisher) when the state changes.
             '_namespace',        # namespace that the service will run in
-            '_lock',             # protect service enabling/disabling 
+            '_lock',             # protect service enabling/disabling
             '_proc',             # holds the custom subprocess variable if TYPE_CUSTOM
             '_roslaunch'         # holds the roslaunch parent variable if TYPE_ROSLAUNCH
         ]

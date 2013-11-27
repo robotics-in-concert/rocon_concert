@@ -1,12 +1,12 @@
 <package>
-  <name>concert_roles</name>
+  <name>concert_utilities</name>
   <version>0.5.5</version>
   <description>
-    Roles and role management for human interactive agents in the concert.
+    Utilities, libraries and modules for general concert support.
   </description>
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/concert_roles</url>
+  <url type="website">http://ros.org/wiki/concert_utilities</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author email="d.stonier@gmail.com">Daniel Stonier</author>
@@ -14,8 +14,4 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>rospy</run_depend>
-  <run_depend>rocon_utilities</run_depend>
-  <run_depend>concert_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>rocon_std_msgs</run_depend>
 </package>
