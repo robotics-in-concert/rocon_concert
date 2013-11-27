@@ -14,6 +14,7 @@ import rocon_std_msgs.msg as rocon_std_msg
 import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
 
 import compatibility_tree
+from .exceptions import FailedToStartAppsException
 
 ##############################################################################
 # Classes
