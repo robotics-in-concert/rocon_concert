@@ -1,0 +1,12 @@
+<!-- Useful testing concert running in parallel with another one. -->
+<launch>
+    <include file="$(find concert_master)/launch/concert_master.launch">
+        <arg name="concert_name" value="Pirate Explorer"/>
+        <arg name="service_lists" value="concert_tutorial/tutorial.services"/>
+        <arg name="conductor_auto_invite" value="true" />
+        <arg name="conductor_local_clients_only" value="true" />
+        <arg name="auto_enable_services" value="true" />
+	    <arg name="hub_port" default="6381"/>
+	    <arg name="hub_uri" default="http://localhost:6381"/>
+    </include>
+</launch>
