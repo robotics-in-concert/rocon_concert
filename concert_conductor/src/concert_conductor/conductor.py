@@ -7,7 +7,6 @@
 # Imports
 ##############################################################################
 
-import os
 import rospy
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
@@ -16,10 +15,10 @@ import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
 import std_srvs.srv as std_srvs
 import rocon_utilities
-import xmlrpclib
 
 # local imports
 from .concert_client import ConcertClient, ConcertClientException
+from .ros_parameters import setup_ros_parameters
 
 ##############################################################################
 # Conductor
@@ -62,12 +61,16 @@ class Conductor(object):
         # Initialisation
         ##################################
         self._get_concert_name()
-        self._param = self._setup_ros_parameters()
+        self._param = setup_ros_parameters()
         self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
 
     def invite(self, concert_name, clientnames, ok_flag):
         for name in clientnames:
             try:
+                if self._param['local_clients_only']:
+                    if not self._concert_clients[name].is_local_client():
+                        rospy.loginfo("Conductor : local concert clients only permitted [%s]" % name)
+                        return False
                 # rapp_manager_srvs.InviteResponse
                 response = self._concert_clients[name].invite(concert_name, name, ok_flag)
                 if response.result:
@@ -89,7 +92,6 @@ class Conductor(object):
           Maintains the clientele list. We have to manage for two kinds here. Currently I use the same
           class interface for both with just a flag to differentiate, but it could probably use a split somewhere in the future.
         '''
-        master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])
         while not rospy.is_shutdown():
             # Grep list of remote clients from gateway
             # Grep list of local clients.
@@ -131,7 +133,7 @@ class Conductor(object):
                             if not str(human_friendly_index) in human_friendly_indices:
                                 break
                         concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
-                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name)
+                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=self._is_local_client(gateway_hash_name))
                     rospy.loginfo("Conductor : new client found [%s]" % concert_name)
                     number_of_new_clients += 1
 
@@ -143,10 +145,12 @@ class Conductor(object):
                 except Exception as e:
                     self._bad_clients.append(gateway_name)
                     rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
-            if self._param['config']['auto_invite']:
+            if self._param['auto_invite']:
                 client_list = [client for client in self._concert_clients
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
+                if self._param['local_clients_only']:
+                    client_list = [client for client in client_list if self._concert_clients[client].is_local_client() == True]
                 self.invite(self._concert_name, client_list, True)
             # Continually publish so it goes to web apps for now (inefficient).
             self._publish_discovered_concert_clients(self.publishers["spammy_list_concert_clients"])
@@ -191,6 +195,27 @@ class Conductor(object):
     ###########################################################################
     # Helpers
     ###########################################################################
+
+    def _is_local_client(self, gateway_name):
+        '''
+          Determine whether it is a local client (same machine) or remote
+
+          @return true if it is a local client, false otherwise.
+          @rtype Bool
+        '''
+        remote_gateway_info_request = gateway_srvs.RemoteGatewayInfoRequest()
+        remote_gateway_info_request.gateways = []
+        remote_gateway_info_response = self._remote_gateway_info_service(remote_gateway_info_request)
+        remote_target_name = gateway_name
+        remote_target_ip = None
+        for gateway in remote_gateway_info_response.gateways:
+            if gateway.name == remote_target_name:
+                remote_target_ip = gateway.ip
+                break
+        if remote_target_ip is not None and self._concert_ip == remote_target_ip:
+            return True
+        else:
+            return False
 
     def _get_gateway_clients(self):
         '''
@@ -267,13 +292,8 @@ class Conductor(object):
             if gateway_info:
                 if gateway_info.connected:
                     self._concert_name = gateway_info.name
+                    self._concert_ip = gateway_info.ip
                     break
                 else:
                     rospy.loginfo("Conductor : no hub yet available, spinning...")
             rospy.rostime.wallsleep(1.0)  # human time
-
-    def _setup_ros_parameters(self):
-        param = {}
-        param['config'] = {}
-        param['config']['auto_invite'] = rospy.get_param('~auto_invite', False)
-        return param

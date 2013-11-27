@@ -1,10 +1,12 @@
 <launch>
   <!-- ******************************* Arguments ******************************* -->
-  <arg name="concert_auto_invite" default="true"/>
+  <arg name="auto_invite" default="true"/>
+  <arg name="local_clients_only" default="false"/>
 
   <!-- ******************************* Conductor ******************************* -->
   <node pkg="concert_conductor" type="conductor.py" name="conductor" output="screen">
-    <param name="auto_invite" value="$(arg concert_auto_invite)"/>
+    <param name="auto_invite" value="$(arg auto_invite)"/>
+    <param name="local_clients_only" value="$(arg local_clients_only)"/>
     <remap from="conductor/gateway_info" to="gateway/gateway_info"/>
     <remap from="conductor/remote_gateway_info" to="gateway/remote_gateway_info"/>
     <remap from="conductor/pull" to="gateway/pull"/>

@@ -31,7 +31,7 @@ class ConcertClientException(Exception):
 
 class ConcertClient(object):
 
-    def __init__(self, client_name, gateway_name):
+    def __init__(self, client_name, gateway_name, is_local_client=False):
         '''
           Initialise, finally ending with a call on the service to the client's
           platform info service.
@@ -40,6 +40,8 @@ class ConcertClient(object):
           @type str
           @param gateway_name : the name with 16 byte hash attached
           @type str
+          @param is_local_client : is on the same ip as the concert (if we care)
+          @type boolean
 
           @raise ConcertClientException : when platform info service is unavailable
         '''
@@ -47,6 +49,7 @@ class ConcertClient(object):
         self.data = concert_msgs.ConcertClient()
         self.gateway_name = gateway_name  # this is the rather unsightly name + hash key
         self.name = client_name  # usually name (+ index), a more human consumable name
+        self._is_local_client = is_local_client
 
         self.platform_info = None
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
@@ -59,6 +62,9 @@ class ConcertClient(object):
             self._update()
         except ConcertClientException:
             raise
+
+    def is_local_client(self):
+        return self._is_local_client
 
     def _pull_concert_client(self):
         '''
@@ -145,6 +151,8 @@ class ConcertClient(object):
 
         # Updating app status
         self.data.app_status = status.application_status
+
+        self.data.is_local_client = self._is_local_client
 
         self.data.last_connection_timestamp = rospy.Time.now()
         if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
