@@ -46,10 +46,14 @@ class ConcertClient(object):
           @raise ConcertClientException : when platform info service is unavailable
         '''
 
+        #####################
+        # Variables
+        #####################
         self.data = concert_msgs.ConcertClient()
         self.gateway_name = gateway_name  # this is the rather unsightly name + hash key
         self.name = client_name  # usually name (+ index), a more human consumable name
-        self._is_local_client = is_local_client
+        self.is_local_client = is_local_client
+        self.is_invited = False
 
         self.platform_info = None
         self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
@@ -62,9 +66,6 @@ class ConcertClient(object):
             self._update()
         except ConcertClientException:
             raise
-
-    def is_local_client(self):
-        return self._is_local_client
 
     def _pull_concert_client(self):
         '''
@@ -152,7 +153,7 @@ class ConcertClient(object):
         # Updating app status
         self.data.app_status = status.application_status
 
-        self.data.is_local_client = self._is_local_client
+        self.data.is_local_client = self.is_local_client
 
         self.data.last_connection_timestamp = rospy.Time.now()
         if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
@@ -164,11 +165,8 @@ class ConcertClient(object):
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
 
-    def invite(self, concert_gateway_name, client_local_name, ok_flag):
+    def invite(self, concert_gateway_name, client_local_name, cancel):
         '''
-          Bit messy with ok_flag here as we are mid-transition to using 'cancel' flag in the
-          invite services.
-
           @param concert_gateway_name : have to let the client know the concert gateway name
                                         so they can flip us topics...
           @type str
@@ -176,10 +174,13 @@ class ConcertClient(object):
           @param client_local_name : this configures the default namespace used by the client
           @type str
 
+          @param cancel : whether to cancel an existing invite or initiate a new invitation
+          @type boolean
+
           @return result of the invitation
           @rtype rapp_manager_srvs.InviteResponse
         '''
-        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, not ok_flag)
+        req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, cancel)
         resp = rapp_manager_srvs.InviteResponse()
         try:
             resp = self._invite_service(req)
@@ -187,6 +188,7 @@ class ConcertClient(object):
             # Couldn't get any data from sender's service provider (something wrong with the client)
             resp.result = False
         if resp.result == True:
+            self.is_invited = not cancel
             self._setup_service_proxies()
         else:
             pass

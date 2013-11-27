@@ -37,7 +37,6 @@ class Conductor(object):
         # efficient latched publisher, put in the public concert namespace.
         self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
         self.services = {}
-        self.services['invite_concert_clients'] = rospy.Service('~invite_concert_clients', concert_srvs.BatchInvite, self._process_invitation_request)
         # service clients
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
@@ -64,18 +63,28 @@ class Conductor(object):
         self._param = setup_ros_parameters()
         self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
 
-    def invite(self, concert_name, clientnames, ok_flag):
-        for name in clientnames:
+    def batch_invite(self, concert_name, client_names):
+        '''
+          Batch invite a list of concert clients. Note we are not ever cancelling the invitations
+          with this batch command.
+
+          @param concert_name : pass our concert name in to the invitation
+          @type string
+
+          @param client_names : list of names of concert clients to invite
+          @type string[]
+        '''
+        for name in client_names:
             try:
                 if self._param['local_clients_only']:
-                    if not self._concert_clients[name].is_local_client():
+                    if not self._concert_clients[name].is_local_client:
                         rospy.loginfo("Conductor : local concert clients only permitted [%s]" % name)
                         return False
                 # rapp_manager_srvs.InviteResponse
-                response = self._concert_clients[name].invite(concert_name, name, ok_flag)
+                response = self._concert_clients[name].invite(concert_name, name, cancel=False)
                 if response.result:
                     rospy.loginfo("Conductor : successfully invited [%s]" % str(name))
-                    self._invited_clients[name] = ok_flag
+                    self._invited_clients[name] = True
                 elif response.error_code == rapp_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY:
                     pass  # quietly....shouldn't actually get here if we tell the conductor not to pull adverts for these.
                     return False
@@ -139,7 +148,7 @@ class Conductor(object):
 
                     # re-invitation of clients that disappeared and came back
                     if concert_name in self._invited_clients:
-                        self.invite(self._concert_name, [concert_name], True)
+                        self.batch_invite(self._concert_name, [concert_name])
                 except rospy.exceptions.ROSInterruptException:  # ros is shutting down, ignore
                     break
                 except Exception as e:
@@ -150,8 +159,8 @@ class Conductor(object):
                                      if (client not in self._invited_clients)
                                      or (client in self._invited_clients and self._invited_clients[client] == False)]
                 if self._param['local_clients_only']:
-                    client_list = [client for client in client_list if self._concert_clients[client].is_local_client() == True]
-                self.invite(self._concert_name, client_list, True)
+                    client_list = [client for client in client_list if self._concert_clients[client].is_local_client == True]
+                self.batch_invite(self._concert_name, client_list)
             # Continually publish so it goes to web apps for now (inefficient).
             self._publish_discovered_concert_clients(self.publishers["spammy_list_concert_clients"])
             # Long term solution
@@ -169,7 +178,7 @@ class Conductor(object):
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
         for client_name, unused_client in self._concert_clients.iteritems():
-            response = self._concert_clients[client_name].invite(self._concert_name, client_name, False)
+            response = self._concert_clients[client_name].invite(self._concert_name, client_name, cancel=True)
             if not response.result:
                 rospy.logwarn("Conductor : failed to uninvite client [%s]" % client_name)
         try:
@@ -179,18 +188,6 @@ class Conductor(object):
             response = rospy.ServiceProxy(concert_msgs.Strings.HUB_SHUTDOWN, std_srvs.Empty)()
         except rospy.ServiceException as e:
             rospy.logerr("failed to externally shut down gateway/hub [%s]" % e)
-
-    ###########################################################################
-    # Ros Callbacks
-    ###########################################################################
-
-    def _process_invitation_request(self, req):
-        '''
-          Handles service requests from the concert master to invite a set of concert clients.
-        '''
-        mastername = req.mastername
-        resp = self.invite(mastername, req.clientnames, req.ok_flag)
-        return concert_srvs.InviteResponse("Success to invite[" + str(resp) + "] : " + str(req.clientnames))
 
     ###########################################################################
     # Helpers
