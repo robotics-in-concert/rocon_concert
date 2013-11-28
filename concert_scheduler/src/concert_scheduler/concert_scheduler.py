@@ -1,4 +1,6 @@
+#
 # License: BSD
+#
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 ##############################################################################
@@ -8,8 +10,8 @@
 import rospy
 import threading
 import copy
-import concert_msgs.srv as concert_srv
-import concert_msgs.msg as concert_msg
+import concert_msgs.srv as concert_srvs
+import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msg
 import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
 
@@ -35,7 +37,7 @@ class ConcertScheduler(object):
         """
             Initialize variables
         """
-        self.sub = {}
+        self.subscribers = {}
         self.srv = {}
 
         self.services = {}
@@ -47,15 +49,15 @@ class ConcertScheduler(object):
         self._shutting_down = False  # Used to protect self.pairs when shutting down.
 
     def setup_ros_api(self):
-        self.sub['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msg.ConcertClients, self.process_list_concert_clients)
-        self.sub['request_resources'] = rospy.Subscriber('request_resources', concert_msg.RequestResources, self.process_request_resources)
+        self.subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self.process_list_concert_clients)
+        self.subscribers['request_resources'] = rospy.Subscriber('request_resources', concert_msgs.RequestResources, self.process_request_resources)
 
-        self.srv['resource_status'] = rospy.Service('resource_status', concert_srv.ResourceStatus, self.process_resource_status)
+        self.srv['resource_status'] = rospy.Service('resource_status', concert_srvs.ResourceStatus, self.process_resource_status)
 
     def process_list_concert_clients(self, msg):
         """
             @param
-                msg : concert_msg.ConcertClients
+                msg : concert_msgs.ConcertClients
 
             1. Stops services which client left.
             2. Rebuild client list
@@ -84,7 +86,7 @@ class ConcertScheduler(object):
             TODO: it does not rearrange clients if only linkgraph get changed.
 
             @param : msg
-            @type concert_msg.RequestResources
+            @type concert_msgs.RequestResources
         """
         self.lock.acquire()
         self.loginfo("received request for resources.")
@@ -109,8 +111,8 @@ class ConcertScheduler(object):
             2. Check all pairs of services whether it is still valid.
             3. Stops services which left_clients are involved
 
-            @param clients : list of client who recently left. list of concert_msg.ConcertClient
-            @type concert_msg.ConcertClient[]
+            @param clients : list of client who recently left. list of concert_msgs.ConcertClient
+            @type concert_msgs.ConcertClient[]
         """
 
         left_client_gateways = self._get_left_clients(clients)
@@ -126,7 +128,7 @@ class ConcertScheduler(object):
     def _is_service_still_valid(self, pairs, left_clients):
         """
             @param pair: list of pair (service node, client node)
-            @type [(concert_msg.LinkNode, concert_msg.ConcertClient)]
+            @type [(concert_msgs.LinkNode, concert_msgs.ConcertClient)]
 
             @param left_clients: list of concert client gateways who recently left
             @type string[]
@@ -191,7 +193,7 @@ class ConcertScheduler(object):
     def _get_left_clients(self, clients):
         """
             @param clients: list of concert client
-            @type concert_msg.ConcertClient[]
+            @type concert_msgs.ConcertClient[]
 
             @return left_clients: list of concert client gateway_name who recently left
             @rtype list of string
@@ -255,7 +257,7 @@ class ConcertScheduler(object):
             app_pairs.extend(new_app_pairs)
 
             # Starts service if it is ready
-            if status is concert_msg.ErrorCodes.SUCCESS:
+            if status is concert_msgs.ErrorCodes.SUCCESS:
                 self.pairs[s] = app_pairs
                 self._mark_clients_as_inuse(app_pairs, linkgraph)
                 self._start_service(new_app_pairs, str(s), linkgraph)
@@ -269,16 +271,16 @@ class ConcertScheduler(object):
             To be compatibile, it should have the same remapping rules, and available slot.
 
             @param service_nodes: list of service nodes
-            @type concert_msg.LinkNode[]
+            @type concert_msgs.LinkNode[]
 
             @param linkgraph: implementation of service
-            @type concert_msg.LinkGraph
+            @type concert_msgs.LinkGraph
 
             @return paired_node: which can reuse inuse client
-            @type concert_msg.LinkNode[]
+            @type concert_msgs.LinkNode[]
 
             @return new_app_pair: new pair
-            @type [(concert_msg.LinkNode, concert_msg.ConcertClient)]
+            @type [(concert_msgs.LinkNode, concert_msgs.ConcertClient)]
         """
         paired_node = []
         new_app_pairs = []
@@ -304,10 +306,10 @@ class ConcertScheduler(object):
             store the paired client in inuse_clients
 
             @param pair: list of pair (service node, client node)
-            @type : list of (concert_msg.LinkNode, concert_msg.ConcertClient)
+            @type : list of (concert_msgs.LinkNode, concert_msgs.ConcertClient)
 
             @param linkgraph: service linkgraph
-            @type : concert_msg.LinkGraph
+            @type : concert_msgs.LinkGraph
         """
         compatibility_tree.print_pairs(pairs)
         edges = linkgraph.edges
@@ -358,9 +360,9 @@ class ConcertScheduler(object):
             Search clients which are not in use yet.
 
             @return list of available clients
-            @rtype concert_msg.ConcertClient[]
+            @rtype concert_msgs.ConcertClient[]
         """
-        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msg.Constants.CONCERT_CLIENT_STATUS_CONNECTED]  # and self.clients[c].app_status == concert_msg.Constants.APP_STATUS_STOPPED]
+        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED]  # and self.clients[c].app_status == concert_msgs.Constants.APP_STATUS_STOPPED]
         inuse_gateways = self._get_inuse_gateways()
         free_clients = [c for c in clients if not (c.gateway_name in inuse_gateways)]
 
@@ -387,13 +389,13 @@ class ConcertScheduler(object):
             Starts up client apps for service
 
             @param pairs: list of pair for service
-            @type [(concert_msg.LinkNode, concert_msg.ConcertClient)]
+            @type [(concert_msgs.LinkNode, concert_msgs.ConcertClient)]
 
             @param service_name
             @type string
 
             @param linkgraph: for service remapping
-            @type concert_msg.LinkGraph
+            @type concert_msgs.LinkGraph
         """
         self.loginfo("starting apps for " + str(service_name))
 
@@ -447,7 +449,7 @@ class ConcertScheduler(object):
             @type string
 
             @param linkgraph
-            @type concert_msg.LinkGraph
+            @type concert_msgs.LinkGraph
 
             @param service_name
             @type string
@@ -470,7 +472,7 @@ class ConcertScheduler(object):
             @type string
 
             @param edges
-            @type concert_msg.LinkEdge[]
+            @type concert_msgs.LinkEdge[]
         """
 
         remappings = [rocon_std_msg.Remapping(e.remap_from, e.remap_to) for e in edges if e.start == node_name or e.finish == node_name]
@@ -480,7 +482,7 @@ class ConcertScheduler(object):
         """
             respond resource_status request
         """
-        resp = concert_srv.ResourceStatusResponse()
+        resp = concert_srvs.ResourceStatusResponse()
 
         self.lock.acquire()
 
@@ -498,7 +500,7 @@ class ConcertScheduler(object):
 
         resp.requested_resources = []
         for s in self.services:
-            srp = concert_msg.ServiceResourcePair()
+            srp = concert_msgs.ServiceResourcePair()
 
             srp.service_name = s
 
@@ -511,7 +513,7 @@ class ConcertScheduler(object):
 
         resp.engaged_pairs = []
         for s in self.pairs:
-            srp = concert_msg.ServiceResourcePair()
+            srp = concert_msgs.ServiceResourcePair()
             srp.service_name = s
 
             for pair in self.pairs[s]:
