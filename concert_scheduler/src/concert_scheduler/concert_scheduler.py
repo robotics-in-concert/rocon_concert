@@ -37,13 +37,13 @@ class ConcertScheduler(object):
         """
             Initialize variables
         """
-        self.subscribers = {}
-        self.srv = {}
+        self.subscribers = {}  # ros subscribers
+        self.srv = {}          # ros services
 
-        self.services = {}
-        self.clients = {}
-        self.inuse = {}
-        self.pairs = {}
+        self.services = {}     #  
+        self.clients = {}      # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
+        self.inuse = {}        #
+        self.pairs = {}        #
         self.lock = None
 
         self._shutting_down = False  # Used to protect self.pairs when shutting down.
@@ -51,7 +51,6 @@ class ConcertScheduler(object):
     def setup_ros_api(self):
         self.subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self.process_list_concert_clients)
         self.subscribers['request_resources'] = rospy.Subscriber('request_resources', concert_msgs.RequestResources, self.process_request_resources)
-
         self.srv['resource_status'] = rospy.Service('resource_status', concert_srvs.ResourceStatus, self.process_resource_status)
 
     def process_list_concert_clients(self, msg):
@@ -230,7 +229,7 @@ class ConcertScheduler(object):
 
             available_clients = self._get_available_clients()
             cname = [c.name for c in available_clients]
-            self.loginfo("Avaialble client : " + str(cname))
+            self.loginfo("Available client : " + str(cname))
 
             rn = [(n.id, n.tuple) for n in nodes]
             self.loginfo("Remaining node : " + str(rn))

@@ -5,10 +5,10 @@ import copy
 import concert_msgs.msg as concert_msg
 
 
-def resolve(service_nodes, client_list):
+def resolve(requested_nodes, client_list):
     """
-        @param service_nodes: list of service nodes.
-        @type concert_msg.LinkNode[]
+        @param requested_nodes: list of requested nodes.
+        @type concert_msgs.LinkNode[]
 
         @param client_list: list of client.
         @type concert_msg.ConcertClient[]
@@ -21,10 +21,10 @@ def resolve(service_nodes, client_list):
 #    rospy.loginfo("=== Service ===")
 #    print_array(d_node)
 
-    snodes = _expand_min_nodes(service_nodes)
+    nodes = _expand_min_nodes(requested_nodes)
 
     pairs = []
-    result, message = _get_app_client_pair(pairs, snodes, client_list)
+    result, message = _get_app_client_pair(pairs, nodes, client_list)
 
 #rospy.loginfo("===== Result =====")
 #rospy.loginfo(str(result))
@@ -38,11 +38,11 @@ def _expand_min_nodes(nodes):
     """
         A multiple of same node may need. service description includes min-max value. Using min value it creates multiple instances.
 
-        @param nodes list of service nodes
-        @type concert_msgs.msg.ConcertService[]
+        @param nodes list of requested nodes
+        @type concert_msgs.LinkNode[]
 
-        @return min expanded list of service nodes
-        @rtype concert_msgs.msg.ConcertService[]
+        @return expanded list of requested nodes
+        @rtype concert_msgs.LinkNode[]
     """
     expanded_nodes = copy.deepcopy(nodes)
 
@@ -53,17 +53,17 @@ def _expand_min_nodes(nodes):
     return expanded_nodes
 
 
-def _get_app_client_pair(pair, snodes, clients):
+def _get_app_client_pair(pair, nodes, clients):
     """
         Simple backtracking to create pairs of service node and client
 
         @param pair: the list of currently created pair. It holds the full list of pairs after the full iteration
-        @type list of (service_node, client)
+        @type list of (node, client)
 
-        @param snodes: list of service nodes need to be paired
+        @param nodes: list of service nodes need to be paired
         @type concert_msgs.msg.LinkNode[]
 
-        @param clients: list of remaining availalble clients
+        @param clients: list of remaining available clients
         @type concert_msgs.msg.ConcertClient[]
 
         @return result : constants in concert_msgs.ErrorCodeswhich indicates the status of pairing.
@@ -74,40 +74,36 @@ def _get_app_client_pair(pair, snodes, clients):
     """
     result = concert_msg.ErrorCodes.SERVICE_UNEXPECTED_ERROR
     message = "No iteration yet"
-    if len(snodes) == 0:
+    if len(nodes) == 0:
         return concert_msg.ErrorCodes.SUCCESS, "Successful Match Making"
 
     if len(clients) == 0:
-        singles = [n.id for n in snodes]
+        singles = [n.id for n in nodes]
         return concert_msg.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "No match for " + str(singles)
 
-    snodes_copy = copy.deepcopy(snodes)
+    nodes_copy = copy.deepcopy(nodes)
     clients_copy = copy.deepcopy(clients)
 
-    for n in snodes:
-        service_node_name = n.id
-        _1, _2, _3, _4, service_app_name = n.tuple.split(".")
+    for n in nodes:
         for c in clients:
             if _is_valid_pair(n, c):
 
-#                app = [ a for a in apps if a.name is app_name]
-#                app_share = app[0].share
                 p = (n, c)
 
                 # Prepare for next depth
                 pair.append(p)
-                snodes_copy.remove(n)
+                nodes_copy.remove(n)
                 clients_copy.remove(c)
 
                 # Go to next depth
-                result, message = _get_app_client_pair(pair, snodes_copy, clients_copy)
+                result, message = _get_app_client_pair(pair, nodes_copy, clients_copy)
 
                 if result is concert_msg.ErrorCodes.SUCCESS:
                     return result, message
 
                 # Return back to current depth
                 pair.remove(p)
-                snodes_copy.append(n)
+                nodes_copy.append(n)
                 clients_copy.append(c)
 
     return result, message
