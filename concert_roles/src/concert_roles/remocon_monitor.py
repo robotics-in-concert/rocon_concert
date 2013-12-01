@@ -33,8 +33,8 @@ class RemoconMonitor(object):
     ##########################################################################
 
     def __init__(self, topic_name):
-        if topic_name.startswith(constants.REMOCONS_NAMESPACE + '/'):
-            self.name = topic_name[len(constants.REMOCONS_NAMESPACE) + 1:]
+        if topic_name.startswith(concert_msgs.Strings.REMOCONS_NAMESPACE + '/'):
+            self.name = topic_name[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:]
         else:
             self.name = 'unknown'  # should raise an error here
             return

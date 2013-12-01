@@ -58,16 +58,16 @@ class RoleManager(object):
             diff = lambda l1, l2: [x for x in l1 if x not in l2]
             try:
                 # This master call returns a filtered list of [topic_name, topic_type] elemnts (list of lists)
-                remocon_topics = [x[0] for x in master.getPublishedTopics(constants.REMOCONS_NAMESPACE)]
+                remocon_topics = [x[0] for x in master.getPublishedTopics(concert_msgs.Strings.REMOCONS_NAMESPACE)]
                 new_remocon_topics = diff(remocon_topics, self._remocon_monitors.keys())
                 lost_remocon_topics = diff(self._remocon_monitors.keys(), remocon_topics)
                 for remocon_topic in new_remocon_topics:
                     self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic)
-                    rospy.loginfo("Role Manager : new remocon connected [%s]" % remocon_topic[len(constants.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Role Manager : new remocon connected [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
                 for remocon_topic in lost_remocon_topics:
                     self._remocon_monitors[remocon_topic].unregister()
                     del self._remocon_monitors[remocon_topic]  # careful, this mutates the dictionary http://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
-                    rospy.loginfo("Role Manager : remocon left [%s]" % remocon_topic[len(constants.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Role Manager : remocon left [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
             except rosgraph.masterapi.Error:
                 rospy.logerr("Role Manager : error trying to retrieve information from the local master.")
             except rosgraph.masterapi.Failure:
