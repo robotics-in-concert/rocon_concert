@@ -1,0 +1,16 @@
+<!-- 
+   Used for simple testing of the concert information retrieval function.
+-->
+<launch>
+  <group ns="services">
+    <group ns="chatter">
+      <param name="name" value="chatter"/>
+      <param name="description" value="A single dudette leading the dudes on a merry chase."/>
+      <param name="uuid" value="5107dd51-3fe0-4693-8785-cb54e5c3d96a"/>
+      <test test-name="test_concert_info" pkg="concert_service_utilities" type="test_concert_info.py" />
+      <group ns="buried">
+        <test test-name="test_buried_concert_info" pkg="concert_service_utilities" type="test_concert_info.py" />
+      </group>
+    </group>
+  </group>
+</launch>

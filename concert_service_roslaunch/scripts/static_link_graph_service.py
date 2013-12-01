@@ -10,6 +10,7 @@
 import rospy
 import yaml
 import concert_service_roslaunch
+import concert_service_utilities
 
 from concert_msgs.srv import *
 from concert_msgs.msg import *
@@ -17,9 +18,8 @@ from concert_msgs.msg import *
 if __name__ == '__main__':
     rospy.init_node('static_link_graph_service', anonymous=True)
 
-    name = rospy.get_param("name")
-    uuid = rospy.get_param("uuid")
-    description = rospy.get_param("description")
+    # this is a uuid key
+    (name, description, uuid) = concert_service_utilities.get_service_info()
     filename = rospy.get_param('~filename')
 
     impl_name, impl = concert_service_roslaunch.load_linkgraph_from_file(filename)

@@ -32,6 +32,19 @@ class StaticLinkGraphHandler(object):
     ]
 
     def __init__(self, name, description, uuid, linkgraph):
+        '''
+          @param name
+          @type str
+
+          @param description
+          @type string
+
+          @param uuid
+          @type uuid.UUID
+
+          @param linkgraph
+          @type concert_msgs.LinkGraph
+        '''
         self._name = name
         self._description = description
         self._uuid = uuid
