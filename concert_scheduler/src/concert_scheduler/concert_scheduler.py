@@ -40,7 +40,7 @@ class ConcertScheduler(object):
         self.subscribers = {}  # ros subscribers
         self.srv = {}          # ros services
 
-        self.services = {}     #  
+        self.services = {}     #
         self.clients = {}      # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
         self.inuse = {}        #
         self.pairs = {}        #
@@ -244,7 +244,7 @@ class ConcertScheduler(object):
             # Clients who are not running yet
             available_clients = self._get_available_clients()
             cname = [c.name for c in available_clients]
-            self.loginfo("Avaialble client : " + str(cname))
+            self.loginfo("Available client : " + str(cname))
 
             rn = [n.id for n in remaining_nodes]
             self.loginfo("Remaining node : " + str(rn))
@@ -286,7 +286,7 @@ class ConcertScheduler(object):
 
         for n in service_nodes:
             service_node_name = n.id
-            _1, _2, _3, _4, service_app_name = n.tuple.split(".")
+            _1, _2, _3, _4, service_app_name = n.tuple.split(".")  # use rpartition instead
 
             if service_app_name in self.inuse:
                 service_remappings = self._get_match_remappings(service_node_name, linkgraph.edges)
@@ -507,7 +507,6 @@ class ConcertScheduler(object):
             for n in self.services[s].nodes:
                 for i in range(n.min):
                     srp.resources.append(n.id)
-
             resp.requested_resources.append(srp)
 
         resp.engaged_pairs = []
