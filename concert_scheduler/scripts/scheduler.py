@@ -9,6 +9,7 @@
 
 import rospy
 import concert_scheduler
+import concert_msgs.msg as concert_msgs
 
 ##############################################################################
 # Main
@@ -16,5 +17,5 @@ import concert_scheduler
 
 if __name__ == '__main__':
     rospy.init_node('scheduler')
-    scheduler = concert_scheduler.ConcertScheduler()
+    scheduler = concert_scheduler.ConcertScheduler(concert_msgs.Strings.SCHEDULER_REQUESTS)
     scheduler.spin()
