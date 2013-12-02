@@ -13,7 +13,6 @@ import concert_msgs.srv as concert_srvs
 
 # Local imports
 import remocon_app_utils
-import constants
 from .remocon_monitor import RemoconMonitor
 
 ##############################################################################

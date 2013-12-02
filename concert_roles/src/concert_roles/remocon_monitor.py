@@ -9,8 +9,6 @@
 import rospy
 import concert_msgs.msg as concert_msgs
 
-# Local imports
-import constants
 
 ##############################################################################
 # Remocon Monitor
