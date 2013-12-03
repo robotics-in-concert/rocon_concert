@@ -10,10 +10,10 @@
 import rospy
 import threading
 import copy
-import concert_msgs.srv as concert_srvs
+import unique_id
 import concert_msgs.msg as concert_msgs
-import rocon_std_msgs.msg as rocon_std_msg
-import rocon_app_manager_msgs.srv as rapp_mamanager_srvs
+import scheduler_msgs.msg as scheduler_msgs
+import rocon_app_manager_msgs.srv as rapp_manager_srvs
 
 import compatibility_tree
 from .exceptions import FailedToStartAppsException
@@ -28,32 +28,21 @@ class ConcertScheduler(object):
     POSTFIX_START_APP = '/start_app'
     POSTFIX_STOP_APP = '/stop_app'
 
-    def __init__(self):
-        self._init_variables()
-        self.setup_ros_api()
-        self.lock = threading.Lock()
+    def __init__(self, requests_topic_name):
+        self._subscribers = {}       # ros subscribers
+        self._requests = {}          # requester uuid : scheduler_msgs/Request[] - keeps track of all current requests
+        self._clients = {}           # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
+        self._inuse = {}             #
+        self._pairs = {}             # scheduler_msgs/Resource, concert_msgs/ConcertClient pairs
+        self._shutting_down = False  # Used to protect self._pairs when shutting down.
+        self._setup_ros_api(requests_topic_name)
+        self._lock = threading.Lock()
 
-    def _init_variables(self):
-        """
-            Initialize variables
-        """
-        self.subscribers = {}  # ros subscribers
-        self.srv = {}          # ros services
+    def _setup_ros_api(self, requests_topic_name):
+        self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._process_list_concert_clients)
+        self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
 
-        self.services = {}     #
-        self.clients = {}      # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
-        self.inuse = {}        #
-        self.pairs = {}        #
-        self.lock = None
-
-        self._shutting_down = False  # Used to protect self.pairs when shutting down.
-
-    def setup_ros_api(self):
-        self.subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self.process_list_concert_clients)
-        self.subscribers['request_resources'] = rospy.Subscriber('request_resources', concert_msgs.RequestResources, self.process_request_resources)
-        self.srv['resource_status'] = rospy.Service('resource_status', concert_srvs.ResourceStatus, self.process_resource_status)
-
-    def process_list_concert_clients(self, msg):
+    def _process_list_concert_clients(self, msg):
         """
             @param
                 msg : concert_msgs.ConcertClients
@@ -62,20 +51,20 @@ class ConcertScheduler(object):
             2. Rebuild client list
             3. Starts services which has all requested resources
         """
-        self.lock.acquire()
-
+        self._lock.acquire()
         clients = msg.clients
-
         self._stop_services_of_left_clients(clients)
 
-        self.clients = {}
+        self._clients = {}
+        self.loginfo("clients:")
         for c in clients:
-            self.clients[c.name] = c
+            self.loginfo("  %s" % c.name)
+            self._clients[c.name] = c
 
-        self._update_services_status()
-        self.lock.release()
+        self._update()
+        self._lock.release()
 
-    def process_request_resources(self, msg):
+    def _process_requests(self, msg):
         """
             1. enable : true. add service or update linkgraph
             2. enable : false. stop service. and remove service
@@ -85,24 +74,13 @@ class ConcertScheduler(object):
             TODO: it does not rearrange clients if only linkgraph get changed.
 
             @param : msg
-            @type concert_msgs.RequestResources
+            @type scheduler_msgs.SchedulerRequests
         """
-        self.lock.acquire()
-        self.loginfo("received request for resources.")
-
-        if msg.enable is True:
-            self.services[msg.service_name] = msg.linkgraph
-        else:
-            self.loginfo("disabling")
-            if msg.service_name in self.pairs:
-                self._stop_service(msg.service_name)
-            if msg.service_name in self.services:
-                del self.services[msg.service_name]
-            else:
-                self.loginfo("'" + str(msg.service_name) + "' does not exist [%s]" % str(self.services.keys()))
-
-        self._update_services_status()
-        self.lock.release()
+        self._lock.acquire()
+        requester_uuid = unique_id.toHexString(msg.requester)
+        self._requests[requester_uuid] = msg.requests  # potentially unsafe
+        self._update()
+        self._lock.release()
 
     def _stop_services_of_left_clients(self, clients):
         """
@@ -117,12 +95,12 @@ class ConcertScheduler(object):
         left_client_gateways = self._get_left_clients(clients)
         service_to_stop = []
 
-        for service_name in self.pairs:
-            if not self._is_service_still_valid(self.pairs[service_name], left_client_gateways):
+        for service_name in self._pairs:
+            if not self._is_service_still_valid(self._pairs[service_name], left_client_gateways):
                 service_to_stop.append(service_name)
 
         for s in service_to_stop:
-            self._stop_service(s, left_client_gateways)
+            self._stop_request(s, left_client_gateways)
 
     def _is_service_still_valid(self, pairs, left_clients):
         """
@@ -141,15 +119,18 @@ class ConcertScheduler(object):
         else:
             return True
 
-    def _stop_service(self, service_name, left_client_gateways=[]):
+    def _stop_request(self, request_id, left_client_gateways=[]):
         """
-            Stops all clients involved in <service_name>
-        """
-        for p in self.pairs[service_name]:
-            service_node, client_node = p
+            Stops all clients involved in serving <request_id>
 
-            service_node_name = service_node.id
-            _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
+            @param request_id : uuid hex string representing the request.
+            @type hex string
+        """
+        for p in self._pairs[request_id]:
+            resource, client_node = p
+
+            (unused_platform_part, unused_separator, resource_platform_name) = resource.platform_info.rpartition('.')
+            service_app_name = resource.name
 
             is_need_to_stop = self._unmark_client_as_inuse(client_node.gateway_name)
 
@@ -159,10 +140,10 @@ class ConcertScheduler(object):
                     stop_app_srv = self._get_stop_client_app_service(client_node.gateway_name)
 
                     # Create stop app request object
-                    req = rapp_mamanager_srvs.StopAppRequest()
+                    req = rapp_manager_srvs.StopAppRequest()
 
                     # Request
-                    self.loginfo(" stopping client app [%s][%s][%s]" % (str(service_node_name), str(service_app_name), str(client_node.name)))
+                    self.loginfo(" stopping client app [%s][%s][%s]" % (str(resource_platform_name), str(service_app_name), str(client_node.name)))
                     resp = stop_app_srv(req)
 
                     if not resp.stopped:
@@ -171,8 +152,8 @@ class ConcertScheduler(object):
             else:
                 self.loginfo(str(client_node.name) + " has already left")
 
-        del self.pairs[service_name]
-        self.loginfo(str(service_name) + " has been stopped")
+        del self._pairs[request_id]
+        self.loginfo(str(request_id) + " has been stopped")
 
     def _get_stop_client_app_service(self, gatewayname):
         """
@@ -185,7 +166,7 @@ class ConcertScheduler(object):
         srv_name = '/' + gatewayname + ConcertScheduler.POSTFIX_STOP_APP
         rospy.wait_for_service(srv_name)
 
-        srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StopApp)
+        srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StopApp)
 
         return srv
 
@@ -197,7 +178,6 @@ class ConcertScheduler(object):
             @return left_clients: list of concert client gateway_name who recently left
             @rtype list of string
         """
-
         inuse_gateways = self._get_inuse_gateways()
         inuse_gateways_set = set(inuse_gateways)
         clients_set = set([c.gateway_name for c in clients])
@@ -205,130 +185,115 @@ class ConcertScheduler(object):
 
         return list(left_clients)
 
-    def _update_services_status(self):
+    def _update(self):
         """
-            Brings up services which can start with currently available clients(or resources)
+            Brings up requests for resources which can start with currently available clients
 
-            For each service which needs to be started
-            1. create (node, client) pair with already running clients.
-            2. create (node, client) pair with available clients
+            For each request which needs to be started
+
+            1. create (resource, client) pair with already running clients.
+            2. create (resource, client) pair with available clients
             3. If all pairs are successfully made, starts service
-
-            TODO : Current implementation is not aware of priority of service
         """
-        for s in self.services:
-            linkgraph = self.services[s]
+        for requests in self._requests.values():
+            for request in requests:
+                key = unique_id.toHexString(request.id)
+                if key in self._pairs:
+                    # nothing to touch
+                    continue
+                self.loginfo("processing outstanding request %s" % unique_id.toHexString(request.id))
+                resources = copy.deepcopy(request.resources)
+                app_pairs = []
+                available_clients = self._get_available_clients()
+                cname = [c.name for c in available_clients]
+                self.loginfo("  available clients : " + str(cname))
+                self.loginfo("  required resources : %s" % [resource.platform_info + "." + resource.name for resource in resources])
 
-            if s in self.pairs:
-                # nothing to touch
-                continue
+                # Check if any resource can be paired with already running client
+                paired_resources, reused_client_app_pairs = self._pairs_with_running_clients(resources)
 
-            # reuse running clients as much as possible
-            nodes = copy.deepcopy(linkgraph.nodes)
-            app_pairs = []
+                # More client is required?
+                remaining_resources = [resource for resource in resources if not resource in paired_resources]
 
-            available_clients = self._get_available_clients()
-            cname = [c.name for c in available_clients]
-            self.loginfo("Available client : " + str(cname))
+                # More client is required?
+                remaining_resources = [r for r in resources if not r in paired_resources]
 
-            rn = [(n.id, n.tuple) for n in nodes]
-            self.loginfo("Remaining node : " + str(rn))
+                # Clients who are not running yet
+                available_clients = self._get_available_clients()
+                cname = [c.name for c in available_clients]
+                self.loginfo("  remaining clients : " + str(cname))
+                self.loginfo("  remaining resources : %s" % [resource.platform_info + "." + resource.name for resource in remaining_resources])
 
-            # Check if any node can be paired with already running client
-            paired_nodes, reused_client_app_pairs = self._pairs_with_running_clients(nodes, linkgraph)
-#compatibility_tree.print_pairs(reused_client_app_pairs)
+                # Pair between remaining node and free cleints
+                status, message, new_app_pairs = compatibility_tree.resolve(remaining_resources, available_clients)
 
-            # More client is required?
-            remaining_nodes = [n for n in nodes if not n in paired_nodes]
+                app_pairs.extend(reused_client_app_pairs)
+                app_pairs.extend(new_app_pairs)
 
-            # Clients who are not running yet
-            available_clients = self._get_available_clients()
-            cname = [c.name for c in available_clients]
-            self.loginfo("Available client : " + str(cname))
+                # Starts request if it is ready
+                if status is concert_msgs.ErrorCodes.SUCCESS:
+                    self._pairs[key] = app_pairs
+                    self._mark_clients_as_inuse(app_pairs)
+                    self._start_request(new_app_pairs, key)
+                else:
+                    # if not, do nothing
+                    self.logwarn("warning in [" + key + "] status. " + str(message))
 
-            rn = [n.id for n in remaining_nodes]
-            self.loginfo("Remaining node : " + str(rn))
-
-            # Pair between remaining node and free cleints
-            status, message, new_app_pairs = compatibility_tree.resolve(remaining_nodes, available_clients)
-
-            app_pairs.extend(reused_client_app_pairs)
-            app_pairs.extend(new_app_pairs)
-
-            # Starts service if it is ready
-            if status is concert_msgs.ErrorCodes.SUCCESS:
-                self.pairs[s] = app_pairs
-                self._mark_clients_as_inuse(app_pairs, linkgraph)
-                self._start_service(new_app_pairs, str(s), linkgraph)
-            else:
-                # if not, do nothing
-                self.logwarn("Warning in [" + str(s) + "] status. " + str(message))
-
-    def _pairs_with_running_clients(self, service_nodes, linkgraph):
+    def _pairs_with_running_clients(self, resources):
         """
-            Check if clients already running can be resued for another service nope
+            Check if clients already running can be reused for another resource.
             To be compatibile, it should have the same remapping rules, and available slot.
 
-            @param service_nodes: list of service nodes
-            @type concert_msgs.LinkNode[]
+            @param resources: list of resources for a single request
+            @type scheduler_msgs.Resource[]
 
-            @param linkgraph: implementation of service
-            @type concert_msgs.LinkGraph
-
-            @return paired_node: which can reuse inuse client
-            @type concert_msgs.LinkNode[]
+            @return paired_resource: which can reuse inuse client
+            @type scheduler_msgs.Resource[]
 
             @return new_app_pair: new pair
             @type [(concert_msgs.LinkNode, concert_msgs.ConcertClient)]
         """
-        paired_node = []
+        paired_resource = []
         new_app_pairs = []
 
-        for n in service_nodes:
-            service_node_name = n.id
-            _1, _2, _3, _4, service_app_name = n.tuple.split(".")  # use rpartition instead
+        for r in resources:
+            resource_app_name = r.name
 
-            if service_app_name in self.inuse:
-                service_remappings = self._get_match_remappings(service_node_name, linkgraph.edges)
-
-                for client_name, tup in self.inuse[service_app_name].items():
+            if resource_app_name in self._inuse:
+                resource_remappings = r.remappings
+                # key is client name, value is a tuple (client_node, remappings, max_share, count)
+                for unused_client_name, tup in self._inuse[resource_app_name].items():
                     client_node, remappings, max_share, count = tup
+                    if remappings == resource_remappings and count < max_share:
+                        paired_resource.append(r)
+                        new_app_pairs.append((r, client_node))
 
-                    if remappings == service_remappings and count < max_share:
-                        paired_node.append(n)
-                        new_app_pairs.append((n, client_node))
+        return paired_resource, new_app_pairs
 
-        return paired_node, new_app_pairs
-
-    def _mark_clients_as_inuse(self, pairs, linkgraph):
+    def _mark_clients_as_inuse(self, pairs):
         """
             store the paired client in inuse_clients
 
-            @param pair: list of pair (service node, client node)
-            @type : list of (concert_msgs.LinkNode, concert_msgs.ConcertClient)
-
-            @param linkgraph: service linkgraph
-            @type : concert_msgs.LinkGraph
+            @param pair: list of pair (resource, client)
+            @type : list of (scheduler_msgs.Resource, concert_msgs.ConcertClient)
         """
-        compatibility_tree.print_pairs(pairs)
-        edges = linkgraph.edges
+        #compatibility_tree.print_pairs(pairs)
 
         for p in pairs:
-            service_node, client_node = p
+            resource, client = p
+            resource_app_name = resource.name
+            remappings = resource.remappings
 
-            _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
-            remappings = self._get_match_remappings(service_node.id, linkgraph.edges)
+            if not resource_app_name in self._inuse:
+                self._inuse[resource_app_name] = {}
 
-            if not service_app_name in self.inuse:
-                self.inuse[service_app_name] = {}
+            app = [a for a in client.apps if a.name == resource_app_name][0]  # must be only one
 
-            app = [a for a in client_node.apps if a.name == service_app_name][0]  # must be only one
-
-            if client_node.name in self.inuse[service_app_name]:
-                c, r, m, count = self.inuse[service_app_name][client_node.name]
-                self.inuse[service_app_name][client_node.name] = (c, r, m, count + 1)
+            if client.name in self._inuse[resource_app_name]:
+                c, r, m, count = self._inuse[resource_app_name][client.name]
+                self._inuse[resource_app_name][client.name] = (c, r, m, count + 1)
             else:
-                self.inuse[service_app_name][client_node.name] = (client_node, remappings, app.share, 1)
+                self._inuse[resource_app_name][client.name] = (client, remappings, app.share, 1)
 
     def _unmark_client_as_inuse(self, gateway_name):
         """
@@ -341,7 +306,7 @@ class ConcertScheduler(object):
             @rtype bool
         """
 
-        for app_name, client_node_dict in self.inuse.items():
+        for app_name, client_node_dict in self._inuse.items():
             for client_node_name, tup in client_node_dict.items():
                 client_node, remapping, max_share, count = tup
 
@@ -351,7 +316,7 @@ class ConcertScheduler(object):
                         return False
                     else:
                         client_node_dict[client_node_name] = (client_node, remapping, max_share, count - 1)
-                        del self.inuse[app_name][client_node_name]
+                        del self._inuse[app_name][client_node_name]
                         return True
 
     def _get_available_clients(self):
@@ -361,7 +326,7 @@ class ConcertScheduler(object):
             @return list of available clients
             @rtype concert_msgs.ConcertClient[]
         """
-        clients = [self.clients[c] for c in self.clients if self.clients[c].client_status == concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED]  # and self.clients[c].app_status == concert_msgs.Constants.APP_STATUS_STOPPED]
+        clients = [self._clients[c] for c in self._clients if self._clients[c].client_status == concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED]  # and self._clients[c].app_status == concert_msgs.Constants.APP_STATUS_STOPPED]
         inuse_gateways = self._get_inuse_gateways()
         free_clients = [c for c in clients if not (c.gateway_name in inuse_gateways)]
 
@@ -376,14 +341,14 @@ class ConcertScheduler(object):
         """
         inuse_gateways = []
 
-        for client_node_dict in self.inuse.values():
-            for client_node, remapping, max_share, count in client_node_dict.values():
+        for client_node_dict in self._inuse.values():
+            for client_node, unused_remapping, unused_max_share, count in client_node_dict.values():
                 if count > 0:
                     inuse_gateways.append(client_node.gateway_name)
 
         return inuse_gateways
 
-    def _start_service(self, pairs, service_name, linkgraph):
+    def _start_request(self, pairs, request_id):
         """
             Starts up client apps for service
 
@@ -392,35 +357,27 @@ class ConcertScheduler(object):
 
             @param service_name
             @type string
-
-            @param linkgraph: for service remapping
-            @type concert_msgs.LinkGraph
         """
-        self.loginfo("starting apps for " + str(service_name))
+        if len(pairs) == 0:
+            return
 
+        self.loginfo("  starting apps for request '" + str(request_id) + "'")
         for p in pairs:
-            service_node, client_node = p
-
-            service_node_name = service_node.id
-            _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
-
-            self.loginfo("Node : " + str(service_node_name) + "\tApp : " + str(service_app_name) + "\tClient : " + str(client_node.name))
+            resource, client = p
 
             # Creates start app service
-            start_app_srv = self._get_start_client_app_service(client_node.gateway_name)
+            start_app_srv = self._get_start_client_app_service(client.gateway_name)
 
             # Create start app request object
-            req = self._create_startapp_request(service_app_name, service_node_name, linkgraph, service_name)
+            req = self._create_startapp_request(resource)
 
             # Request client to start app
-            self.loginfo("    Starting...")
-            self.loginfo(str(req.remappings))
+            self.loginfo("    starting '%s' on client '%s'..." % (resource.name, client.name))
             resp = start_app_srv(req)
 
             if not resp.started:
                 message = resp.message
                 raise FailedToStartAppsException(message)
-        self.loginfo("'" + str(service_name) + "' has been started")
 
     def _get_start_client_app_service(self, gateway_name):
         """
@@ -433,102 +390,29 @@ class ConcertScheduler(object):
         srv_name = '/' + gateway_name + ConcertScheduler.POSTFIX_START_APP
         rospy.wait_for_service(srv_name)
 
-        srv = rospy.ServiceProxy(srv_name, rapp_mamanager_srvs.StartApp)
+        srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StartApp)
 
         return srv
 
-    def _create_startapp_request(self, service_app_name, service_node_name, linkgraph, service_name):
+    def _create_startapp_request(self, resource):
         """
             creates startapp request instance
 
-            @param service_app_name: name of app to start in client
+            @param resource_app_name: name of app to start in client
             @type string
 
-            @param service_node_name
+            @param resource_node_name
             @type string
 
-            @param linkgraph
-            @type concert_msgs.LinkGraph
-
-            @param service_name
+            @param resource_name
             @type string
         """
 
-        req = rapp_mamanager_srvs.StartAppRequest()
-        req.name = service_app_name
-
-        # Remappings
-        edges = linkgraph.edges
-        req.remappings = self._get_match_remappings(service_node_name, edges)
+        req = rapp_manager_srvs.StartAppRequest()
+        req.name = resource.name
+        req.remappings = resource.remappings
 
         return req
-
-    def _get_match_remappings(self, node_name, edges):
-        """
-            finds out matching remappings for given node
-
-            @param node_name
-            @type string
-
-            @param edges
-            @type concert_msgs.LinkEdge[]
-        """
-
-        remappings = [rocon_std_msg.Remapping(e.remap_from, e.remap_to) for e in edges if e.start == node_name or e.finish == node_name]
-        return remappings
-
-    def process_resource_status(self, req):
-        """
-            respond resource_status request
-        """
-        resp = concert_srvs.ResourceStatusResponse()
-
-        self.lock.acquire()
-
-        inuse_gateways = self._get_inuse_gateways()
-        available = [c for c in self.clients if not self.clients[c].gateway_name in inuse_gateways]
-
-        inuse = []
-        for client_node_dict in self.inuse.values():
-            for client_node, remapping, max_share, count in client_node_dict.values():
-                s = client_node.name + " - " + str(count) + "(" + str(max_share) + ")"
-                inuse.append(s)
-
-        resp.available_clients = available
-        resp.inuse_clients = inuse
-
-        resp.requested_resources = []
-        for s in self.services:
-            srp = concert_msgs.ServiceResourcePair()
-
-            srp.service_name = s
-
-            srp.resources = []
-            for n in self.services[s].nodes:
-                for i in range(n.min):
-                    srp.resources.append(n.id)
-            resp.requested_resources.append(srp)
-
-        resp.engaged_pairs = []
-        for s in self.pairs:
-            srp = concert_msgs.ServiceResourcePair()
-            srp.service_name = s
-
-            for pair in self.pairs[s]:
-                service_node, client_node = pair
-
-                service_node_name = service_node.id
-                _1, _2, _3, _4, service_app_name = service_node.tuple.split(".")
-
-                p = service_node_name + " - " + client_node.name + " - " + service_app_name
-
-                srp.resources.append(p)
-
-            resp.engaged_pairs.append(srp)
-
-        self.lock.release()
-
-        return resp
 
     def loginfo(self, msg):
         rospy.loginfo("Scheduler : " + str(msg))

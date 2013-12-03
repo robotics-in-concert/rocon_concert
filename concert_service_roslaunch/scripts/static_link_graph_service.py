@@ -18,7 +18,7 @@ from concert_msgs.msg import *
 if __name__ == '__main__':
     rospy.init_node('static_link_graph_service', anonymous=True)
 
-    # this is a uuid key
+    # this is a uuid.UUID key
     (name, description, uuid) = concert_service_utilities.get_service_info()
     filename = rospy.get_param('~filename')
 
@@ -27,5 +27,5 @@ if __name__ == '__main__':
     if not name:
         name = impl_name
 
-    sgsh =  concert_service_roslaunch.StaticLinkGraphHandler(name, uuid, description, impl)
+    sgsh =  concert_service_roslaunch.StaticLinkGraphHandler(name, description, uuid, impl)
     sgsh.spin()

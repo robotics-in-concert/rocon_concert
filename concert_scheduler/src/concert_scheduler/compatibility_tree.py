@@ -2,13 +2,13 @@
 
 import rospy
 import copy
-import concert_msgs.msg as concert_msg
+import concert_msgs.msg as concert_msgs
 
 
-def resolve(requested_nodes, client_list):
+def resolve(resources, client_list):
     """
-        @param requested_nodes: list of requested nodes.
-        @type concert_msgs.LinkNode[]
+        @param resources: list of requested nodes.
+        @type scheduler_msgs.Resource[]
 
         @param client_list: list of client.
         @type concert_msg.ConcertClient[]
@@ -16,52 +16,20 @@ def resolve(requested_nodes, client_list):
         @return result of pairing. message. list of valid pair (service node, client node)
         @rtype concert_msg.ErrorCodes.CONSTANT, string, [(LinkNode,ConcertClient)]
     """
-#    rospy.loginfo("=== Clients ===")
-#    print_dict(c_node)
-#    rospy.loginfo("=== Service ===")
-#    print_array(d_node)
-
-    nodes = _expand_min_nodes(requested_nodes)
-
     pairs = []
-    result, message = _get_app_client_pair(pairs, nodes, client_list)
-
-#rospy.loginfo("===== Result =====")
-#rospy.loginfo(str(result))
-#rospy.loginfo(str(message))
-#print_pairs(pairs)
-#rospy.loginfo("==================")
+    result, message = _get_app_client_pair(pairs, resources, client_list)
     return result, message, pairs
 
 
-def _expand_min_nodes(nodes):
-    """
-        A multiple of same node may need. service description includes min-max value. Using min value it creates multiple instances.
-
-        @param nodes list of requested nodes
-        @type concert_msgs.LinkNode[]
-
-        @return expanded list of requested nodes
-        @rtype concert_msgs.LinkNode[]
-    """
-    expanded_nodes = copy.deepcopy(nodes)
-
-    for n in nodes:
-        for unused_i in range((n.min - 1)):
-            expanded_nodes.append(copy.deepcopy(n))
-
-    return expanded_nodes
-
-
-def _get_app_client_pair(pair, nodes, clients):
+def _get_app_client_pair(pairs, resources, clients):
     """
         Simple backtracking to create pairs of service node and client
 
-        @param pair: the list of currently created pair. It holds the full list of pairs after the full iteration
+        @param pairs: the list of currently created pairs. It holds the full list of pairs after the full iteration
         @type list of (node, client)
 
         @param nodes: list of service nodes need to be paired
-        @type concert_msgs.msg.LinkNode[]
+        @type scheduler_msgs.Resource
 
         @param clients: list of remaining available clients
         @type concert_msgs.msg.ConcertClient[]
@@ -72,48 +40,51 @@ def _get_app_client_pair(pair, nodes, clients):
         @return message : comment
         @rtype string
     """
-    result = concert_msg.ErrorCodes.SERVICE_UNEXPECTED_ERROR
+    result = concert_msgs.ErrorCodes.SERVICE_UNEXPECTED_ERROR
     message = "No iteration yet"
-    if len(nodes) == 0:
-        return concert_msg.ErrorCodes.SUCCESS, "Successful Match Making"
+    if len(resources) == 0:
+        return concert_msgs.ErrorCodes.SUCCESS, "Successful Match Making"
 
     if len(clients) == 0:
-        singles = [n.id for n in nodes]
-        return concert_msg.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "No match for " + str(singles)
+        singles = [_get_resource_platform_name(resource) for resource in resources]
+        for resource in resources:
+            (unused_platform_part, unused_separator, name) = resource.platform_info.rpartition('.')
+            singles.append(name)
+        return concert_msgs.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "No match for " + str(singles)
 
-    nodes_copy = copy.deepcopy(nodes)
+    nodes_copy = copy.deepcopy(resources)
     clients_copy = copy.deepcopy(clients)
 
-    for n in nodes:
+    for resource in resources:
         for c in clients:
-            if _is_valid_pair(n, c):
+            if _is_valid_pair(resource, c):
 
-                p = (n, c)
+                p = (resource, c)
 
                 # Prepare for next depth
-                pair.append(p)
-                nodes_copy.remove(n)
+                pairs.append(p)
+                nodes_copy.remove(resource)
                 clients_copy.remove(c)
 
                 # Go to next depth
-                result, message = _get_app_client_pair(pair, nodes_copy, clients_copy)
+                result, message = _get_app_client_pair(pairs, nodes_copy, clients_copy)
 
-                if result is concert_msg.ErrorCodes.SUCCESS:
+                if result is concert_msgs.ErrorCodes.SUCCESS:
                     return result, message
 
                 # Return back to current depth
-                pair.remove(p)
-                nodes_copy.append(n)
+                pairs.remove(p)
+                nodes_copy.append(resource)
                 clients_copy.append(c)
 
     return result, message
 
 
-def _is_valid_pair(n, c):
+def _is_valid_pair(resource, c):
     """
         Compatibility check. Check if client node 'c' can serve as service node 'n'
-        @param n : service node
-        @type concert_msgs.msg.LinkNode
+        @param resource : requested resource
+        @type scheduler_msgs.Resource
 
         @param c : client node
         @type concert_msgs.msg.ConcertClient
@@ -121,11 +92,11 @@ def _is_valid_pair(n, c):
         @return True if client node 'c' can serve as service node 'n'
         @rtype bool
     """
-
     # 0 : os, 1: version, 2: system, 3: platform
     client_tuple = node_tuple = [0, 1, 2, 3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
 
-    node_tuple[0], node_tuple[1], node_tuple[2], node_tuple[3], service_app_name = n.tuple.split(".")
+    service_app_name = resource.name
+    node_tuple[0], node_tuple[1], node_tuple[2], node_tuple[3], unused_name = resource.platform_info.split(".")
 
     client_tuple[0] = c.os
     client_tuple[1] = c.version
@@ -144,18 +115,24 @@ def _is_valid_pair(n, c):
     return True
 
 
-def print_dict(node):
-    for n in node:
-        rospy.loginfo(str(n) + " : " + str(node[n]))
+###############################################################################
+# Utilities
+###############################################################################
 
+def _get_resource_platform_name(resource):
+    '''
+      @param resource : details about a requested resource
+      @type scheduler_msgs.Resource
 
-def print_array(ary):
-    for a in ary:
-        rospy.loginfo(str(a))
+      @return the platform name buried at the end of the platform_info string tuple.
+      @type str
+    '''
+    (unused_platform_part, unused_separator, name) = resource.platform_info.rpartition('.')
+    return name
 
 
 def print_pairs(pairs):
-    for p in pairs:
-        n, c = p
-        node_name = n.id
-        rospy.loginfo(str(n.id) + " - " + str(c.name))
+    for pair in pairs:
+        resource, client = pair
+        resource_name = _get_resource_platform_name(resource)
+        rospy.loginfo(str(resource_name) + " - " + str(client.name))

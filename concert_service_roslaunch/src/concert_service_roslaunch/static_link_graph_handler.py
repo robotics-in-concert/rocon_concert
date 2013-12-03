@@ -14,8 +14,10 @@
 
 import rospy
 
-import unique_id
+import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
+import rocon_scheduler_requests
+import scheduler_msgs.msg as scheduler_msgs
 import yaml
 
 ##############################################################################
@@ -30,9 +32,10 @@ class StaticLinkGraphHandler(object):
         '_uuid',
         '_linkgraph',
         '_publishers',
+        '_requester',
     ]
 
-    def __init__(self, name, description, uuid, linkgraph):
+    def __init__(self, name, description, key, linkgraph):
         '''
           @param name
           @type str
@@ -40,7 +43,7 @@ class StaticLinkGraphHandler(object):
           @param description
           @type string
 
-          @param uuid
+          @param key
           @type uuid.UUID
 
           @param linkgraph
@@ -48,43 +51,35 @@ class StaticLinkGraphHandler(object):
         '''
         self._name = name
         self._description = description
-        self._uuid = uuid
+        self._uuid = key
         self._linkgraph = linkgraph
         self._publishers = {}
-        self._setup_ros_api()
-
-    def _setup_ros_api(self):
-        self._publishers['request_resources'] = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)
+        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
+                                                             uuid=self._uuid,
+                                                             topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                                            )
 
     def _request_resources(self, enable):
-        rospy.loginfo("enable : " + str(enable))
-
-        msg = concert_msgs.RequestResources()
-
-        # Legacy style, delete once we go live.
-        msg.service_name = self._name
-        msg.linkgraph = self._linkgraph
-        msg.enable = enable
-
-        # Once this goes live, we can delete the legacy style above
-        msg.id = unique_id.toMsg(unique_id.fromRandom())
-        msg.group = self._name
-        msg.resources = []
-        msg.priority = 0
+        # Once this goes in, both of the legacy approaches can be deleted.
+        resources = []
         for node in self._linkgraph.nodes:
             # node.tuple is of the form 'linux.*.ros.pc.rocon_apps/talker'
-            resource = concert_msgs.Resource()
-            (platform_part, unused_separator, resource.name) = node.tuple.rpartition('.')
-            resource.platform_info = platform_part + "." + node.id
-            resource.remappings = []
-            # jihoon didn't do anything to implement for max values
+            resource = _node_to_resource(node, self._linkgraph)
             for unused_i in range(node.min):
-                msg.resources.append(resource)
-        self._publishers['request_resources'].publish(msg)
+                resources.append(resource)
+        unused_request_uuid = self._requester.new_request(resources)
 
-        # @TODO : Now we should regenerate the uuid, empty the resources, drop the
-        # priority and traverse the nodes again. Add extras for any min-max ranges
-        # (these are optionals)
+        # provide extra requests for over min, and under max
+        # unfortunately no priority settable here yet so this doesn't
+        # yet work well - they get in the way of each other.
+        for node in self._linkgraph.nodes:
+            for unused_i in range(node.max - node.min):
+                resource = _node_to_resource(node, self._linkgraph)
+                # could use a way of setting the request priority here.
+                unused_request_uuid = self._requester.new_request([resource])
+
+    def _requester_feedback(self):
+        rospy.loginfo("Static Link Graph Handler : requester feedback")
 
     def spin(self):
         self._request_resources(True)
@@ -131,3 +126,27 @@ def load_linkgraph_from_file(filename):
         for edge in impl['edges']:
             lg.edges.append(concert_msgs.LinkEdge(edge['start'], edge['finish'], edge['remap_from'], edge['remap_to']))
     return name, lg
+
+
+def _node_to_resource(node, linkgraph):
+    '''
+      Convert linkgraph information for a particular node to a scheduler_msgs.Resource type.
+
+      @param node : a node from the linkgraph
+      @type concert_msgs.LinkNode
+
+      @param linkgraph : the entire linkgraph (used to lookup the node's edges)
+      @type concert_msgs.LinkGraph
+
+      @return resource
+      @rtype scheduler_msgs.Resource
+    '''
+    resource = scheduler_msgs.Resource()
+    (platform_part, unused_separator, resource.name) = node.tuple.rpartition('.')
+    resource.platform_info = platform_part + "." + node.id
+    if node.force_name_matching:
+        resource.platform_info = platform_part + "." + node.id
+    else:
+        resource.platform_info = platform_part + "." + rocon_std_msgs.PlatformInfo.NAME_ANY
+    resource.remappings = [rocon_std_msgs.Remapping(e.remap_from, e.remap_to) for e in linkgraph.edges if e.start == node.id or e.finish == node.id]
+    return resource

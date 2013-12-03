@@ -75,13 +75,14 @@ class ServiceManager(object):
     def _setup_ros_api(self):
         self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self._ros_service_enable_concert_service)
         self._publishers['list_concert_services'] = rospy.Publisher('list_concert_services', concert_msgs.ConcertServices, latch=True)
-        self._publishers['request_resources']     = rospy.Publisher(concert_msgs.Strings.REQUEST_RESOURCES, concert_msgs.RequestResources, latch=True)  #@IgnorePep8
 
     def _unload_resources(self, service_name):
-        request_resources = concert_msgs.RequestResources()
-        request_resources.service_name = service_name
-        request_resources.enable = False
-        self._publishers['request_resources'].publish(request_resources)
+        # Taken out temporarily until the scheduler handles 'groups',
+        pass
+        #request_resources = concert_msgs.RequestResources()
+        #request_resources.service_name = service_name
+        #request_resources.enable = False
+        #self._publishers['request_resources'].publish(request_resources)
 
     def _ros_service_enable_concert_service(self, req):
         name = req.concertservice_name
