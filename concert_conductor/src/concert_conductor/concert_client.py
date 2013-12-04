@@ -101,11 +101,13 @@ class ConcertClient(object):
         # These are permanent
         self._status_service = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'status'), rapp_manager_srvs.Status)
         self._invite_service = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'invite'), rapp_manager_srvs.Invite)
+        self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
             platform_info_service.wait_for_service()
             list_app_service.wait_for_service()
             self._status_service.wait_for_service()
             self._invite_service.wait_for_service()
+            self._remote_gateway_info_service.wait_for_service()
         except rospy.ServiceException, e:
             raise e
         platform_info = platform_info_service().platform_info
@@ -166,6 +168,19 @@ class ConcertClient(object):
         else:
             self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
         #    self.data.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
+
+        try:
+            remote_gateway_info = self._remote_gateway_info_service()
+        except rospy.service.ServiceException:
+            raise ConcertClientException("remote client statistics unavailable")
+        gateway_found = False
+        for gateway in remote_gateway_info.gateways:
+            if gateway.name == self.gateway_name:
+                self.data.conn_stats = gateway.conn_stats 
+                gateway_found = True
+                break
+        if not gateway_found:
+            raise ConcertClientException("couldn't find remote gateway info while update client information")
 
     def invite(self, concert_gateway_name, client_local_name, cancel):
         '''
