@@ -15,6 +15,8 @@
   <!-- Service Manager -->
   <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
+  <!-- Scheduler -->
+  <arg name="scheduler_type" value="demo"/>  <!-- options are demo, compatibility_tree -->
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
@@ -38,7 +40,7 @@
     </include>
 
     <!-- ****************************** Scheduler ****************************** -->
-    <node pkg="concert_scheduler" name="scheduler" type="scheduler.py" output="screen"/>
+    <node pkg="concert_scheduler" name="scheduler" type="$(arg scheduler_type)_scheduler.py"/>
 
     <!-- **************************** Role Manager ***************************** -->
     <node pkg="concert_roles" type="role_manager.py" name="interactions"/>
