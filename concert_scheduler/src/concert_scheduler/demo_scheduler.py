@@ -12,6 +12,7 @@ import threading
 import copy
 import unique_id
 import concert_msgs.msg as concert_msgs
+import concert_msgs.srv as concert_srvs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import rocon_scheduler_requests
@@ -31,6 +32,7 @@ class DemoScheduler(object):
 
     def __init__(self, requests_topic_name):
         self._subscribers = {}       # ros subscribers
+        self._services = {}          # ros services
         self._requests = {}          # requester uuid : scheduler_msgs/Request[] - keeps track of all current requests
         self._clients = {}           # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
         self._inuse = {}             #
@@ -43,6 +45,7 @@ class DemoScheduler(object):
     def _setup_ros_api(self, requests_topic_name):
         self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._ros_service_list_concert_clients)
         self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
+        self._services['resource_status'] = rospy.Service('~resource_status', concert_srvs.ResourceStatus, self._ros_service_resource_status)
 
     def _ros_service_list_concert_clients(self, msg):
         """
@@ -65,6 +68,47 @@ class DemoScheduler(object):
 
         self._update()
         self._lock.release()
+
+    def _ros_service_resource_status(self, req):
+        """
+            respond resource_status request
+        """
+        resp = concert_srvs.ResourceStatusResponse()
+        self._lock.acquire()
+        inuse_gateways = self._get_inuse_gateways()
+        available = [c for c in self._clients if not self._clients[c].gateway_name in inuse_gateways]
+
+        inuse = []
+        for client_node_dict in self._inuse.values():
+            for client_node, unused_remapping, max_share, count in client_node_dict.values():
+                s = client_node.name + " - " + str(count) + "(" + str(max_share) + ")"
+                inuse.append(s)
+
+        resp.available_clients = available
+        resp.inuse_clients = inuse
+
+        resp.requested_resources = []
+        for s in self._requests:
+            srp = concert_msgs.ServiceResourcePair()
+            srp.request_id = s
+            srp.resources = []
+            for request in self._requests[s]:
+                for resource in request.resources:
+                    srp.resources.append(resource.platform_info + "." + resource.name)
+            resp.requested_resources.append(srp)
+
+        resp.engaged_pairs = []
+        for s in self._pairs:
+            srp = concert_msgs.ServiceResourcePair()
+            srp.request_id = s
+
+            for pair in self._pairs[s]:
+                resource, client_node = pair
+                p = resource.platform_info + " - " + client_node.name + " - " + resource.name
+                srp.resources.append(p)
+            resp.engaged_pairs.append(srp)
+        self._lock.release()
+        return resp
 
     def _requester_update(self, request_set):
         '''
