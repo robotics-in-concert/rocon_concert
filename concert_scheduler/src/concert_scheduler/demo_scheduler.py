@@ -16,7 +16,7 @@ import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import rocon_scheduler_requests
 
-import compatibility_tree
+import demo_allocator
 from .exceptions import FailedToStartAppsException
 
 ##############################################################################
@@ -24,7 +24,7 @@ from .exceptions import FailedToStartAppsException
 ##############################################################################
 
 
-class ConcertScheduler(object):
+class DemoScheduler(object):
 
     POSTFIX_START_APP = '/start_app'
     POSTFIX_STOP_APP = '/stop_app'
@@ -176,7 +176,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to stop app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gatewayname + ConcertScheduler.POSTFIX_STOP_APP
+        srv_name = '/' + gatewayname + DemoScheduler.POSTFIX_STOP_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StopApp)
@@ -238,7 +238,7 @@ class ConcertScheduler(object):
                 self.loginfo("  remaining resources : %s" % [resource.platform_info + "." + resource.name for resource in remaining_resources])
 
                 # Pair between remaining node and free cleints
-                status, message, new_app_pairs = compatibility_tree.resolve(remaining_resources, available_clients)
+                status, message, new_app_pairs = demo_allocator.resolve(remaining_resources, available_clients)
 
                 app_pairs.extend(reused_client_app_pairs)
                 app_pairs.extend(new_app_pairs)
@@ -290,7 +290,7 @@ class ConcertScheduler(object):
             @param pair: list of pair (resource, client)
             @type : list of (scheduler_msgs.Resource, concert_msgs.ConcertClient)
         """
-        #compatibility_tree.print_pairs(pairs)
+        #demo_allocator.print_pairs(pairs)
 
         for p in pairs:
             resource, client = p
@@ -400,7 +400,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to start app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gateway_name + ConcertScheduler.POSTFIX_START_APP
+        srv_name = '/' + gateway_name + DemoScheduler.POSTFIX_START_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StartApp)

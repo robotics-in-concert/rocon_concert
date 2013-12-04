@@ -17,5 +17,5 @@ import concert_msgs.msg as concert_msgs
 
 if __name__ == '__main__':
     rospy.init_node('scheduler')
-    scheduler = concert_scheduler.ConcertScheduler(concert_msgs.Strings.SCHEDULER_REQUESTS)
+    scheduler = concert_scheduler.CompatibilityTreeScheduler(concert_msgs.Strings.CONCERT_CLIENT_CHANGES)
     scheduler.spin()
