@@ -78,8 +78,15 @@ class StaticLinkGraphHandler(object):
                 # could use a way of setting the request priority here.
                 unused_request_uuid = self._requester.new_request([resource])
 
-    def _requester_feedback(self):
-        rospy.loginfo("Static Link Graph Handler : requester feedback")
+    def _requester_feedback(self, request_set):
+        '''
+          Callback used to act on feedback coming from the scheduler request handler.
+
+          @param request_set : a snapshot of the state of all requests from this requester
+          @type rocon_scheduler_requests.transition.RequestSet
+        '''
+        #rospy.loginfo("Static Link Graph Handler : requester feedback")
+        pass
 
     def spin(self):
         self._request_resources(True)

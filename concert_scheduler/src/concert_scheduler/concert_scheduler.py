@@ -14,6 +14,7 @@ import unique_id
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import rocon_scheduler_requests
 
 import compatibility_tree
 from .exceptions import FailedToStartAppsException
@@ -37,12 +38,13 @@ class ConcertScheduler(object):
         self._shutting_down = False  # Used to protect self._pairs when shutting down.
         self._setup_ros_api(requests_topic_name)
         self._lock = threading.Lock()
+        self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
 
     def _setup_ros_api(self, requests_topic_name):
-        self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._process_list_concert_clients)
+        self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._ros_service_list_concert_clients)
         self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
 
-    def _process_list_concert_clients(self, msg):
+    def _ros_service_list_concert_clients(self, msg):
         """
             @param
                 msg : concert_msgs.ConcertClients
@@ -63,6 +65,17 @@ class ConcertScheduler(object):
 
         self._update()
         self._lock.release()
+
+    def _requester_update(self, request_set):
+        '''
+          Callback used in rocon_scheduler_requests scheduler for processing incoming resource requests.
+          This gets fired every time an incoming message arrives from a Requester.
+
+          @param request_set : a snapshot of all requests from a single requester in their current state.
+          @type rocon_scheduler_requests.transition.RequestSet
+        '''
+        pass
+        #self.logwarn("requester update callback function!")
 
     def _process_requests(self, msg):
         """
