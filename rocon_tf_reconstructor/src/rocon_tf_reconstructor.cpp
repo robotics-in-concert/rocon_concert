@@ -1,4 +1,5 @@
 #include <rocon_tf_reconstructor/rocon_tf_reconstructor.h>
+#include <concert_msgs/Strings.h>
 
 namespace rocon {
 
@@ -26,7 +27,7 @@ namespace rocon {
 
   void RoconTFReconstructor::getParams()
   {
-    this->nh.param<std::string>("list_concert_client",this->sub_client_list_topic,"/concert/list_concert_clients");
+    this->nh.param<std::string>("concert_client_changes",this->sub_client_list_topic, concert_msgs::Strings::CONCERT_CLIENT_CHANGES);
     this->nh.param<std::string>("robotpose_topic",this->sub_robotpose_topic,"robot_pose");
   }
 

@@ -43,7 +43,7 @@ class DemoScheduler(object):
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
 
     def _setup_ros_api(self, requests_topic_name):
-        self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._ros_service_list_concert_clients)
+        self._subscribers['list_concert_clients'] = rospy.Subscriber(concert_msgs.Strings.CONCERT_CLIENT_CHANGES, concert_msgs.ConcertClients, self._ros_service_list_concert_clients)
         self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
         self._services['resource_status'] = rospy.Service('~resource_status', concert_srvs.ResourceStatus, self._ros_service_resource_status)
 

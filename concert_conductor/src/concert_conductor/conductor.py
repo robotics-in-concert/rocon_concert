@@ -31,10 +31,10 @@ class Conductor(object):
         # Pubs, Subs and Services
         ##################################
         self.publishers = {}
-        # private spammy list_concert_clients publisher - used by web applications since they can't yet handle latched
-        self.publishers["spammy_list_concert_clients"] = rospy.Publisher("~list_concert_clients", concert_msgs.ConcertClients)
-        # efficient latched publisher, put in the public concert namespace.
-        self.publishers["list_concert_clients"] = rospy.Publisher("list_concert_clients", concert_msgs.ConcertClients, latch=True)
+        # high frequency list_concert_clients publisher - good for connectivity statistics and app status'
+        self.publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients)
+        # efficient latched publisher which only publishes on client leaving/joining
+        self.publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         # service clients
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
@@ -150,7 +150,7 @@ class Conductor(object):
                     client_list = [client for client in client_list if self._concert_clients[client].is_local_client == True]
                 self.batch_invite(self._concert_name, client_list)
             # Continually publish so it goes to web apps for now (inefficient).
-            self._publish_discovered_concert_clients(self.publishers["spammy_list_concert_clients"])
+            self._publish_discovered_concert_clients(self.publishers["concert_clients"])
             # Long term solution
             if number_of_pruned_clients != 0 or number_of_new_clients != 0:
                 self._publish_discovered_concert_clients()
@@ -262,7 +262,7 @@ class Conductor(object):
                 # (it will be deleted from client list next pass)
                 pass
         if not list_concert_clients_publisher:
-            list_concert_clients_publisher = self.publishers["list_concert_clients"]  # default
+            list_concert_clients_publisher = self.publishers["concert_client_changes"]  # default
         list_concert_clients_publisher.publish(discovered_concert)
 
     ###########################################################################
