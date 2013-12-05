@@ -12,10 +12,12 @@ import threading
 import copy
 import unique_id
 import concert_msgs.msg as concert_msgs
+import concert_msgs.srv as concert_srvs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import rocon_scheduler_requests
 
-import compatibility_tree
+import demo_allocator
 from .exceptions import FailedToStartAppsException
 
 ##############################################################################
@@ -23,13 +25,14 @@ from .exceptions import FailedToStartAppsException
 ##############################################################################
 
 
-class ConcertScheduler(object):
+class DemoScheduler(object):
 
     POSTFIX_START_APP = '/start_app'
     POSTFIX_STOP_APP = '/stop_app'
 
     def __init__(self, requests_topic_name):
         self._subscribers = {}       # ros subscribers
+        self._services = {}          # ros services
         self._requests = {}          # requester uuid : scheduler_msgs/Request[] - keeps track of all current requests
         self._clients = {}           # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
         self._inuse = {}             #
@@ -37,12 +40,14 @@ class ConcertScheduler(object):
         self._shutting_down = False  # Used to protect self._pairs when shutting down.
         self._setup_ros_api(requests_topic_name)
         self._lock = threading.Lock()
+        self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
 
     def _setup_ros_api(self, requests_topic_name):
-        self._subscribers['list_concert_clients'] = rospy.Subscriber('list_concert_clients', concert_msgs.ConcertClients, self._process_list_concert_clients)
+        self._subscribers['list_concert_clients'] = rospy.Subscriber(concert_msgs.Strings.CONCERT_CLIENT_CHANGES, concert_msgs.ConcertClients, self._ros_service_list_concert_clients)
         self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
+        self._services['resource_status'] = rospy.Service('~resource_status', concert_srvs.ResourceStatus, self._ros_service_resource_status)
 
-    def _process_list_concert_clients(self, msg):
+    def _ros_service_list_concert_clients(self, msg):
         """
             @param
                 msg : concert_msgs.ConcertClients
@@ -63,6 +68,58 @@ class ConcertScheduler(object):
 
         self._update()
         self._lock.release()
+
+    def _ros_service_resource_status(self, req):
+        """
+            respond resource_status request
+        """
+        resp = concert_srvs.ResourceStatusResponse()
+        self._lock.acquire()
+        inuse_gateways = self._get_inuse_gateways()
+        available = [c for c in self._clients if not self._clients[c].gateway_name in inuse_gateways]
+
+        inuse = []
+        for client_node_dict in self._inuse.values():
+            for client_node, unused_remapping, max_share, count in client_node_dict.values():
+                s = client_node.name + " - " + str(count) + "(" + str(max_share) + ")"
+                inuse.append(s)
+
+        resp.available_clients = available
+        resp.inuse_clients = inuse
+
+        resp.requested_resources = []
+        for s in self._requests:
+            srp = concert_msgs.ServiceResourcePair()
+            srp.request_id = s
+            srp.resources = []
+            for request in self._requests[s]:
+                for resource in request.resources:
+                    srp.resources.append(resource.platform_info + "." + resource.name)
+            resp.requested_resources.append(srp)
+
+        resp.engaged_pairs = []
+        for s in self._pairs:
+            srp = concert_msgs.ServiceResourcePair()
+            srp.request_id = s
+
+            for pair in self._pairs[s]:
+                resource, client_node = pair
+                p = resource.platform_info + " - " + client_node.name + " - " + resource.name
+                srp.resources.append(p)
+            resp.engaged_pairs.append(srp)
+        self._lock.release()
+        return resp
+
+    def _requester_update(self, request_set):
+        '''
+          Callback used in rocon_scheduler_requests scheduler for processing incoming resource requests.
+          This gets fired every time an incoming message arrives from a Requester.
+
+          @param request_set : a snapshot of all requests from a single requester in their current state.
+          @type rocon_scheduler_requests.transition.RequestSet
+        '''
+        pass
+        #self.logwarn("requester update callback function!")
 
     def _process_requests(self, msg):
         """
@@ -163,7 +220,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to stop app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gatewayname + ConcertScheduler.POSTFIX_STOP_APP
+        srv_name = '/' + gatewayname + DemoScheduler.POSTFIX_STOP_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StopApp)
@@ -225,7 +282,7 @@ class ConcertScheduler(object):
                 self.loginfo("  remaining resources : %s" % [resource.platform_info + "." + resource.name for resource in remaining_resources])
 
                 # Pair between remaining node and free cleints
-                status, message, new_app_pairs = compatibility_tree.resolve(remaining_resources, available_clients)
+                status, message, new_app_pairs = demo_allocator.resolve(remaining_resources, available_clients)
 
                 app_pairs.extend(reused_client_app_pairs)
                 app_pairs.extend(new_app_pairs)
@@ -277,7 +334,7 @@ class ConcertScheduler(object):
             @param pair: list of pair (resource, client)
             @type : list of (scheduler_msgs.Resource, concert_msgs.ConcertClient)
         """
-        #compatibility_tree.print_pairs(pairs)
+        #demo_allocator.print_pairs(pairs)
 
         for p in pairs:
             resource, client = p
@@ -387,7 +444,7 @@ class ConcertScheduler(object):
             @return srv: ROS service instance to start app
             @type rospy.ServiceProxy
         """
-        srv_name = '/' + gateway_name + ConcertScheduler.POSTFIX_START_APP
+        srv_name = '/' + gateway_name + DemoScheduler.POSTFIX_START_APP
         rospy.wait_for_service(srv_name)
 
         srv = rospy.ServiceProxy(srv_name, rapp_manager_srvs.StartApp)
