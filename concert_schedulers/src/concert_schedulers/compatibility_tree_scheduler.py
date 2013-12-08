@@ -9,15 +9,11 @@
 
 import rospy
 import threading
-import copy
 import unique_id
 import concert_msgs.msg as concert_msgs
-import scheduler_msgs.msg as scheduler_msgs
-import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import rocon_scheduler_requests
 
-import demo_allocator
-from .exceptions import FailedToStartAppsException
+import impl
 
 ##############################################################################
 # Classes
@@ -30,7 +26,10 @@ class CompatibilityTreeScheduler(object):
             '_subscribers',
             '_requests',
             '_lock',
-            'spin'
+            'spin',
+            '_scheduler',
+            '_clients',
+            '_requests',
         ]
 
     ##########################################################################
@@ -46,26 +45,24 @@ class CompatibilityTreeScheduler(object):
         '''
         self._subscribers = {}       # ros subscribers
         self._requests = {}          # requester uuid : scheduler_msgs/Request[] - keeps track of all current requests
-#        self._clients = {}           # concert_msgs/ConcertClient.name : concert_msgs/ConcertClient of all concert clients
-#        self._inuse = {}             #
-#        self._pairs = {}             # scheduler_msgs/Resource, concert_msgs/ConcertClient pairs
-#        self._shutting_down = False  # Used to protect self._pairs when shutting down.
-#        self._setup_ros_api(requests_topic_name)
+        self._clients = {}           # impl.ConcertClient.name : impl.ConcertClient of all concert clients
         self._lock = threading.Lock()
-#        self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
+        self._requests = []
+
+        self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
+        self._setup_ros_api(concert_clients_topic_name)
 
         # aliases
         self.spin = rospy.spin
 
-    def _setup_ros_api(self, requests_topic_name):
-        self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_service_concert_client_changes)
-        self._subscribers['requests'] = rospy.Subscriber(requests_topic_name, scheduler_msgs.SchedulerRequests, self._process_requests)
+    def _setup_ros_api(self, concert_clients_topic_name):
+        self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_subscriber_concert_client_changes)
 
     ##########################################################################
     # Ros callbacks
     ##########################################################################
 
-    def _ros_service_concert_client_changes(self, msg):
+    def _ros_subscriber_concert_client_changes(self, msg):
         """
             @param
                 msg : concert_msgs.ConcertClients
@@ -76,28 +73,15 @@ class CompatibilityTreeScheduler(object):
         """
         self._lock.acquire()
         clients = msg.clients
-        #self._stop_services_of_left_clients(clients)
 
-        self._clients = {}
-        self.loginfo("clients:")
-        for c in clients:
-            self.loginfo("  %s" % c.name)
-            self._clients[c.name] = c
+        for client in clients:
+            rospy.loginfo("Client : %s" % client.name)
+            if client.gateway_name not in self._clients.keys():
+                rospy.loginfo("  New Client : %s" % client.name)
+                self._clients[client.gateway_name] = impl.ConcertClient(client)  # default setting is unallocated
 
-        self._update()
-        self._lock.release()
-
-    def _process_requests(self, msg):
-        """
-            Handle incoming requests for resources.
-
-            @param : msg
-            @type scheduler_msgs.SchedulerRequests
-        """
-        self._lock.acquire()
-        requester_uuid = unique_id.toHexString(msg.requester)
-        self._requests[requester_uuid] = msg.requests
-        # This is periodic, so should check if the requests changed before calling update.
+        # should check for some things here, e.g. can we verify a client is allocated or not?
+        rospy.logwarn("Scheduler : update from concert clients!")
         self._update()
         self._lock.release()
 
@@ -114,17 +98,48 @@ class CompatibilityTreeScheduler(object):
           @param request_set : a snapshot of all requests from a single requester in their current state.
           @type rocon_scheduler_requests.transition.RequestSet
         '''
-        pass
-        #self.logwarn("requester update callback function!")
+        #for r in request_set.requests.values():
+        #    print("Request: %s" % r.msg)
+        self._lock.acquire()
+        self._requests = [r.msg for r in request_set.requests.values()]
+        # sort by priority
+        self._requests[:] = sorted(self._requests, key=lambda request: request.priority)
+        #for request in self._requests:
+        #    rospy.loginfo("\nRequest:\n%s" % request)
+        #    for resource in request.resources:
+        #        print("\n%s" % resource)
+        rospy.logwarn("Scheduler : update from requester update!")
+        self._update()
+        self._lock.release()
 
     def _update(self):
         """
             Logic for allocating resources after there has been a state change in either the list of
             available concert clients or the incoming resource requests.
 
-            For each request which needs to be started
+            Note : this must be protected by being called inside locked code
         """
         rospy.loginfo("Scheduler : updating")
+        last_failed_priority = None  # used to check if we should block further allocations to lower priorities
+        for request in self._requests:
+            if last_failed_priority is not None and request.priority < last_failed_priority:
+                rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
+                break
+            request_id = unique_id.toHexString(request.id)
+            compatibility_tree = impl.create_compatibility_tree(request.resources, [client for client in self._clients.values() if not client.allocated])
+            compatibility_tree.print_branches("Compatibility Tree")
+            pruned_branches = impl.prune_compatibility_tree(compatibility_tree, verbosity=True)
+            pruned_compatibility_tree = impl.CompatibilityTree(pruned_branches)
+            pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
+            if pruned_compatibility_tree.is_valid():
+                rospy.loginfo("Scheduler : allocating")
+                last_failed_priority = None
+                for branch in pruned_compatibility_tree.branches:
+                    for leaf in branch.leaves:
+                        leaf.allocate(request_id, branch.limb)
+            else:
+                last_failed_priority = request.priority
+                rospy.loginfo("Scheduler : not ready yet")
 #        for requests in self._requests.values():
 #            for request in requests:
 #                key = unique_id.toHexString(request.id)

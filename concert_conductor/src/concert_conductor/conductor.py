@@ -10,7 +10,6 @@
 import rospy
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
-import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
 import std_srvs.srv as std_srvs
 import rocon_utilities

@@ -17,8 +17,8 @@ import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import rocon_scheduler_requests
 
-import demo_allocator
-from .exceptions import FailedToStartAppsException
+import impl.demo_allocator as demo_allocator
+from .impl.exceptions import FailedToStartAppsException
 
 ##############################################################################
 # Classes

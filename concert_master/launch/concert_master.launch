@@ -40,7 +40,7 @@
     </include>
 
     <!-- ****************************** Scheduler ****************************** -->
-    <node pkg="concert_scheduler" name="scheduler" type="$(arg scheduler_type)_scheduler.py"/>
+    <node pkg="concert_schedulers" name="scheduler" type="$(arg scheduler_type)_scheduler.py"/>
 
     <!-- **************************** Role Manager ***************************** -->
     <node pkg="concert_roles" type="role_manager.py" name="interactions"/>
@@ -63,6 +63,7 @@
       <param name="hub_whitelist" value="$(arg hub_uri)"/>
       <param name="disable_uuids" value="$(arg disable_uuids)"/>
       <param name="external_shutdown" value="true"/> <!-- let the conductor shut it down -->
+      <param name="network_interface" value="eth0"/>
     </node>
     <!-- ****************************** Zeroconf ******************************* -->
     <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
