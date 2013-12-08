@@ -8,7 +8,8 @@
   <arg name="hub_port" default="6380"/>
   <arg name="hub_uri" default="http://localhost:6380"/>
   <arg name="gateway_watch_loop_period" default="2"/> <!-- Polling period for multimaster advertising/flipping -->
-  <arg name="disable_uuids" default="false"/> <!-- manage unique naming of multiple gateways yourself -->
+  <arg name="gateway_disable_uuids" default="false"/> <!-- manage unique naming of multiple gateways yourself -->
+  <arg name="gateway_network_interface" default=""/>  <!-- Use if you have multiple network interfaces and want to lock it on one (e.g. 'eth0') -->
   <!-- Conductor -->
   <arg name="conductor_auto_invite" default="true"/>
   <arg name="conductor_local_clients_only" default="false"/>
@@ -61,9 +62,9 @@
       <param name="firewall" value="false"/>
       <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
       <param name="hub_whitelist" value="$(arg hub_uri)"/>
-      <param name="disable_uuids" value="$(arg disable_uuids)"/>
-      <param name="external_shutdown" value="true"/> <!-- let the conductor shut it down -->
-      <param name="network_interface" value="eth0"/>
+      <param name="disable_uuids" value="$(arg gateway_disable_uuids)"/>
+      <param name="network_interface" value="$(arg gateway_network_interface)"/>
+      <param name="external_shutdown" value="true"/> <!-- let the conductor shut this node down -->
     </node>
     <!-- ****************************** Zeroconf ******************************* -->
     <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
