@@ -20,3 +20,7 @@ class FailedToLockClientsException(Exception):
 
 class FailedToStartAppsException(Exception):
     pass
+
+
+class InvalidResourceGroupException(Exception):
+    pass

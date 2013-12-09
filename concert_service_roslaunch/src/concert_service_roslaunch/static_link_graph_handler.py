@@ -12,6 +12,7 @@
 # Imports
 ##############################################################################
 
+import copy
 import rospy
 
 import rocon_std_msgs.msg as rocon_std_msgs
@@ -57,22 +58,42 @@ class StaticLinkGraphHandler(object):
         self._uuid = key
         self._linkgraph = linkgraph
         self._param = setup_ros_parameters()
-        if (self._param['requester_type'] == 'pool_requester'):
-            self._requester = concert_schedulers.PoolRequester(feedback=self._requester_feedback,
-                                                                 uuid=self._uuid,
-                                                                 topic=concert_msgs.Strings.SCHEDULER_REQUESTS
-                                                            )
+        if (self._param['requester_type'] == 'resource_pool_requester'):
+            self._setup_resource_pool_requester()
         else:
-            self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
-                                                                 uuid=self._uuid,
-                                                                 topic=concert_msgs.Strings.SCHEDULER_REQUESTS
-                                                            )
-        self._request_resources(True)
+            self._setup_requester()
 
         # aliases
         self.spin = rospy.spin
 
-    def _request_resources(self, enable):
+    def _setup_resource_pool_requester(self):
+        '''
+          Setup the resource groups, then feed it into and Initialise the
+          resource pool requester, It looks everything from thereon.
+        '''
+        resource_groups = []
+        for node in self._linkgraph.nodes:
+            resources = []
+            resource = _node_to_resource(node, self._linkgraph)
+            for unused_i in range(node.max):
+                resources.append(copy.deepcopy(resource))
+            resource_groups.append(concert_schedulers.ResourcePoolGroup(node.min, resources))
+        self._requester = concert_schedulers.ResourcePoolRequester(
+                                            resource_groups,
+                                            feedback=self._requester_feedback,
+                                            uuid=self._uuid,
+                                            topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                            )
+
+    def _setup_requester(self):
+        '''
+          Initialise the requester, then feed it a sequence of requests - 1 for the
+          essential resources (up to min) and 1 each for any resource thereafter.
+        '''
+        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
+                                            uuid=self._uuid,
+                                            topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                            )
         resources = []
         for node in self._linkgraph.nodes:
             # node.tuple is of the form 'linux.*.ros.pc.rocon_apps/talker'

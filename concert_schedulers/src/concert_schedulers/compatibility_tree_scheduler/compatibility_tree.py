@@ -11,7 +11,7 @@ import rocon_utilities.console as console
 import concert_msgs.msg as concert_msgs
 
 # local imports
-import utils
+import concert_schedulers.common.utils as utils
 
 ##############################################################################
 # Classes

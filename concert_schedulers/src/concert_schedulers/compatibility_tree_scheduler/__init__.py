@@ -14,7 +14,4 @@ from .compatibility_tree import (
              prune_compatibility_tree,
              print_branches
              )
-from .common import ConcertClient
-import demo_allocator
-import exceptions
-import utils
+from .scheduler import CompatibilityTreeScheduler

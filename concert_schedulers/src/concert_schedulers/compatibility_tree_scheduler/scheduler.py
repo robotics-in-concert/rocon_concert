@@ -15,7 +15,11 @@ import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_scheduler_requests
 import rocon_utilities
-import impl
+
+# local imports
+import concert_schedulers.common as common
+from .compatibility_tree import create_compatibility_tree, prune_compatibility_tree, CompatibilityTree
+
 
 ##############################################################################
 # Classes
@@ -47,7 +51,7 @@ class CompatibilityTreeScheduler(object):
         '''
         self._subscribers = {}       # ros subscribers
         self._request_set = None     # rocon_scheduler_request.transitions.RequestSet (contains ResourceReply objects)
-        self._clients = {}           # impl.ConcertClient.name : impl.ConcertClient of all concert clients
+        self._clients = {}           # common.ConcertClient.name : common.ConcertClient of all concert clients
         self._lock = threading.Lock()
 
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
@@ -72,13 +76,13 @@ class CompatibilityTreeScheduler(object):
         """
         self._lock.acquire()
         clients = msg.clients
-        
+
         rospy.logwarn("Scheduler : concert clients update")
         for client in clients:
             rospy.loginfo("Client : %s" % client.name)
             if client.gateway_name not in self._clients.keys():
                 rospy.loginfo("  New Client : %s" % client.name)
-                self._clients[client.gateway_name] = impl.ConcertClient(client)  # default setting is unallocated
+                self._clients[client.gateway_name] = common.ConcertClient(client)  # default setting is unallocated
 
         # @Todo : determine and handle lost clients as well.
 
@@ -134,7 +138,7 @@ class CompatibilityTreeScheduler(object):
             return  # Nothing to do
         # get all requests for compatibility tree processing and sort by priority
         # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
-        new_requests = [r.msg for r in self._request_set.requests.values() if r.msg.status == scheduler_msgs.Request.NEW]
+        new_requests = [r.msg for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW]
         new_requests[:] = sorted(new_requests, key=lambda request: request.priority)
         last_failed_priority = None  # used to check if we should block further allocations to lower priorities
         for request in new_requests:
@@ -142,10 +146,10 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
                 break
             request_id = unique_id.toHexString(request.id)
-            compatibility_tree = impl.create_compatibility_tree(request.resources, [client for client in self._clients.values() if not client.allocated])
+            compatibility_tree = create_compatibility_tree(request.resources, [client for client in self._clients.values() if not client.allocated])
             compatibility_tree.print_branches("Compatibility Tree")
-            pruned_branches = impl.prune_compatibility_tree(compatibility_tree, verbosity=True)
-            pruned_compatibility_tree = impl.CompatibilityTree(pruned_branches)
+            pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=True)
+            pruned_compatibility_tree = CompatibilityTree(pruned_branches)
             pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
             if pruned_compatibility_tree.is_valid():
                 rospy.loginfo("Scheduler : allocating")

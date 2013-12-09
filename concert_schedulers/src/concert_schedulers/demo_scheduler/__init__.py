@@ -7,4 +7,4 @@
 # Imports
 ##############################################################################
 
-import min_max
+from .scheduler import DemoScheduler

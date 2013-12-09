@@ -7,12 +7,5 @@
 # Imports
 ##############################################################################
 
-# local imports
-
-##############################################################################
-# Exceptions
-##############################################################################
-
-
-class InvalidRequestException(Exception):
-    pass
+from .requester import ResourcePoolRequester
+from .resource_group import ResourcePoolGroup
