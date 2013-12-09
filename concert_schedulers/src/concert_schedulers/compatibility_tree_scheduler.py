@@ -9,6 +9,7 @@
 
 import rospy
 import threading
+import copy
 import unique_id
 import concert_msgs.msg as concert_msgs
 import rocon_scheduler_requests
@@ -115,10 +116,10 @@ class CompatibilityTreeScheduler(object):
           @type uuid hex string
 
           @param concert_client : the concert client that is being allocated to this resource
-          @type 
+          @type impl.common.ConcertClient
         '''
-        for resource_reply in self._request_set.values():
-            if request_id == unique_id.toHexString(resource_reply.msg.id):
+        for request in self._request_set.values():
+            if request_id == unique_id.toHexString(request.msg.id):
                 rospy.logwarn("Scheduler : grant id matched")
 
     def _update(self):
@@ -149,10 +150,15 @@ class CompatibilityTreeScheduler(object):
             if pruned_compatibility_tree.is_valid():
                 rospy.loginfo("Scheduler : allocating")
                 last_failed_priority = None
+                resources = []
                 for branch in pruned_compatibility_tree.branches:
                     for leaf in branch.leaves:  # there should be but one
-                        # find the corresponding client
+                        # this info is actually embedding into self._clients
                         leaf.allocate(request_id, branch.limb)
+                        resource = copy.deepcopy(branch.limb)
+                        rospy.loginfo("Adding resource with platform info %s %s %s" % (leaf.msg.platform_info, leaf.msg.name, leaf.msg.gateway_name))
+                        resource.platform_info = leaf.msg.platform_info
+                        resources.append(resource)
             else:
                 last_failed_priority = request.priority
                 rospy.loginfo("Scheduler : not ready yet")
