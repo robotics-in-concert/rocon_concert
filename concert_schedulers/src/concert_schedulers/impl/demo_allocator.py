@@ -3,6 +3,7 @@
 import rospy
 import copy
 import concert_msgs.msg as concert_msgs
+import rocon_utilities
 
 
 def resolve(resources, client_list):
@@ -96,12 +97,15 @@ def _is_valid_pair(resource, c):
     client_tuple = node_tuple = [0, 1, 2, 3]  # Man this is ugly. Impossible even to introspect n, c with prints to see wtf they are
 
     service_app_name = resource.name
+
+    # This is really quite fugly.
+    client_platform_info = rocon_utilities.platform_info.to_msg(c.platform_info)
     node_tuple[0], node_tuple[1], node_tuple[2], node_tuple[3], unused_name = resource.platform_info.split(".")
 
-    client_tuple[0] = c.os
-    client_tuple[1] = c.version
-    client_tuple[2] = c.system
-    client_tuple[3] = c.platform
+    client_tuple[0] = client_platform_info.os
+    client_tuple[1] = client_platform_info.version
+    client_tuple[2] = client_platform_info.system
+    client_tuple[3] = client_platform_info.platform
 
     client_apps = [a.name for a in c.apps]
 
