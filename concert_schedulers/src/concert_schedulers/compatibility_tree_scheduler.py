@@ -24,7 +24,7 @@ class CompatibilityTreeScheduler(object):
 
     __slots__ = [
             '_subscribers',
-            '_requests',
+            '_request_set',
             '_lock',
             'spin',
             '_scheduler',
@@ -44,10 +44,9 @@ class CompatibilityTreeScheduler(object):
           @type string
         '''
         self._subscribers = {}       # ros subscribers
-        self._requests = {}          # requester uuid : scheduler_msgs/Request[] - keeps track of all current requests
+        self._request_set = None     # rocon_scheduler_request.transitions.RequestSet (contains ResourceReply objects)
         self._clients = {}           # impl.ConcertClient.name : impl.ConcertClient of all concert clients
         self._lock = threading.Lock()
-        self._requests = []
 
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
         self._setup_ros_api(concert_clients_topic_name)
@@ -98,30 +97,46 @@ class CompatibilityTreeScheduler(object):
           @param request_set : a snapshot of all requests from a single requester in their current state.
           @type rocon_scheduler_requests.transition.RequestSet
         '''
-        #for r in request_set.requests.values():
-        #    print("Request: %s" % r.msg)
+        self._request_set = request_set
+        for r in request_set.requests.values():
+            print("Request: %s" % r.msg)
         self._lock.acquire()
-        self._requests = [r.msg for r in request_set.requests.values()]
-        # sort by priority
-        self._requests[:] = sorted(self._requests, key=lambda request: request.priority)
-        #for request in self._requests:
-        #    rospy.loginfo("\nRequest:\n%s" % request)
-        #    for resource in request.resources:
-        #        print("\n%s" % resource)
         rospy.logwarn("Scheduler : update from requester update!")
         self._update()
         self._lock.release()
 
+    def _grant(self, request_id, concert_client):
+        '''
+          Need to update the resource information with the exact resource provided
+
+          Note : this must be protected by being called inside locked code
+
+          @param request_id : hex string of request id
+          @type uuid hex string
+
+          @param concert_client : the concert client that is being allocated to this resource
+          @type 
+        '''
+        for resource_reply in self._request_set.values():
+            if request_id == unique_id.toHexString(resource_reply.msg.id):
+                rospy.logwarn("Scheduler : grant id matched")
+
     def _update(self):
         """
-            Logic for allocating resources after there has been a state change in either the list of
-            available concert clients or the incoming resource requests.
+          Logic for allocating resources after there has been a state change in either the list of
+          available concert clients or the incoming resource requests.
 
-            Note : this must be protected by being called inside locked code
+          Note : this must be protected by being called inside locked code
         """
+        if self._request_set is None:
+            return  # Nothing to do
         rospy.loginfo("Scheduler : updating")
+        # get all requests for compatibility tree processing and sort by priority
+        # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
+        requests = [r.msg for r in self._request_set.requests.values()]
+        requests[:] = sorted(requests, key=lambda request: request.priority)
         last_failed_priority = None  # used to check if we should block further allocations to lower priorities
-        for request in self._requests:
+        for request in requests:
             if last_failed_priority is not None and request.priority < last_failed_priority:
                 rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
                 break
@@ -135,51 +150,9 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : allocating")
                 last_failed_priority = None
                 for branch in pruned_compatibility_tree.branches:
-                    for leaf in branch.leaves:
+                    for leaf in branch.leaves:  # there should be but one
+                        # find the corresponding client
                         leaf.allocate(request_id, branch.limb)
             else:
                 last_failed_priority = request.priority
                 rospy.loginfo("Scheduler : not ready yet")
-#        for requests in self._requests.values():
-#            for request in requests:
-#                key = unique_id.toHexString(request.id)
-#                if key in self._pairs:
-#                    # nothing to touch
-#                    continue
-#                self.loginfo("processing outstanding request %s" % unique_id.toHexString(request.id))
-#                resources = copy.deepcopy(request.resources)
-#                app_pairs = []
-#                available_clients = self._get_available_clients()
-#                cname = [c.name for c in available_clients]
-#                self.loginfo("  available clients : " + str(cname))
-#                self.loginfo("  required resources : %s" % [resource.platform_info + "." + resource.name for resource in resources])
-#
-#                # Check if any resource can be paired with already running client
-#                paired_resources, reused_client_app_pairs = self._pairs_with_running_clients(resources)
-#
-#                # More client is required?
-#                remaining_resources = [resource for resource in resources if not resource in paired_resources]
-#
-#                # More client is required?
-#                remaining_resources = [r for r in resources if not r in paired_resources]
-#
-#                # Clients who are not running yet
-#                available_clients = self._get_available_clients()
-#                cname = [c.name for c in available_clients]
-#                self.loginfo("  remaining clients : " + str(cname))
-#                self.loginfo("  remaining resources : %s" % [resource.platform_info + "." + resource.name for resource in remaining_resources])
-#
-#                # Pair between remaining node and free cleints
-#                status, message, new_app_pairs = demo_allocator.resolve(remaining_resources, available_clients)
-#
-#                app_pairs.extend(reused_client_app_pairs)
-#                app_pairs.extend(new_app_pairs)
-#
-#                # Starts request if it is ready
-#                if status is concert_msgs.ErrorCodes.SUCCESS:
-#                    self._pairs[key] = app_pairs
-#                    self._mark_clients_as_inuse(app_pairs)
-#                    self._start_request(new_app_pairs, key)
-#                else:
-#                    # if not, do nothing
-#                    self.logwarn("warning in [" + key + "] status. " + str(message))

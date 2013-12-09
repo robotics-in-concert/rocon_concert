@@ -7,7 +7,6 @@
 # Imports
 ##############################################################################
 
-import copy
 import rocon_utilities.console as console
 import concert_msgs.msg as concert_msgs
 
@@ -84,9 +83,8 @@ def create_compatibility_tree(resources, concert_clients):
     compatibility_tree = CompatibilityTree([])
     for resource in resources:
         compatibility_tree.branches.append(CompatibilityBranch(resource))
-    clients = copy.deepcopy(concert_clients)
     for branch in compatibility_tree.branches:
-        branch.leaves.extend([client for client in clients if client.is_compatible(branch.limb)])
+        branch.leaves.extend([client for client in concert_clients if client.is_compatible(branch.limb)])
     return compatibility_tree
 
 
@@ -140,19 +138,18 @@ def prune_resolvable_branches(compatibility_tree, verbosity):
     for branch in branches:
         if not branch.leaves:
             if not pruned_branches:  # Only accept one change at a time
-                pruned_branches.append(copy.deepcopy(branch))
+                pruned_branches.append(branch)
             else:
-                remaining_branches.append(copy.deepcopy(branch))
+                remaining_branches.append(branch)
         elif len(branch.leaves) == 1:
             if not pruned_branches:
-                pruned_branches.append(copy.deepcopy(branch))
+                pruned_branches.append(branch)
                 removed_leaves.extend(branch.leaves)
             else:
-                remaining_branches.append(copy.deepcopy(branch))
+                remaining_branches.append(branch)
         else:
-            remaining_branches.append(copy.deepcopy(branch))
+            remaining_branches.append(branch)
     removed_leaves = list(set(removed_leaves))  # get a unique list
-    # remove leaves that were pruned from all other branches
     for branch in remaining_branches:
         branch.prune_leaves(removed_leaves)
     # are we guaranteed of clearing all of these?
@@ -209,7 +206,7 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
         if least_visible_leaf is None or thinnest_branch_leaf_count[leaf] < thinnest_branch_leaf_count[least_visible_leaf.name]:
             least_visible_leaf = leaves[leaf]
     # Lock down the thinnest branch that leaf shows up on.
-    pruned_compatibility_tree = copy.deepcopy(compatibility_tree)
+    pruned_compatibility_tree = compatibility_tree
     for branch in pruned_compatibility_tree.branches:
         if least_visible_leaf.name in [leaf.name for leaf in branch.leaves]:
             if len(branch.leaves) == thinnest_branch_leaf_count[least_visible_leaf.name]:
