@@ -1,6 +1,6 @@
-#!/usr/bin/env python
 #
 # License: BSD
+#
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 # Used for runnings services that are defined by a multi-master style
@@ -18,7 +18,9 @@ import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
+import concert_schedulers
 import yaml
+
 
 ##############################################################################
 # Classes
@@ -31,8 +33,9 @@ class StaticLinkGraphHandler(object):
         '_description',
         '_uuid',
         '_linkgraph',
-        '_publishers',
         '_requester',
+        '_param',
+        'spin'
     ]
 
     def __init__(self, name, description, key, linkgraph):
@@ -53,14 +56,23 @@ class StaticLinkGraphHandler(object):
         self._description = description
         self._uuid = key
         self._linkgraph = linkgraph
-        self._publishers = {}
-        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
-                                                             uuid=self._uuid,
-                                                             topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+        self._param = setup_ros_parameters()
+        if (self._param['requester_type'] == 'pool_requester'):
+            self._requester = concert_schedulers.PoolRequester(feedback=self._requester_feedback,
+                                                                 uuid=self._uuid,
+                                                                 topic=concert_msgs.Strings.SCHEDULER_REQUESTS
                                                             )
+        else:
+            self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
+                                                                 uuid=self._uuid,
+                                                                 topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                                            )
+        self._request_resources(True)
+
+        # aliases
+        self.spin = rospy.spin
 
     def _request_resources(self, enable):
-        # Once this goes in, both of the legacy approaches can be deleted.
         resources = []
         for node in self._linkgraph.nodes:
             # node.tuple is of the form 'linux.*.ros.pc.rocon_apps/talker'
@@ -85,16 +97,17 @@ class StaticLinkGraphHandler(object):
           @param request_set : a snapshot of the state of all requests from this requester
           @type rocon_scheduler_requests.transition.RequestSet
         '''
-        #rospy.loginfo("Static Link Graph Handler : requester feedback")
         pass
-
-    def spin(self):
-        self._request_resources(True)
-        rospy.spin()
 
 ##############################################################################
 # Methods
 ##############################################################################
+
+
+def setup_ros_parameters():
+    param = {}
+    param['requester_type'] = rospy.get_param('~requester_type', 'demo')
+    return param
 
 
 def load_linkgraph_from_file(filename):

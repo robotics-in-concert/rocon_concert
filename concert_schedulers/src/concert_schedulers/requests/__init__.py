@@ -7,6 +7,4 @@
 # Imports
 ##############################################################################
 
-from .demo_scheduler import DemoScheduler
-from .compatibility_tree_scheduler import CompatibilityTreeScheduler
-from .pool_requester import PoolRequester
+import min_max

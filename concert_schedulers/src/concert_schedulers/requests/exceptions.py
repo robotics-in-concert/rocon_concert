@@ -7,6 +7,12 @@
 # Imports
 ##############################################################################
 
-from .demo_scheduler import DemoScheduler
-from .compatibility_tree_scheduler import CompatibilityTreeScheduler
-from .pool_requester import PoolRequester
+# local imports
+
+##############################################################################
+# Exceptions
+##############################################################################
+
+
+class InvalidRequestException(Exception):
+    pass

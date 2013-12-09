@@ -28,7 +28,7 @@ endif()
 
 install(
     PROGRAMS 
-        scripts/compatibility_tree_scheduler
-        scripts/scheduler
+        scripts/compatibility_tree_scheduler.py
+        scripts/demo_scheduler.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )

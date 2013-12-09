@@ -72,14 +72,15 @@ class CompatibilityTreeScheduler(object):
         """
         self._lock.acquire()
         clients = msg.clients
-
+        
+        rospy.logwarn("Scheduler : concert clients update")
         for client in clients:
             rospy.loginfo("Client : %s" % client.name)
             if client.gateway_name not in self._clients.keys():
                 rospy.loginfo("  New Client : %s" % client.name)
                 self._clients[client.gateway_name] = impl.ConcertClient(client)  # default setting is unallocated
 
-        @Todo : determine and handle lost clients as well.
+        # @Todo : determine and handle lost clients as well.
 
         # should check for some things here, e.g. can we verify a client is allocated or not?
         self._update()
@@ -120,7 +121,6 @@ class CompatibilityTreeScheduler(object):
         '''
         for request in self._request_set.values():
             if request_id == unique_id.toHexString(request.msg.id):
-                rospy.logwarn("Scheduler : grant id matched")
                 request.grant(resources)
 
     def _update(self):
@@ -151,14 +151,26 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : allocating")
                 last_failed_priority = None
                 resources = []
+                failed_to_allocate = False
                 for branch in pruned_compatibility_tree.branches:
                     for leaf in branch.leaves:  # there should be but one
                         # this info is actually embedding into self._clients
-                        leaf.allocate(request_id, branch.limb)
+                        if not leaf.allocate(request_id, branch.limb):
+                            rospy.logwarn("Failed to allocate")
+                            failed_to_allocate = True
+                            break
                         resource = copy.deepcopy(branch.limb)
                         resource.platform_info = rocon_utilities.platform_info.set_name(leaf.msg.platform_info, leaf.msg.name)
                         resources.append(resource)
-                self._grant(request_id, resources)
+                if failed_to_allocate:
+                    # aborting request allocation
+                    for branch in pruned_compatibility_tree.branches:
+                        for leaf in branch.leaves:  # there should be but one
+                            if leaf.allocated:
+                                leaf.abandon()
+                    last_failed_priority = request.priority
+                else:
+                    self._grant(request_id, resources)
             else:
                 last_failed_priority = request.priority
                 rospy.loginfo("Scheduler : not ready yet")

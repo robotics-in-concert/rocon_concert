@@ -40,12 +40,17 @@ class ConcertClient(object):
         self.allocated = True
         self._request_id = request_id
         self._resource = resource
-        self._start(self.msg.gateway_name, resource)
+        if not self._start(self.msg.gateway_name, resource):
+            self.allocated = False
+            self._request_id = None
+            self._resource = None
+        return self.allocated
 
     def abandon(self):
         self.allocated = False
         self._request_id = None
         self._resource = None
+        self._stop(self.msg.gateway_name, self.resource)
 
     def is_compatible(self, resource):
         return utils.is_compatible(self.msg, resource)
@@ -53,7 +58,7 @@ class ConcertClient(object):
     def _start(self, gateway_name, resource):
         if self._resource == None:
             rospy.logwarn("Scheduler : this client hasn't been allocated yet, aborting start app request.")
-            return
+            return False
         start_app = rospy.ServiceProxy('/' + gateway_name + '/start_app', rapp_manager_srvs.StartApp)
         request = rapp_manager_srvs.StartAppRequest()
         request.name = resource.name
@@ -62,14 +67,18 @@ class ConcertClient(object):
             start_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down
             rospy.logwarn("Scheduler : could not start '%s' on '%s' [%s]" % (resource.name, self.name, str(e)))
+            return False
+        return True
 
     def _stop(self, gateway_name, resource):
         if resource == None:
             rospy.logwarn("Scheduler : this client hasn't been allocated yet, aborting stop app request.")
-            return
+            return False
         stop_app = rospy.ServiceProxy('/' + gateway_name + '/stop_app', rapp_manager_srvs.StartApp)
         request = rapp_manager_srvs.StopAppRequest()
         try:
             stop_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down
             rospy.logwarn("Scheduler : could not stop app '%s' on '%s' [%s]" % (resource.name, self.name, str(e)))
+            return False
+        return True
