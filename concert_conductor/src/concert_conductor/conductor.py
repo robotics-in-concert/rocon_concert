@@ -194,10 +194,11 @@ class Conductor(object):
             if gateway.name == remote_target_name:
                 remote_target_ip = gateway.ip
                 break
+        if remote_target_ip is not None and remote_target_ip == 'localhost':
+            return True
         if remote_target_ip is not None and self._concert_ip == remote_target_ip:
             return True
-        else:
-            return False
+        return False
 
     def _get_gateway_clients(self):
         '''

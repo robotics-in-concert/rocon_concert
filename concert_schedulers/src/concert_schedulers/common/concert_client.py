@@ -50,7 +50,7 @@ class ConcertClient(object):
         self.allocated = False
         self._request_id = None
         self._resource = None
-        self._stop(self.msg.gateway_name, self.resource)
+        self._stop(self.msg.gateway_name, self._resource)
 
     def is_compatible(self, resource):
         return utils.is_compatible(self.msg, resource)

@@ -175,7 +175,7 @@ class ConcertClient(object):
         gateway_found = False
         for gateway in remote_gateway_info.gateways:
             if gateway.name == self.gateway_name:
-                self.data.conn_stats = gateway.conn_stats 
+                self.data.conn_stats = gateway.conn_stats
                 gateway_found = True
                 break
         if not gateway_found:
