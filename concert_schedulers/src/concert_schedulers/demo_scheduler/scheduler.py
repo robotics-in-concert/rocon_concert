@@ -18,7 +18,7 @@ import rocon_app_manager_msgs.srv as rapp_manager_srvs
 import rocon_scheduler_requests
 
 import demo_allocator
-from .exceptions import FailedToStartAppsException
+from concert_schedulers.common.exceptions import FailedToStartAppsException
 
 ##############################################################################
 # Classes

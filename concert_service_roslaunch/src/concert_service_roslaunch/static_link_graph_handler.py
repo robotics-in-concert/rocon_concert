@@ -1,6 +1,6 @@
-#!/usr/bin/env python
 #
 # License: BSD
+#
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 # Used for runnings services that are defined by a multi-master style
@@ -12,13 +12,16 @@
 # Imports
 ##############################################################################
 
+import copy
 import rospy
 
 import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
+import concert_schedulers
 import yaml
+
 
 ##############################################################################
 # Classes
@@ -31,8 +34,9 @@ class StaticLinkGraphHandler(object):
         '_description',
         '_uuid',
         '_linkgraph',
-        '_publishers',
         '_requester',
+        '_param',
+        'spin'
     ]
 
     def __init__(self, name, description, key, linkgraph):
@@ -53,14 +57,43 @@ class StaticLinkGraphHandler(object):
         self._description = description
         self._uuid = key
         self._linkgraph = linkgraph
-        self._publishers = {}
-        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
-                                                             uuid=self._uuid,
-                                                             topic=concert_msgs.Strings.SCHEDULER_REQUESTS
-                                                            )
+        self._param = setup_ros_parameters()
+        if (self._param['requester_type'] == 'resource_pool_requester'):
+            self._setup_resource_pool_requester()
+        else:
+            self._setup_requester()
 
-    def _request_resources(self, enable):
-        # Once this goes in, both of the legacy approaches can be deleted.
+        # aliases
+        self.spin = rospy.spin
+
+    def _setup_resource_pool_requester(self):
+        '''
+          Setup the resource groups, then feed it into and Initialise the
+          resource pool requester, It looks everything from thereon.
+        '''
+        resource_groups = []
+        for node in self._linkgraph.nodes:
+            resources = []
+            resource = _node_to_resource(node, self._linkgraph)
+            for unused_i in range(node.max):
+                resources.append(copy.deepcopy(resource))
+            resource_groups.append(concert_schedulers.ResourcePoolGroup(node.min, resources))
+        self._requester = concert_schedulers.ResourcePoolRequester(
+                                            resource_groups,
+                                            feedback=self._requester_feedback,
+                                            uuid=self._uuid,
+                                            topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                            )
+
+    def _setup_requester(self):
+        '''
+          Initialise the requester, then feed it a sequence of requests - 1 for the
+          essential resources (up to min) and 1 each for any resource thereafter.
+        '''
+        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
+                                            uuid=self._uuid,
+                                            topic=concert_msgs.Strings.SCHEDULER_REQUESTS
+                                            )
         resources = []
         for node in self._linkgraph.nodes:
             # node.tuple is of the form 'linux.*.ros.pc.rocon_apps/talker'
@@ -85,16 +118,17 @@ class StaticLinkGraphHandler(object):
           @param request_set : a snapshot of the state of all requests from this requester
           @type rocon_scheduler_requests.transition.RequestSet
         '''
-        #rospy.loginfo("Static Link Graph Handler : requester feedback")
         pass
-
-    def spin(self):
-        self._request_resources(True)
-        rospy.spin()
 
 ##############################################################################
 # Methods
 ##############################################################################
+
+
+def setup_ros_parameters():
+    param = {}
+    param['requester_type'] = rospy.get_param('~requester_type', 'demo')
+    return param
 
 
 def load_linkgraph_from_file(filename):

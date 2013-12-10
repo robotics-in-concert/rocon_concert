@@ -10,7 +10,6 @@
 import rospy
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
-import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import gateway_msgs.srv as gateway_srvs
 import std_srvs.srv as std_srvs
 import rocon_utilities
@@ -195,10 +194,11 @@ class Conductor(object):
             if gateway.name == remote_target_name:
                 remote_target_ip = gateway.ip
                 break
+        if remote_target_ip is not None and remote_target_ip == 'localhost':
+            return True
         if remote_target_ip is not None and self._concert_ip == remote_target_ip:
             return True
-        else:
-            return False
+        return False
 
     def _get_gateway_clients(self):
         '''

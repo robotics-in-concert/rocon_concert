@@ -14,6 +14,7 @@ import rocon_std_msgs.srv as rocon_std_srvs
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
+import rocon_utilities
 
 ##############################################################################
 # Exceptions
@@ -110,12 +111,10 @@ class ConcertClient(object):
             self._remote_gateway_info_service.wait_for_service()
         except rospy.ServiceException, e:
             raise e
-        platform_info = platform_info_service().platform_info
-        self.data.name = platform_info.name
-        self.data.os = platform_info.os
-        self.data.version = platform_info.version
-        self.data.system = platform_info.system
-        self.data.platform = platform_info.platform
+        platform_info_msg = platform_info_service().platform_info
+        self.data.name = platform_info_msg.name
+        self.data.platform_info = rocon_utilities.platform_info.to_string(platform_info_msg)
+
         # List Apps
         try:
             list_app_service.wait_for_service()
@@ -176,7 +175,7 @@ class ConcertClient(object):
         gateway_found = False
         for gateway in remote_gateway_info.gateways:
             if gateway.name == self.gateway_name:
-                self.data.conn_stats = gateway.conn_stats 
+                self.data.conn_stats = gateway.conn_stats
                 gateway_found = True
                 break
         if not gateway_found:

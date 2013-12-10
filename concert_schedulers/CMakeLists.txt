@@ -3,7 +3,7 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 2.8.3)
-project(concert_scheduler)
+project(concert_schedulers)
 
 ##############################################################################
 # Catkin
@@ -15,12 +15,20 @@ catkin_package()
 catkin_python_setup()
 
 ##############################################################################
+# Tests
+##############################################################################
+
+if (CATKIN_ENABLE_TESTING)
+  add_subdirectory(tests)
+endif()
+
+##############################################################################
 # Installs
 ##############################################################################
 
 install(
     PROGRAMS 
-        scripts/compatibility_tree_scheduler
-        scripts/scheduler
+        scripts/compatibility_tree_scheduler.py
+        scripts/demo_scheduler.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
