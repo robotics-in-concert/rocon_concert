@@ -164,7 +164,7 @@ class CompatibilityTreeScheduler(object):
                     for leaf in branch.leaves:  # there should be but one
                         # this info is actually embedding into self._clients
                         if not leaf.allocate(request_id, branch.limb):
-                            rospy.logwarn("Failed to allocate")
+                            rospy.logwarn("Scheduler : failed to allocate.")  # could use a better message
                             failed_to_allocate = True
                             break
                         resource = copy.deepcopy(branch.limb)
