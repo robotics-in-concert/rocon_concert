@@ -82,7 +82,6 @@ class ResourcePoolGroup(object):
                     high_priority_trackers += 1
             else:
                 free_resource_trackers.append(copy.deepcopy(resource_tracker))
-        rospy.loginfo("Length of free_resource_trackers: %s" % len(free_resource_trackers))
         if not free_resource_trackers:
             return (None, False)
         resource = free_resource_trackers[0].resource

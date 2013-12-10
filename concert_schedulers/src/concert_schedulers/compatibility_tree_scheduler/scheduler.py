@@ -77,12 +77,13 @@ class CompatibilityTreeScheduler(object):
         self._lock.acquire()
         clients = msg.clients
 
-        rospy.logwarn("Scheduler : concert clients update")
+        rospy.loginfo("Scheduler : concert clients update")
         for client in clients:
-            rospy.loginfo("Client : %s" % client.name)
             if client.gateway_name not in self._clients.keys():
-                rospy.loginfo("  New Client : %s" % client.name)
+                rospy.loginfo("Scheduler :   new client [%s]" % client.name)
                 self._clients[client.gateway_name] = common.ConcertClient(client)  # default setting is unallocated
+            else:
+                rospy.loginfo("Scheduler :   old client [%s]" % client.name)
 
         # @Todo : determine and handle lost clients as well.
 
@@ -146,7 +147,10 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
                 break
             request_id = unique_id.toHexString(request.id)
-            compatibility_tree = create_compatibility_tree(request.resources, [client for client in self._clients.values() if not client.allocated])
+            free_clients = [client for client in self._clients.values() if not client.allocated]
+            if not free_clients:
+                continue  # nothing to do
+            compatibility_tree = create_compatibility_tree(request.resources, free_clients)
             compatibility_tree.print_branches("Compatibility Tree")
             pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=True)
             pruned_compatibility_tree = CompatibilityTree(pruned_branches)
