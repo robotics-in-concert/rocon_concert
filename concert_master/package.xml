@@ -20,7 +20,7 @@
   <run_depend>concert_service_manager</run_depend>
   <run_depend>concert_conductor</run_depend>
   <run_depend>concert_roles</run_depend>
-  <run_depend>concert_scheduler</run_depend>
+  <run_depend>concert_schedulers</run_depend>
   <run_depend>concert_msgs</run_depend>
   <!-- 
     Hardcode this dependency for now since we only test it on linux 
