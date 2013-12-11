@@ -80,6 +80,7 @@ class Conductor(object):
                 # on with the invitation - rapp_manager_srvs.InviteResponse
                 if self._concert_clients[name].invite(concert_name, name, cancel=False):
                     self._invited_clients[name] = True
+                    self._publish_discovered_concert_clients()  # publish changes
             except KeyError:  # raised when name is not in the self._concert_clients keys
                 rospy.logerr("Conductor : tried to invite unknown concert client [%s]" % name)
 
@@ -257,6 +258,8 @@ class Conductor(object):
             try:
                 if client.is_invited:
                     discovered_concert.clients.append(client.to_msg_format())
+                else:
+                    discovered_concert.uninvited_clients.append(client.to_msg_format())
             except ConcertClientException:
                 # service was broken, quietly do not add it
                 # (it will be deleted from client list next pass)
