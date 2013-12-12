@@ -95,6 +95,23 @@ class ConcertClient(object):
             rospy.logwarn("Conductor: failed to pull the platform info service from the client.")
             return None
 
+    def _cancel_pulls(self):
+        '''
+          Cancel any pulls for a client which failed to construct (e.g. in the init() when the service calls
+          fail.
+        '''
+        pull_service = rospy.ServiceProxy('~pull', gateway_srvs.Remote)
+        req = gateway_srvs.RemoteRequest()
+        req.cancel = True
+        req.remotes = []
+        for service_name in ['platform_info', 'list_apps', 'status', 'invite']:
+            rule = gateway_msgs.Rule()
+            rule.name = str('/' + self.gateway_name + '/' + service_name)
+            rule.node = ''
+            rule.type = gateway_msgs.ConnectionType.SERVICE
+            req.remotes.append(gateway_msgs.RemoteRule(self.gateway_name.lstrip('/'), rule))
+        unused_resp = pull_service(req)
+
     def _init(self):
         # Platform_info
         platform_info_service = rospy.ServiceProxy(str('/' + self.gateway_name + '/' + 'platform_info'), rocon_std_srvs.GetPlatformInfo)
@@ -104,22 +121,27 @@ class ConcertClient(object):
         self._invite_service = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'invite'), rapp_manager_srvs.Invite)
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
-            platform_info_service.wait_for_service()
-            list_app_service.wait_for_service()
-            self._status_service.wait_for_service()
-            self._invite_service.wait_for_service()
-            self._remote_gateway_info_service.wait_for_service()
+            platform_info_service.wait_for_service(0.5)
+            list_app_service.wait_for_service(0.5)
+            self._status_service.wait_for_service(0.5)
+            self._invite_service.wait_for_service(0.5)
+            self._remote_gateway_info_service.wait_for_service(0.5)
+        except rospy.ROSException, e:
+            self.cancel_pulls()
+            raise ConcertClientException("timed out on remote concert client services")
         except rospy.ServiceException, e:
-            raise e
+            raise ConcertClientException(str(e))
+            self.cancel_pulls()
         platform_info_msg = platform_info_service().platform_info
         self.data.name = platform_info_msg.name
         self.data.platform_info = rocon_utilities.platform_info.to_string(platform_info_msg)
 
         # List Apps
         try:
-            list_app_service.wait_for_service()
-        except rospy.ServiceException, e:
-            raise e
+            list_app_service.wait_for_service(0.5)
+        except rospy.ROSException, e:
+            self.cancel_pulls()
+            raise ConcertClientException("timed out on remote concert client services")
         self.data.apps = list_app_service().available_apps
 
     def to_msg_format(self):
@@ -204,7 +226,16 @@ class ConcertClient(object):
         req = rapp_manager_srvs.InviteRequest(concert_gateway_name, client_local_name, cancel)
         resp = rapp_manager_srvs.InviteResponse()
         try:
+            self._invite_service.wait_for_service(0.3)
             resp = self._invite_service(req)
+        except rospy.ROSException:
+            resp.result = False
+            resp.error_code = rapp_manager_msgs.ErrorCodes.CLIENT_CONNECTION_DISRUPTED
+            resp.message = "service not available"
+        except rospy.ROSInterruptException:
+            resp.result = False
+            resp.error_code = rapp_manager_msgs.ErrorCodes.CLIENT_CONNECTION_DISRUPTED
+            resp.message = "interrupted by shutdown"
         except rospy.service.ServiceException:
             resp.result = False
             resp.error_code = rapp_manager_msgs.ErrorCodes.CLIENT_CONNECTION_DISRUPTED

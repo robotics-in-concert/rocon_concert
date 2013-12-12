@@ -21,8 +21,6 @@ import concert_schedulers.common as common
 from concert_schedulers.common.exceptions import FailedToAllocateException
 from .compatibility_tree import create_compatibility_tree, prune_compatibility_tree, CompatibilityTree
 
-
-
 ##############################################################################
 # Classes
 ##############################################################################
