@@ -78,8 +78,8 @@ class ResourcePoolRequester():
             elif request.msg.status == scheduler_msgs.Request.GRANTED:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
 
-        for resource_group in self._resource_groups:
-            print("\n%s" % str(resource_group))
+        #for resource_group in self._resource_groups:
+        #    print("\n%s" % str(resource_group))
 
         # check alive status
         tentatively_alive = True

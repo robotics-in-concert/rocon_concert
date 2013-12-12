@@ -73,17 +73,18 @@ class ResourcePoolGroup(object):
         tracking_and_allocated = 0
         high_priority_trackers = 0
         free_resource_trackers = []
+        unallocated_tracker_pending = False
         for resource_tracker in self._resources.values():
             if resource_tracker.tracking and not resource_tracker.allocated:
-                return (None, False)
+                unallocated_tracker_pending = True
             if resource_tracker.tracking:
                 tracking_and_allocated += 1
                 if resource_tracker.high_priority_flag:
                     high_priority_trackers += 1
             else:
                 free_resource_trackers.append(copy.deepcopy(resource_tracker))
-        rospy.loginfo("Length of free_resource_trackers: %s" % len(free_resource_trackers))
-        if not free_resource_trackers:
+        # rospy.loginfo("Requester : length of free_resource_trackers: [%s][%s][%s]" % (tracking_and_allocated, high_priority_trackers, len(free_resource_trackers)))
+        if unallocated_tracker_pending or not free_resource_trackers:
             return (None, False)
         resource = free_resource_trackers[0].resource
         if high_priority_trackers < self._min:
