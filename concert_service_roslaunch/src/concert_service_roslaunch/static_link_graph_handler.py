@@ -36,7 +36,9 @@ class StaticLinkGraphHandler(object):
         '_linkgraph',
         '_requester',
         '_param',
-        'spin'
+        'spin',
+        '_subscribers',
+        '_disabled'
     ]
 
     def __init__(self, name, description, key, linkgraph):
@@ -58,13 +60,25 @@ class StaticLinkGraphHandler(object):
         self._uuid = key
         self._linkgraph = linkgraph
         self._param = setup_ros_parameters()
+        self._disabled = False
         if (self._param['requester_type'] == 'resource_pool_requester'):
             self._setup_resource_pool_requester()
         else:
             self._setup_requester()
 
-        # aliases
-        self.spin = rospy.spin
+    def spin(self):
+        while not rospy.is_shutdown() and not self._disabled:
+            rospy.rostime.wallsleep(0.5)  # same period as rospy.client's spin
+
+    def _setup_ros_subscribers(self):
+        self._subscribers = {}
+        self._subscribers['disable'] = rospy.Subscriber('~disable', concert_msgs.ConcertClients, self._ros_subscriber_disable)
+
+    def _ros_subscriber_disable(self):
+        rospy.loginfo("Service : disabling [%s]" % self._name)
+        rospy.logwarn("Service : this is a stub for sending the requester a cancel_all_requests request [%s]" % self._name)
+        #self._requester.cancel_all_requests()
+        self._disabled = True
 
     def _setup_resource_pool_requester(self):
         '''
