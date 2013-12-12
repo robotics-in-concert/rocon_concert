@@ -28,6 +28,8 @@ def is_runnable(remocon_app, remocon_platform_info):
         return True
     if remocon_platform_info.os == '' or remocon_platform_info.os == '*':
         return True
+    if remocon_app.platform_info.os == '' or remocon_app.platform_info.os == '*':
+        return True
     elif remocon_platform_info.os != remocon_app.platform_info.os:
         return False
     # Not worrying about version check yet (should need it for android soon)
