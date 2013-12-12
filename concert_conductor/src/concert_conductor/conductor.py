@@ -137,8 +137,14 @@ class Conductor(object):
                     # re-invitation of clients that disappeared and came back
                     if concert_name in self._invited_clients:
                         self.batch_invite(self._concert_name, [concert_name])
+                except ConcertClientException as e:  # problem constructing a concert client
+                    self._bad_clients.append(gateway_name)
+                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(gateway_hash_name), str(e)))
                 except rospy.exceptions.ROSInterruptException:  # ros is shutting down, ignore
                     break
+                except rospy.service.ServiceException as e:  # service not available
+                    self._bad_clients.append(gateway_name)
+                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(gateway_hash_name), str(e)))
                 except Exception as e:
                     self._bad_clients.append(gateway_name)
                     rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
