@@ -66,6 +66,13 @@ class ResourcePoolRequester():
         self._initial_request_uuid = self._requester.new_request(initial_resources, priority=self._high_priority)
 
     def _requester_feedback(self, request_set):
+        '''
+          This returns requests processed by the scheduler with whatever necessary modifications
+          that were made on the original requests.
+
+          @param request_set : the modified requests
+          @type dic { uuid.UUID : scheduler_msgs.ResourceRequest }
+        '''
         # call self._feedback in here
         #print("Request set: %s" % request_set)
         # should we reset all tracking, allocated flags in all resources here, then enable them below?
@@ -73,7 +80,7 @@ class ResourcePoolRequester():
             resource_group.reset_scheduler_flags()
         for request in request_set.values():
             high_priority_flag = True if request.msg.priority == self._high_priority else False
-            if request.msg.status == scheduler_msgs.Request.NEW:
+            if request.msg.status == scheduler_msgs.Request.NEW or request.msg.status == scheduler_msgs.Request.WAITING:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=False, high_priority_flag=high_priority_flag)
             elif request.msg.status == scheduler_msgs.Request.GRANTED:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)

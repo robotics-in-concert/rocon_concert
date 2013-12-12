@@ -111,22 +111,6 @@ class CompatibilityTreeScheduler(object):
         self._update()
         self._lock.release()
 
-    def _grant(self, request_id, resources):
-        '''
-          Need to update the resource information with the exact resource provided
-
-          Note : this must be protected by being called inside locked code
-
-          @param request_id : hex string of request id
-          @type uuid hex string
-
-          @param resources : list of resources updated with allocated concert client info
-          @type scheduler_msgs.Resources[]
-        '''
-        for request in self._request_set.values():
-            if request_id == unique_id.toHexString(request.msg.id):
-                request.grant(resources)
-
     def _update(self):
         """
           Logic for allocating resources after there has been a state change in either the list of
@@ -141,10 +125,11 @@ class CompatibilityTreeScheduler(object):
             return  # Nothing to do
         # get all requests for compatibility tree processing and sort by priority
         # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
-        new_requests = [r.msg for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW]
-        new_requests[:] = sorted(new_requests, key=lambda request: request.priority)
+        pending_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW or r.msg.status == scheduler_msgs.Request.WAITING]
+        pending_replies[:] = sorted(pending_replies, key=lambda request: request.msg.priority)
         last_failed_priority = None  # used to check if we should block further allocations to lower priorities
-        for request in new_requests:
+        for reply in pending_replies:
+            request = reply.msg
             if last_failed_priority is not None and request.priority < last_failed_priority:
                 rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
                 break
@@ -182,8 +167,12 @@ class CompatibilityTreeScheduler(object):
                             if leaf.allocated:
                                 leaf.abandon()
                     last_failed_priority = request.priority
+                    if reply.msg.status == scheduler_msgs.Request.NEW:
+                        reply.wait()
                 else:
-                    self._grant(request_id, resources)
+                    reply.grant(resources)
             else:
+                if reply.msg.status == scheduler_msgs.Request.NEW:
+                    reply.wait()
                 last_failed_priority = request.priority
-                rospy.loginfo("Scheduler : not ready yet")
+                rospy.loginfo("Scheduler : insufficient resources to satisfy request [%s]" % request_id)
