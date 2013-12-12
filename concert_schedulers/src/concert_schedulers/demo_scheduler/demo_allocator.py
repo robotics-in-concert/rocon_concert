@@ -41,17 +41,14 @@ def _get_app_client_pair(pairs, resources, clients):
         @return message : comment
         @rtype string
     """
-    result = concert_msgs.ErrorCodes.SERVICE_UNEXPECTED_ERROR
+    result = None
     message = "No iteration yet"
     if len(resources) == 0:
         return concert_msgs.ErrorCodes.SUCCESS, "Successful Match Making"
 
     if len(clients) == 0:
-        singles = [_get_resource_platform_name(resource) for resource in resources]
-        for resource in resources:
-            (unused_platform_part, unused_separator, name) = resource.platform_info.rpartition('.')
-            singles.append(name)
-        return concert_msgs.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "No match for " + str(singles)
+        #singles = [_get_resource_platform_name(resource) for resource in resources]
+        return concert_msgs.ErrorCodes.SERVICE_INSUFFICIENT_CLIENTS, "Insufficient clients for resources"
 
     nodes_copy = copy.deepcopy(resources)
     clients_copy = copy.deepcopy(clients)
@@ -70,6 +67,9 @@ def _get_app_client_pair(pairs, resources, clients):
                 # Go to next depth
                 result, message = _get_app_client_pair(pairs, nodes_copy, clients_copy)
 
+                if result is not None:  # error
+                    return result, message
+
                 if result is concert_msgs.ErrorCodes.SUCCESS:
                     return result, message
 
@@ -78,7 +78,7 @@ def _get_app_client_pair(pairs, resources, clients):
                 nodes_copy.append(resource)
                 clients_copy.append(c)
 
-    return result, message
+    return concert_msgs.ErrorCodes.SERVICE_UNEXPECTED_ERROR, message
 
 
 def _is_valid_pair(resource, c):
