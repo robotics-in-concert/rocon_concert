@@ -105,11 +105,13 @@ class StaticLinkGraphHandler(object):
         # provide extra requests for over min, and under max
         # unfortunately no priority settable here yet so this doesn't
         # yet work well - they get in the way of each other.
-        for node in self._linkgraph.nodes:
-            for unused_i in range(node.max - node.min):
-                resource = _node_to_resource(node, self._linkgraph)
-                # could use a way of setting the request priority here.
-                unused_request_uuid = self._requester.new_request([resource])
+        # in fact it works horribly, since dudette in chatter_concert will often get assigned
+        # to the listener here.
+        #for node in self._linkgraph.nodes:
+        #    for unused_i in range(node.max - node.min):
+        #        resource = _node_to_resource(node, self._linkgraph)
+        #        # could use a way of setting the request priority here.
+        #        unused_request_uuid = self._requester.new_request([resource])
 
     def _requester_feedback(self, request_set):
         '''
