@@ -41,10 +41,6 @@ def _get_app_client_pair(pairs, resources, clients):
         @return message : comment
         @rtype string
     """
-    # This doesn't handle error checking very well - it can recusively hit an error three times and never
-    # drop out of the recursion. it only drops out of recursion if there is success.
-    # Fix : start with None in result, check for None at any point in the result and if it is not none,
-    # return immediately.
     result = None
     message = "No iteration yet"
     if len(resources) == 0:
