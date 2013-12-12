@@ -218,7 +218,7 @@ class RoleManager(object):
         if maximum_quota is not None:
             count = 0
             for remocon_monitor in self._remocon_monitors.values():
-                if remocon_monitor.status.running_app:
+                if remocon_monitor.status is not None and remocon_monitor.status.running_app:
                     # Todo this is a weak check as it is not necessarily uniquely identifying the app
                     if remocon_monitor.status.app_name == request.application:
                         count += 1
