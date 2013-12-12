@@ -12,6 +12,7 @@ import rocon_app_manager_msgs.srv as rapp_manager_srvs
 
 # local imports
 import utils
+from exceptions import FailedToStartAppsException, FailedToAllocateException
 
 ##############################################################################
 # Classes
@@ -40,11 +41,13 @@ class ConcertClient(object):
         self.allocated = True
         self._request_id = request_id
         self._resource = resource
-        if not self._start(self.msg.gateway_name, resource):
+        try:
+            self._start(self.msg.gateway_name, resource)
+        except FailedToStartAppsException as e:
             self.allocated = False
             self._request_id = None
             self._resource = None
-        return self.allocated
+            raise FailedToAllocateException(str(e))
 
     def abandon(self):
         self.allocated = False
@@ -57,8 +60,7 @@ class ConcertClient(object):
 
     def _start(self, gateway_name, resource):
         if self._resource == None:
-            rospy.logwarn("Scheduler : this client hasn't been allocated yet, aborting start app request.")
-            return False
+            raise FailedToStartAppsException("this client hasn't been allocated yet.")
         start_app = rospy.ServiceProxy('/' + gateway_name + '/start_app', rapp_manager_srvs.StartApp)
         request = rapp_manager_srvs.StartAppRequest()
         request.name = resource.name
@@ -66,9 +68,7 @@ class ConcertClient(object):
         try:
             start_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down
-            rospy.logwarn("Scheduler : could not start '%s' on '%s' [%s]" % (resource.name, self.name, str(e)))
-            return False
-        return True
+            raise FailedToStartAppsException("%s" % str(e))
 
     def _stop(self, gateway_name, resource):
         if resource == None:

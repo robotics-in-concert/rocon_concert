@@ -22,5 +22,9 @@ class FailedToStartAppsException(Exception):
     pass
 
 
+class FailedToAllocateException(Exception):
+    pass
+
+
 class InvalidResourceGroupException(Exception):
     pass
