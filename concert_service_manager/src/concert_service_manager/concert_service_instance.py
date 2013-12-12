@@ -66,6 +66,7 @@ class ConcertServiceInstance(object):
         '''
         self._lock.acquire()
         if self._description.enabled:
+            self._lock.release()
             return False, "already enabled"
         try:
             self._start()
