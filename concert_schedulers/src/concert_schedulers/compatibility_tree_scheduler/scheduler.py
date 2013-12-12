@@ -83,8 +83,8 @@ class CompatibilityTreeScheduler(object):
             if client.gateway_name not in self._clients.keys():
                 rospy.loginfo("Scheduler : new concert client : %s" % client.name)
                 self._clients[client.gateway_name] = common.ConcertClient(client)  # default setting is unallocated
-            else:
-                rospy.loginfo("Scheduler :   old client [%s]" % client.name)
+            #else:
+            #    rospy.loginfo("Scheduler :   old client [%s]" % client.name)
 
         # @Todo : determine and handle lost clients as well.
 
