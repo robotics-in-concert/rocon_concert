@@ -6,10 +6,13 @@
 # Imports
 ##############################################################################
 
+import uuid
 import rospy
 import rosgraph
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
+import unique_id
+import rocon_utilities
 
 # Local imports
 import remocon_app_utils
@@ -61,11 +64,13 @@ class RoleManager(object):
                 new_remocon_topics = diff(remocon_topics, self._remocon_monitors.keys())
                 lost_remocon_topics = diff(self._remocon_monitors.keys(), remocon_topics)
                 for remocon_topic in new_remocon_topics:
-                    self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic)
+                    self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic, self._ros_publish_interactive_clients)
+                    self._ros_publish_interactive_clients()
                     rospy.loginfo("Role Manager : new remocon connected [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
                 for remocon_topic in lost_remocon_topics:
                     self._remocon_monitors[remocon_topic].unregister()
                     del self._remocon_monitors[remocon_topic]  # careful, this mutates the dictionary http://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
+                    self._ros_publish_interactive_clients()
                     rospy.loginfo("Role Manager : remocon left [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
             except rosgraph.masterapi.Error:
                 rospy.logerr("Role Manager : error trying to retrieve information from the local master.")
@@ -80,6 +85,7 @@ class RoleManager(object):
         '''
         publishers = {}
         publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
+        publishers['interactive_clients'] = rospy.Publisher('~interactive_clients', concert_msgs.InteractiveClients, latch=True)
         return publishers
 
     def _setup_services(self):
@@ -108,7 +114,7 @@ class RoleManager(object):
         return param
 
     ##########################################################################
-    # Ros Service Callbacks
+    # Ros Api Functions
     ##########################################################################
 
     def _ros_service_filter_roles_and_apps(self, request):
@@ -131,6 +137,21 @@ class RoleManager(object):
             roles_and_apps.data.append(role_app_list)
         #print 'roles_and_apps service result: %s' % roles_and_apps
         return roles_and_apps
+    
+    def _ros_publish_interactive_clients(self):
+        interactive_clients = concert_msgs.InteractiveClients()
+        for remocon in self._remocon_monitors.values():
+            if remocon.status is not None:  # i.e. we are monitoring it.
+                interactive_client = concert_msgs.InteractiveClient()
+                interactive_client.name = remocon.name
+                interactive_client.id = unique_id.toMsg(uuid.UUID(remocon.status.uuid))
+                interactive_client.platform_info = rocon_utilities.platform_info.to_string(remocon.status.platform_info)
+                if remocon.status.running_app:
+                    interactive_client.app_name = remocon.status.app_name
+                    interactive_clients.running_clients.append(interactive_client)
+                else:
+                    interactive_clients.idle_clients.append(interactive_client)
+        self.publishers['interactive_clients'].publish(interactive_clients)
 
     def _ros_service_get_app(self, request):
         '''
@@ -198,6 +219,7 @@ class RoleManager(object):
             count = 0
             for remocon_monitor in self._remocon_monitors.values():
                 if remocon_monitor.status.running_app:
+                    # Todo this is a weak check as it is not necessarily uniquely identifying the app
                     if remocon_monitor.status.app_name == request.application:
                         count += 1
             if count < max:

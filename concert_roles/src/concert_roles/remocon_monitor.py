@@ -24,23 +24,28 @@ class RemoconMonitor(object):
             'name',
             'status',  # concert_msgs.RemoconStatus
             '_subscriber',
+            '_publish_interactive_clients_callback'  # publishes the list of interactive clients
         ]
 
     ##########################################################################
     # Initialisation
     ##########################################################################
 
-    def __init__(self, topic_name):
+    def __init__(self, topic_name, publish_interactive_clients_callback):
         if topic_name.startswith(concert_msgs.Strings.REMOCONS_NAMESPACE + '/'):
-            self.name = topic_name[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:]
+            uuid_postfixed_name = topic_name[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:]
+            (self.name, unused_separator, unused_uuid_part) = uuid_postfixed_name.rpartition('_')
         else:
             self.name = 'unknown'  # should raise an error here
             return
         self._subscriber = rospy.Subscriber(topic_name, concert_msgs.RemoconStatus, self._callback)
         self.status = None
+        self._publish_interactive_clients_callback = publish_interactive_clients_callback
 
     def _callback(self, msg):
         self.status = msg
+        # make sure we publish whenever there is a state change (as assumed when we get a status update)
+        self._publish_interactive_clients_callback()
 
     def unregister(self):
         self._subscriber.unregister()

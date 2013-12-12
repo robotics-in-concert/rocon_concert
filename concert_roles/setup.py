@@ -12,7 +12,8 @@ d = generate_distutils_setup(
               'rospy', 
               'concert_msgs', 
               'rocon_utilities',
-              'rocon_std_msgs'
+              'rocon_std_msgs',
+              'unique_id'
              ]
 )
 
