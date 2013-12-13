@@ -109,17 +109,6 @@ class DemoScheduler(object):
         self._lock.release()
         return resp
 
-    def _requester_update(self, request_set):
-        '''
-          Callback used in rocon_scheduler_requests scheduler for processing incoming resource requests.
-          This gets fired every time an incoming message arrives from a Requester.
-
-          @param request_set : a snapshot of all requests from a single requester in their current state.
-          @type rocon_scheduler_requests.transition.RequestSet
-        '''
-        pass
-        #self.logwarn("requester update callback function!")
-
     def _process_requests(self, msg):
         """
             1. enable : true. add service or update linkgraph
@@ -132,10 +121,28 @@ class DemoScheduler(object):
             @param : msg
             @type scheduler_msgs.SchedulerRequests
         """
+        if len(msg.requests) == 0:
+            return  # nothing to do
+        # We make some assumptions here - our simple requester either sends
+        # all new, or all releasing requests.
+        update = False
         self._lock.acquire()
-        requester_uuid = unique_id.toHexString(msg.requester)
-        self._requests[requester_uuid] = msg.requests  # potentially unsafe
-        self._update()
+        releasing_requests = []
+        requester_id = unique_id.toHexString(msg.requester)
+        for request in msg.requests:
+            if request.status == scheduler_msgs.Request.NEW:
+                if requester_id not in self._requests.keys():
+                    self._requests[requester_id] = []
+                self._requests[requester_id].append(request)
+                update = True
+            elif request.status == scheduler_msgs.Request.RELEASING:
+                releasing_requests.append(unique_id.toHexString(request.id))
+            else:
+                rospy.logerr("Scheduler : received invalid requests [illegitimate status]")
+        for request_id in releasing_requests:
+            self._stop_request(request_id)
+        if update:
+            self._update()
         self._lock.release()
 
     def _stop_services_of_left_clients(self, clients):
@@ -179,8 +186,10 @@ class DemoScheduler(object):
         """
             Stops all clients involved in serving <request_id>
 
-            @param request_id : uuid hex string representing the request.
+            @param request_id : uuid hex string representing the request id (not the requester id).
             @type hex string
+
+            Note, must be called from within the protection of locked code.
         """
         for p in self._pairs[request_id]:
             resource, client_node = p
@@ -209,6 +218,10 @@ class DemoScheduler(object):
                 self.loginfo(str(client_node.name) + " has already left")
 
         del self._pairs[request_id]
+        for requester_id in self._requests.keys():
+            self._requests[requester_id][:] = [request for request in self._requests[requester_id] if request_id != unique_id.toHexString(request.id)]
+            if not self._requests[requester_id]:
+                del self._requests[requester_id]
         self.loginfo(str(request_id) + " has been stopped")
 
     def _get_stop_client_app_service(self, gatewayname):
@@ -241,6 +254,13 @@ class DemoScheduler(object):
 
         return list(left_clients)
 
+    def _cancel(self, requester_uuid):
+        '''
+            Note, must be called from within the protection of locked code.
+
+            Deallocate resources (stop apps).
+        '''
+
     def _update(self):
         """
             Brings up requests for resources which can start with currently available clients
@@ -250,6 +270,8 @@ class DemoScheduler(object):
             1. create (resource, client) pair with already running clients.
             2. create (resource, client) pair with available clients
             3. If all pairs are successfully made, starts service
+
+            Note, must be called from within the protection of locked code.
         """
         for requests in self._requests.values():
             for request in requests:
@@ -288,6 +310,7 @@ class DemoScheduler(object):
 
                 # Starts request if it is ready
                 if status is concert_msgs.ErrorCodes.SUCCESS:
+                    request.status = scheduler_msgs.Request.GRANTED
                     self._pairs[key] = app_pairs
                     self._mark_clients_as_inuse(app_pairs)
                     self._start_request(new_app_pairs, key)
