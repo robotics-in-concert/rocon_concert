@@ -92,11 +92,12 @@ class StaticLinkGraphHandler(object):
             self._requester.cancel_all_requests()
         else:
             # we don't have a function stub, have to implement it here ourselves.
-            for request in self._requester.rset:
-                if request.msg.status == scheduler_msgs.Request.GRANTED:
-                    request.release()
+            for request in self._requester.rset.values():
+                # This is actually a hack because we don't use the real scheduler on the other
+                # side, we just publish these messages. The other scheduler is our demo
+                # scheduler, which will be aware of checking for the releasing flag.
+                request.msg.status = scheduler_msgs.Request.RELEASING
             self._requester.send_requests()
-            rospy.logwarn("Service : this is a stub for catching a shutdown signal - we have to deallocate resources here.")
         self._disabled = True
 
     def _setup_resource_pool_requester(self):

@@ -53,7 +53,7 @@ class ConcertServiceInstance(object):
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
-        self._shutdown_publisher = rospy.Publisher(self._namespace + "/shutdown", std_msgs.Empty, latch=True)
+        self._shutdown_publisher = rospy.Publisher(self._namespace + "/shutdown", std_msgs.Empty, latch=False)
 
     def __del__(self):
         if self._proc is not None:
@@ -125,7 +125,7 @@ class ConcertServiceInstance(object):
                         break
                     count = count + 1
             elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
-                rospy.loginfo("shutting down roslaunched concert service [%s]" % self._description.name)
+                rospy.loginfo("Service Manager : shutting down roslaunched concert service [%s]" % self._description.name)
                 count = 0
                 # give it some time to naturally die first.
                 while self._roslaunch.pm and not self._roslaunch.pm.done:
