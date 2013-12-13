@@ -15,6 +15,7 @@ import threading
 import roslaunch
 import rocon_utilities
 import concert_msgs.msg as concert_msgs
+import std_msgs.msg as std_msgs
 import concert_roles
 
 ##############################################################################
@@ -30,12 +31,16 @@ class ConcertServiceInstance(object):
 
     __slots__ = [
             '_description',  # concert_msgs.ConcertService fixed configuration and variable parameters
-            '_update_callback',  # used to trigger an external callback (service manager publisher) when the state changes.
-            '_namespace',        # namespace that the service will run in
-            '_lock',             # protect service enabling/disabling
-            '_proc',             # holds the custom subprocess variable if TYPE_CUSTOM
-            '_roslaunch'         # holds the roslaunch parent variable if TYPE_ROSLAUNCH
+            '_update_callback',    # used to trigger an external callback (service manager publisher) when the state changes.
+            '_namespace',          # namespace that the service will run in
+            '_lock',               # protect service enabling/disabling
+            '_proc',               # holds the custom subprocess variable if TYPE_CUSTOM
+            '_roslaunch',          # holds the roslaunch parent variable if TYPE_ROSLAUNCH
+            '_shutdown_publisher'  # used for disabling the service
         ]
+
+    shutdown_timeout = 5
+    kill_timeout = 10
 
     def __init__(self, service_description=None, env=os.environ, update_callback=dummy_cb):
         '''
@@ -48,6 +53,7 @@ class ConcertServiceInstance(object):
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
+        self._shutdown_publisher = rospy.Publisher(self._namespace + "/shutdown", std_msgs.Empty, latch=True)
 
     def __del__(self):
         if self._proc is not None:
@@ -94,11 +100,11 @@ class ConcertServiceInstance(object):
         '''
         success = False
         message = "unknown error"
-
         self._lock.acquire()
         if not self._description.enabled:
+            self._lock.release()
             return False, "already disabled"
-
+        self._shutdown_publisher.publish(std_msgs.Empty())
         try:
             if self._description.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
@@ -107,11 +113,12 @@ class ConcertServiceInstance(object):
             force_kill = False
 
             if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
-                self._proc.terminate()
                 count = 0
                 while not rospy.is_shutdown() and self._proc.poll() is None:
                     rospy.rostime.wallsleep(0.5)
-                    if count == 20:  # if service does not terminate for 10 secs, force kill
+                    if count == 2 * ConcertServiceInstance.shutdown_timeout:
+                        self._proc.terminate()
+                    if count == 2 * ConcertServiceInstance.kill_timeout:
                         self.loginfo("waited too long, force killing..")
                         self._proc.kill()
                         force_kill = True
@@ -119,9 +126,13 @@ class ConcertServiceInstance(object):
                     count = count + 1
             elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
                 rospy.loginfo("shutting down roslaunched concert service [%s]" % self._description.name)
-                self._roslaunch.shutdown()
+                count = 0
+                # give it some time to naturally die first.
                 while self._roslaunch.pm and not self._roslaunch.pm.done:
+                    if count == 2 * ConcertServiceInstance.shutdown_timeout:
+                        self._roslaunch.shutdown()
                     rospy.rostime.wallsleep(0.5)
+                    count = count + 1
             self._description.enabled = False
             unload_resources(self._description.name)
             success = True

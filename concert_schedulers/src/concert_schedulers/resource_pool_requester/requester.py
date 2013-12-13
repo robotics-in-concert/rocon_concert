@@ -7,10 +7,12 @@
 # Imports
 ##############################################################################
 
+import copy
 import rospy
 import unique_id
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
+import threading
 
 ##############################################################################
 # Methods
@@ -38,7 +40,9 @@ class ResourcePoolRequester():
             '_high_priority',
             '_low_priority',
             '_initial_request_uuid',
-            'alive'
+            'alive',
+            '_request_set',
+            '_lock'
         ]
 
     def __init__(self,
@@ -59,11 +63,27 @@ class ResourcePoolRequester():
         self._alive = False
         self._high_priority = high_priority
         self._low_priority = low_priority
+        self._request_set = None
+        self._lock = threading.Lock()
 
         initial_resources = []
         for resource_group in self._resource_groups:
             initial_resources.extend(resource_group.initial_resources())
         self._initial_request_uuid = self._requester.new_request(initial_resources, priority=self._high_priority)
+
+    def cancel_all_requests(self):
+        '''
+          Exactly as it says! Used typically when shutting down.
+
+          Note - called by external processes, so make sure it's protected.
+        '''
+        self._lock.acquire()
+        for request in self._request_set.values():
+            if request.msg.status == scheduler_msgs.Request.GRANTED:
+                request.release()
+        self._requester.rset.merge(self._request_set)
+        self._requester.send_requests()
+        self._lock.release()
 
     def _requester_feedback(self, request_set):
         '''
@@ -73,6 +93,9 @@ class ResourcePoolRequester():
           @param request_set : the modified requests
           @type dic { uuid.UUID : scheduler_msgs.ResourceRequest }
         '''
+        self._lock.acquire()
+        self._request_set = copy.deepcopy(request_set)
+        self._lock.release()
         # call self._feedback in here
         #print("Request set: %s" % request_set)
         # should we reset all tracking, allocated flags in all resources here, then enable them below?
@@ -110,6 +133,11 @@ class ResourcePoolRequester():
                     unused_request_uuid = self._requester.new_request([resource], priority=priority)
 
     def _flag_resource_trackers(self, resources, tracking, allocated, high_priority_flag):
+        '''
+          Update the flags in the resource trackers for each resource. This is used to
+          follow whether a particular resource is getting tracked, or is already allocated so
+          that we can determine if new requests should be made and at what priority.
+        '''
         for resource in resources:
             resource_tracker = self._find_resource_tracker(unique_id.toHexString(resource.id))
             if resource_tracker is None:

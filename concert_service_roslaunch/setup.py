@@ -8,6 +8,7 @@ d = generate_distutils_setup(
     package_dir={'':'src'},
     requires=['rospy', 
               'unique_id',
+              'std_msgs',
               'uuid_msgs',
               'concert_msgs',
               'rocon_std_msgs',

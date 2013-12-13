@@ -19,6 +19,7 @@ import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
+import std_msgs.msg as std_msgs
 import concert_schedulers
 import yaml
 
@@ -65,6 +66,7 @@ class StaticLinkGraphHandler(object):
             self._setup_resource_pool_requester()
         else:
             self._setup_requester()
+        self._setup_ros_subscribers()
 
     def spin(self):
         while not rospy.is_shutdown() and not self._disabled:
@@ -72,12 +74,29 @@ class StaticLinkGraphHandler(object):
 
     def _setup_ros_subscribers(self):
         self._subscribers = {}
-        self._subscribers['disable'] = rospy.Subscriber('~disable', concert_msgs.ConcertClients, self._ros_subscriber_disable)
+        # put the shutdown topic in the root of the service space
+        self._subscribers['shutdown'] = rospy.Subscriber('shutdown', std_msgs.Empty, self._ros_subscriber_shutdown)
 
-    def _ros_subscriber_disable(self):
+    def _ros_subscriber_shutdown(self, unused_msg):
+        '''
+          Typically called by the service manager when it wants to disable this service.
+          Note: if the node is shutting down we don't want to run this code as it runs into all sorts
+          of unreliable ros pubsub communication. Instead, we deallocate (stop apps and uninvite) via
+          a shutdown hook in the conductor.
+
+          @param unused_msg : it's just a signal to trigger this callback
+          @type std_msgs.Empty
+        '''
         rospy.loginfo("Service : disabling [%s]" % self._name)
-        rospy.logwarn("Service : this is a stub for sending the requester a cancel_all_requests request [%s]" % self._name)
-        #self._requester.cancel_all_requests()
+        if (self._param['requester_type'] == 'resource_pool_requester'):
+            self._requester.cancel_all_requests()
+        else:
+            # we don't have a function stub, have to implement it here ourselves.
+            for request in self._requester.rset:
+                if request.msg.status == scheduler_msgs.Request.GRANTED:
+                    request.release()
+            self._requester.send_requests()
+            rospy.logwarn("Service : this is a stub for catching a shutdown signal - we have to deallocate resources here.")
         self._disabled = True
 
     def _setup_resource_pool_requester(self):
