@@ -8,6 +8,7 @@
 ##############################################################################
 
 import rospy
+import rosgraph
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
@@ -204,6 +205,8 @@ class Conductor(object):
         if remote_target_ip is not None and remote_target_ip == 'localhost':
             return True
         if remote_target_ip is not None and self._concert_ip == remote_target_ip:
+            return True
+        if rosgraph.network.is_local_address(remote_target_ip):
             return True
         return False
 
