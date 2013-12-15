@@ -9,7 +9,7 @@ d = generate_distutils_setup(
 #    scripts=['scripts/gateway_info',
 #             'scripts/remote_gateway_info'
 #             ],
-    requires=['std_msgs', 'rospy', 'rocon_app_manager_msgs', 'concert_msgs', 'gateway_msgs', 'rocon_utilities']
+    requires=['std_msgs', 'rospy', 'rosgraph', 'rocon_app_manager_msgs', 'concert_msgs', 'gateway_msgs', 'rocon_utilities']
 )
 
 setup(**d)

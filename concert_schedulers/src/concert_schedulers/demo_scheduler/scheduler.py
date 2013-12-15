@@ -129,12 +129,13 @@ class DemoScheduler(object):
         self._lock.acquire()
         releasing_requests = []
         requester_id = unique_id.toHexString(msg.requester)
-        for request in msg.requests:
+        for request in msg.requests:  # request is scheduler_msgs.Request
             if request.status == scheduler_msgs.Request.NEW:
                 if requester_id not in self._requests.keys():
                     self._requests[requester_id] = []
-                self._requests[requester_id].append(request)
-                update = True
+                if request.id not in [r.id for r in self._requests[requester_id]]:
+                    self._requests[requester_id].append(request)
+                    update = True
             elif request.status == scheduler_msgs.Request.RELEASING:
                 releasing_requests.append(unique_id.toHexString(request.id))
             else:
@@ -156,14 +157,14 @@ class DemoScheduler(object):
         """
 
         left_client_gateways = self._get_left_clients(clients)
-        service_to_stop = []
+        request_to_stop = []
 
-        for service_name in self._pairs:
-            if not self._is_service_still_valid(self._pairs[service_name], left_client_gateways):
-                service_to_stop.append(service_name)
+        for key in self._pairs:  # request id key
+            if not self._is_service_still_valid(self._pairs[key], left_client_gateways):
+                request_to_stop.append(key)
 
-        for s in service_to_stop:
-            self._stop_request(s, left_client_gateways)
+        for key in request_to_stop:
+            self._stop_request(key, left_client_gateways)
 
     def _is_service_still_valid(self, pairs, left_clients):
         """
