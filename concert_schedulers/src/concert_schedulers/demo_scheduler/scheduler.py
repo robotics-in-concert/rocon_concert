@@ -313,8 +313,8 @@ class DemoScheduler(object):
                 if status is concert_msgs.ErrorCodes.SUCCESS:
                     request.status = scheduler_msgs.Request.GRANTED
                     self._pairs[key] = app_pairs
-                    self._mark_clients_as_inuse(app_pairs)
-                    self._start_request(new_app_pairs, key)
+                    if self._start_request(new_app_pairs, key):
+                        self._mark_clients_as_inuse(app_pairs)
                 else:
                     # if not, do nothing
                     self.logwarn("warning in [" + key + "] status. " + str(message))
@@ -437,27 +437,36 @@ class DemoScheduler(object):
 
             @param service_name
             @type string
+
+            @return true if all apps started their engines successfully
+            @rtype Bool
         """
         if len(pairs) == 0:
             return
 
         self.loginfo("  starting apps for request '" + str(request_id) + "'")
-        for p in pairs:
-            resource, client = p
-
-            # Creates start app service
-            start_app_srv = self._get_start_client_app_service(client.gateway_name)
-
-            # Create start app request object
-            req = self._create_startapp_request(resource)
-
-            # Request client to start app
-            self.loginfo("    starting '%s' on client '%s'..." % (resource.name, client.name))
-            resp = start_app_srv(req)
-
-            if not resp.started:
-                message = resp.message
-                raise FailedToStartAppsException(message)
+        already_started_pairs = []
+        try:
+            for p in pairs:
+                resource, client = p
+                start_app_srv = self._get_start_client_app_service(client.gateway_name)
+                req = self._create_startapp_request(resource)
+                self.loginfo("    starting '%s' on client '%s'..." % (resource.name, client.name))
+                resp = start_app_srv(req)
+                if resp.started:
+                    already_started_pairs.append(p)
+                else:
+                    message = resp.message
+                    raise FailedToStartAppsException(message)
+        except FailedToStartAppsException as e:
+            self.logerr(" failed to start all apps [%s]" % str(e))
+            for p in already_started_pairs:
+                resource, client = p
+                stop_app_srv = self._get_stop_client_app_service(client.gateway_name)
+                req = self._create_stopapp_request(resource)
+                stop_app_srv(req)
+            return False
+        return True
 
     def _get_start_client_app_service(self, gateway_name):
         """
