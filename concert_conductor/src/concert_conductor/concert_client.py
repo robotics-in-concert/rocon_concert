@@ -59,7 +59,6 @@ class ConcertClient(object):
         self.is_invited_elsewhere = False  # someone else already invited it.
 
         self.platform_info = None
-        self.service_execution = {}  # Services to execute, e.g. start_app, stop_app
         self._pull_concert_client()  # get concert client info and pull required handles in
             # could maybe catch an exception on error here
         self._init()
