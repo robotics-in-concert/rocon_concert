@@ -137,7 +137,7 @@ class RoleManager(object):
             roles_and_apps.data.append(role_app_list)
         #print 'roles_and_apps service result: %s' % roles_and_apps
         return roles_and_apps
-    
+
     def _ros_publish_interactive_clients(self):
         interactive_clients = concert_msgs.InteractiveClients()
         for remocon in self._remocon_monitors.values():
