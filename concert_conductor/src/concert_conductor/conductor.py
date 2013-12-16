@@ -139,16 +139,16 @@ class Conductor(object):
                     if concert_name in self._invited_clients:
                         self.batch_invite(self._concert_name, [concert_name])
                 except ConcertClientException as e:  # problem constructing a concert client
-                    self._bad_clients.append(gateway_name)
+                    self._bad_clients.append(gateway_hash_name)
                     rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(gateway_hash_name), str(e)))
                 except rospy.exceptions.ROSInterruptException:  # ros is shutting down, ignore
                     break
                 except rospy.service.ServiceException as e:  # service not available
                     self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(gateway_hash_name), str(e)))
+                    rospy.loginfo("Conductor : service exception while establishing client [%s][%s]" % (str(gateway_hash_name), str(e)))
                 except Exception as e:
                     self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
+                    rospy.loginfo("Conductor : unknown exception while establishing client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
             if self._param['auto_invite']:
                 client_list = [client for client in self._concert_clients
                                      if (client not in self._invited_clients)
@@ -247,6 +247,7 @@ class Conductor(object):
             if not gateway_name in new_clients:
                 number_of_pruned_clients += 1
                 rospy.loginfo("Conductor : client left : " + client_name)
+                self._concert_clients[client_name].cancel_pulls()
                 del self._concert_clients[client_name]
         return number_of_pruned_clients
 

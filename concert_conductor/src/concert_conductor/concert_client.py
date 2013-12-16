@@ -95,7 +95,7 @@ class ConcertClient(object):
             rospy.logwarn("Conductor: failed to pull the platform info service from the client.")
             return None
 
-    def _cancel_pulls(self):
+    def cancel_pulls(self):
         '''
           Cancel any pulls for a client which failed to construct (e.g. in the init() when the service calls
           fail.
@@ -127,11 +127,11 @@ class ConcertClient(object):
             self._invite_service.wait_for_service(0.5)
             self._remote_gateway_info_service.wait_for_service(0.5)
         except rospy.ROSException, e:
-            self._cancel_pulls()
+            self.cancel_pulls()
             raise ConcertClientException("timed out on remote concert client services")
         except rospy.ServiceException, e:
             raise ConcertClientException(str(e))
-            self._cancel_pulls()
+            self.cancel_pulls()
         platform_info_msg = platform_info_service().platform_info
         self.data.name = platform_info_msg.name
         self.data.platform_info = rocon_utilities.platform_info.to_string(platform_info_msg)
@@ -140,7 +140,7 @@ class ConcertClient(object):
         try:
             list_app_service.wait_for_service(0.5)
         except rospy.ROSException, e:
-            self._cancel_pulls()
+            self.cancel_pulls()
             raise ConcertClientException("timed out on remote concert client services")
         self.data.apps = list_app_service().available_apps
 
