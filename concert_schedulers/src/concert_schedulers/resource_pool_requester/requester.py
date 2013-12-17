@@ -77,13 +77,15 @@ class ResourcePoolRequester():
 
           Note - called by external processes, so make sure it's protected.
         '''
-        self._lock.acquire()
-        for request in self._request_set.values():
-            if request.msg.status == scheduler_msgs.Request.GRANTED:
-                request.release()
-        self._requester.rset.merge(self._request_set)
+        #self._lock.acquire()
+        #for request in self._request_set.values():
+        #    if request.msg.status == scheduler_msgs.Request.GRANTED:
+        #        request.release()
+        #self._requester.rset.merge(self._request_set)
+        # Will update self._request_set when the feedback comes back
+        self._requester.cancel_all()
         self._requester.send_requests()
-        self._lock.release()
+        #self._lock.release()
 
     def _requester_feedback(self, request_set):
         '''

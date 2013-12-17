@@ -30,6 +30,7 @@ class CompatibilityTreeScheduler(object):
 
     __slots__ = [
             '_subscribers',
+            '_publishers',
             '_request_set',
             '_lock',
             'spin',
@@ -51,7 +52,7 @@ class CompatibilityTreeScheduler(object):
         '''
         self._subscribers = {}       # ros subscribers
         self._request_set = None     # rocon_scheduler_request.transitions.RequestSet (contains ResourceReply objects)
-        self._clients = {}           # common.ConcertClient.name : common.ConcertClient of all concert clients
+        self._clients = {}           # common.ConcertClient.gateway_name : common.ConcertClient of all concert clients
         self._lock = threading.Lock()
 
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
@@ -62,6 +63,7 @@ class CompatibilityTreeScheduler(object):
 
     def _setup_ros_api(self, concert_clients_topic_name):
         self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_subscriber_concert_client_changes)
+#        self._publishers["request_set"] = rospy.Publisher("~request_set", concert_msgs.SchedulerRequests, latch=True)
 
     ##########################################################################
     # Ros callbacks
@@ -90,6 +92,14 @@ class CompatibilityTreeScheduler(object):
         self._update()
         self._lock.release()
 
+#    def _ros_publish_request_set(self):
+#        '''
+#          Publishes the current requests on a ros topic. This is generally used
+#          for introspection purposes.
+#        '''
+#        msg = concert_msgs.SchedulerRequests()
+#        msg.requests = []
+#        self._publishers['request_set'].publish()
     ##########################################################################
     # Requester Callback
     ##########################################################################
@@ -104,8 +114,10 @@ class CompatibilityTreeScheduler(object):
           @param request_set : a snapshot of all requests from a single requester in their current state.
           @type rocon_scheduler_requests.transition.RequestSet
         '''
+        #rospy.logwarn("Scheduler : requester update")
+        #print("Request status: %s" % [r.msg.status for r in request_set.requests.values()])
         #for r in request_set.requests.values():
-        #    print("Request: %s" % r.msg)
+        #    print("Request: %s" % r.msg.status)
         self._lock.acquire()
         self._request_set = request_set
         self._update()
@@ -120,59 +132,77 @@ class CompatibilityTreeScheduler(object):
         """
         if self._request_set is None:
             return  # Nothing to do
+        ########################################
+        # Allocating Concert Clients
+        ########################################
         unallocated_clients = [client for client in self._clients.values() if not client.allocated]
-        if not unallocated_clients:
-            return  # Nothing to do
-        # get all requests for compatibility tree processing and sort by priority
-        # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
-        pending_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW or r.msg.status == scheduler_msgs.Request.WAITING]
-        pending_replies[:] = sorted(pending_replies, key=lambda request: request.msg.priority)
-        last_failed_priority = None  # used to check if we should block further allocations to lower priorities
-        for reply in pending_replies:
-            request = reply.msg
-            if last_failed_priority is not None and request.priority < last_failed_priority:
-                rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
-                break
-            request_id = unique_id.toHexString(request.id)
-            compatibility_tree = create_compatibility_tree(request.resources, unallocated_clients)
-            compatibility_tree.print_branches("Compatibility Tree")
-            pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=True)
-            pruned_compatibility_tree = CompatibilityTree(pruned_branches)
-            pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
-            if pruned_compatibility_tree.is_valid():
-                rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate...")
-                last_failed_priority = None
-                resources = []
-                failed_to_allocate = False
-                for branch in pruned_compatibility_tree.branches:
-                    if failed_to_allocate:  # nested break catch
-                        break
-                    for leaf in branch.leaves:  # there should be but one
-                        # this info is actually embedding into self._clients
-                        try:
-                            leaf.allocate(request_id, branch.limb)
-                            rospy.loginfo("Scheduler :   allocated [%s]" % leaf.name)
-                        except FailedToAllocateException as e:
-                            rospy.logwarn("Scheduler :   failed to allocate [%s][%s]" % (leaf.name, str(e)))
-                            failed_to_allocate = True
-                            break
-                        resource = copy.deepcopy(branch.limb)
-                        resource.platform_info = rocon_utilities.platform_info.set_name(leaf.msg.platform_info, leaf.msg.name)
-                        resources.append(resource)
-                if failed_to_allocate:
-                    rospy.logwarn("Scheduler : aborting request allocation [%s]" % request_id)
-                    # aborting request allocation
+        if unallocated_clients:
+            # get all requests for compatibility tree processing and sort by priority
+            # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
+            pending_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW or r.msg.status == scheduler_msgs.Request.WAITING]
+            pending_replies[:] = sorted(pending_replies, key=lambda request: request.msg.priority)
+            last_failed_priority = None  # used to check if we should block further allocations to lower priorities
+            for reply in pending_replies:
+                request = reply.msg
+                if last_failed_priority is not None and request.priority < last_failed_priority:
+                    rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
+                    break
+                request_id = unique_id.toHexString(request.id)
+                compatibility_tree = create_compatibility_tree(request.resources, unallocated_clients)
+                compatibility_tree.print_branches("Compatibility Tree")
+                pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=True)
+                pruned_compatibility_tree = CompatibilityTree(pruned_branches)
+                pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
+                if pruned_compatibility_tree.is_valid():
+                    rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate...")
+                    last_failed_priority = None
+                    resources = []
+                    failed_to_allocate = False
                     for branch in pruned_compatibility_tree.branches:
+                        if failed_to_allocate:  # nested break catch
+                            break
                         for leaf in branch.leaves:  # there should be but one
-                            if leaf.allocated:
-                                leaf.abandon()
-                    last_failed_priority = request.priority
+                            # this info is actually embedding into self._clients
+                            try:
+                                leaf.allocate(request_id, branch.limb)
+                                rospy.loginfo("Scheduler :   allocated [%s]" % leaf.name)
+                            except FailedToAllocateException as e:
+                                rospy.logwarn("Scheduler :   failed to allocate [%s][%s]" % (leaf.name, str(e)))
+                                failed_to_allocate = True
+                                break
+                            resource = copy.deepcopy(branch.limb)
+                            resource.platform_info = rocon_utilities.platform_info.set_name(leaf.msg.platform_info, leaf.msg.gateway_name)
+                            resources.append(resource)
+                    if failed_to_allocate:
+                        rospy.logwarn("Scheduler : aborting request allocation [%s]" % request_id)
+                        # aborting request allocation
+                        for branch in pruned_compatibility_tree.branches:
+                            for leaf in branch.leaves:  # there should be but one
+                                if leaf.allocated:
+                                    leaf.abandon()
+                        last_failed_priority = request.priority
+                        if reply.msg.status == scheduler_msgs.Request.NEW:
+                            reply.wait()
+                    else:
+                        reply.grant(resources)
+                else:
                     if reply.msg.status == scheduler_msgs.Request.NEW:
                         reply.wait()
-                else:
-                    reply.grant(resources)
-            else:
-                if reply.msg.status == scheduler_msgs.Request.NEW:
-                    reply.wait()
-                last_failed_priority = request.priority
-                rospy.loginfo("Scheduler : insufficient resources to satisfy request [%s]" % request_id)
+                    last_failed_priority = request.priority
+                    rospy.loginfo("Scheduler : insufficient resources to satisfy request [%s]" % request_id)
+        ########################################
+        # Releasing Allocated Concert Clients
+        ########################################
+        releasing_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.RELEASING]
+        for reply in releasing_replies:
+            #print("Releasing Resources: %s" % [r.name for r in reply.msg.resources])
+            #print("  Releasing Resources: %s" % [r.platform_info for r in reply.msg.resources])
+            #print("  Clients: %s" % self._clients.keys())
+            #for client in self._clients.values():
+            #    print(str(client))
+            for resource in reply.msg.resources:
+                try:
+                    self._clients[rocon_utilities.platform_info.get_name(resource.platform_info)].abandon()
+                except KeyError:
+                    pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
+            reply.msg.status = scheduler_msgs.Request.RELEASED
