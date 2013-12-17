@@ -40,15 +40,15 @@ class ConcertClient(object):
         self.gateway_name = self.msg.gateway_name
 
     def __str__(self):
-        rval = "Concert Client"
-        rval += "  Name: %s" % self.name
-        rval += "  Gateway Name: %s" % self.gateway_name
+        rval = "Concert Client\n"
+        rval += "  Name: %s\n" % self.name
+        rval += "  Gateway Name: %s\n" % self.gateway_name
         if self.allocated:
-            rval += "  Allocated: yes"
-            rval += "  Request Id: %s" % self._request_id
+            rval += "  Allocated: yes\n"
+            rval += "  Request Id: %s\n" % self._request_id
             #rval += "  Resource: %s" % self._resource
         else:
-            rval += "  Allocated: no"
+            rval += "  Allocated: no\n"
         return rval
 
     def allocate(self, request_id, resource):

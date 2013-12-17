@@ -63,7 +63,6 @@ class CompatibilityTreeScheduler(object):
 
     def _setup_ros_api(self, concert_clients_topic_name):
         self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_subscriber_concert_client_changes)
-#        self._publishers["request_set"] = rospy.Publisher("~request_set", concert_msgs.SchedulerRequests, latch=True)
 
     ##########################################################################
     # Ros callbacks
@@ -77,33 +76,33 @@ class CompatibilityTreeScheduler(object):
           @param msg : concert_msgs.ConcertClients
         """
         self._lock.acquire()
-        clients = msg.clients
-
-        for client in clients:
-            if client.gateway_name not in self._clients.keys():
-                rospy.loginfo("Scheduler : new concert client : %s" % client.name)
-                self._clients[client.gateway_name] = common.ConcertClient(client)  # default setting is unallocated
-            #else:
-            #    rospy.loginfo("Scheduler :   old client [%s]" % client.name)
-
-        # @Todo : determine and handle lost clients as well.
-
+        # new_clients: concert_msgs.ConcertClient[]
+        new_clients = [client for client in msg.clients if client.gateway_name not in self._clients.keys()]
+        # lost_clients: common.ConcertClient[]
+        lost_clients = [client for client in self._clients.values() if client.gateway_name not in [c.gateway_name for c in msg.clients]]
+        # work over the client list
+        for client in new_clients:
+            rospy.loginfo("Scheduler : new concert client [%s]" % client.name)
+            self._clients[client.gateway_name] = common.ConcertClient(client)  # default setting is unallocated
+        for client in lost_clients:
+            if client.allocated:
+                rospy.logwarn("Scheduler : lost allocated concert client [%s]" % client.name)
+                platform_info_tuple = rocon_utilities.platform_info.set_name(client.msg.platform_info, client.msg.gateway_name)
+                for request in self._request_set.values():
+                    found = False
+                    for resource in request.msg.resources:
+                        if resource.platform_info == platform_info_tuple:
+                            resource.platform_info = rocon_utilities.platform_info.set_name(platform_info_tuple, concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE)
+                            found = True
+                            break
+                    if found:
+                        # @todo might want to consider changing the request status if all resources have been unallocated
+                        break
+                # @todo might want to validate that we unallocated since we did detect an allocated flag 
+            del self._clients[client.gateway_name]
         # should check for some things here, e.g. can we verify a client is allocated or not?
         self._update()
         self._lock.release()
-
-#    def _ros_publish_request_set(self):
-#        '''
-#          Publishes the current requests on a ros topic. This is generally used
-#          for introspection purposes.
-#        '''
-#        msg = concert_msgs.SchedulerRequests()
-#        msg.requests = []
-#        self._publishers['request_set'].publish()
-    ##########################################################################
-    # Requester Callback
-    ##########################################################################
-    # Later this should remove the need for _process_requests above.
 
     def _requester_update(self, request_set):
         '''

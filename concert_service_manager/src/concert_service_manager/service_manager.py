@@ -46,7 +46,6 @@ class ServiceManager(object):
         for service_description in service_descriptions:
             self._concert_services[service_description.name] = ConcertServiceInstance(service_description=service_description,
                                                                                       update_callback=self.update)
-            #self._setup_service_parameters(service_description.name, service_description.description, service_description.uuid)
         self.lock.release()
         if self._param['auto_enable_services']:
             for name in self._concert_services.keys():
