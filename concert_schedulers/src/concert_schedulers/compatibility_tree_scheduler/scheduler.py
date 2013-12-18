@@ -99,9 +99,10 @@ class CompatibilityTreeScheduler(object):
                             found = True
                             break
                     if found:
+                        self._scheduler.notify(self._request_set.requester_id)
                         # @todo might want to consider changing the request status if all resources have been unallocated
                         break
-                # @todo might want to validate that we unallocated since we did detect an allocated flag 
+                # @todo might want to validate that we unallocated since we did detect an allocated flag
             del self._clients[client.gateway_name]
         # should check for some things here, e.g. can we verify a client is allocated or not?
         self._update()
@@ -117,10 +118,10 @@ class CompatibilityTreeScheduler(object):
           @type rocon_scheduler_requests.transition.RequestSet
         '''
         #rospy.logwarn("Scheduler : requester update")
-        #print("Request status: %s" % [r.msg.status for r in request_set.requests.values()])
-        #for r in request_set.requests.values():
-        #    print("Request: %s" % r.msg.status)
         self._lock.acquire()
+        # this might cause a problem if this gets blocked while in the middle of processing a lost
+        # allocation (where we change the request set's resource info). Would this next line overwrite
+        # our changes or would we be getting the updated request set?
         self._request_set = request_set
         self._update()
         self._lock.release()
@@ -131,6 +132,8 @@ class CompatibilityTreeScheduler(object):
           available concert clients or the incoming resource requests.
 
           Note : this must be protected by being called inside locked code
+
+          @todo test use of rlocks here
         """
         if self._request_set is None:
             return  # Nothing to do

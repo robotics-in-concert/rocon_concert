@@ -7,6 +7,7 @@
 # Imports
 ##############################################################################
 
+import time
 import copy
 import rospy
 import unique_id
@@ -18,6 +19,23 @@ import rocon_utilities
 
 ##############################################################################
 # Methods
+##############################################################################
+
+
+def request_unallocated(resources):
+    '''
+      Quick check to see if a request's resources have been entirely
+      lost (i.e. unallocated). This will trigger the responder to
+      cleanup (i.e. release the request).
+
+      @param resources
+      @type scheduler_msgs.Resource[]
+
+      @return true or false if entirely unallocated or not.
+    '''
+
+##############################################################################
+# Classes
 ##############################################################################
 
 
@@ -33,15 +51,15 @@ class ResourcePoolRequester(object):
             '_feedback',
             '_high_priority',    # priority to set for necessary (minimum) resource requirements
             '_low_priority',     # priority to set for optional resource requirements
-            '_initial_request_uuid',
-            '_request_set',
+            '_recovery_start',   # the timestamp recorded when moving from State.ALIVE -> State.RECOVERING (used for recovery timeout)
             '_lock'
         ]
 
     class State(object):
-        PENDING = 'pending'        # pending resource allocations for minimum requirements of the resource groups
-        ALIVE = 'alive'            # minimum resource requirements have been allocated - it is now functioning
-        RECOVERING = 'recovering'  # was alive, but resource allocations fell below minimum requirements and trying to recover
+        PENDING = 'pending'             # pending resource allocations for minimum requirements of the resource groups
+        ALIVE = 'alive'                 # minimum resource requirements have been allocated - it is now functioning
+        RECOVERING = 'recovering'       # was alive, but resource allocations fell below minimum requirements and trying to recover
+        timeout = rospy.Duration(2.0)  # timeout for dropping 'alive' state status.
 
     def __init__(self,
                  resource_groups,
@@ -73,19 +91,20 @@ class ResourcePoolRequester(object):
         self._state = self.State.PENDING
         self._high_priority = high_priority
         self._low_priority = low_priority
-        self._request_set = None
         self._lock = threading.Lock()
+        self._issue_minimum_request()
 
+    def _issue_minimum_request(self):
         initial_resources = []
         for resource_group in self._resource_groups:
             initial_resources.extend(resource_group.initial_resources())
-        self._initial_request_uuid = self._requester.new_request(initial_resources, priority=self._high_priority)
+        unused_minimum_request_uuid = self._requester.new_request(initial_resources, priority=self._high_priority)
 
     def cancel_all_requests(self):
         '''
-          Exactly as it says! Used typically when shutting down.
-
-          Note - called by external processes, so make sure it's protected.
+          Exactly as it says! Used typically when shutting down or when
+          it's lost more allocated resources than the minimum required (in which case it
+          cancels everything and starts reissuing new requests).
         '''
         #self._lock.acquire()
         self._requester.cancel_all()
@@ -100,9 +119,6 @@ class ResourcePoolRequester(object):
           @param request_set : the modified requests
           @type dic { uuid.UUID : scheduler_msgs.ResourceRequest }
         '''
-        self._lock.acquire()
-        self._request_set = copy.deepcopy(request_set)
-        self._lock.release()
         # call self._feedback in here
         #print("Request set: %s" % request_set)
         ########################################
@@ -116,12 +132,14 @@ class ResourcePoolRequester(object):
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=False, high_priority_flag=high_priority_flag)
             elif request.msg.status == scheduler_msgs.Request.GRANTED:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
+            elif request.msg.status == scheduler_msgs.Request.RELEASED:
+                self._flag_resource_trackers(request.msg.resources, tracking=False, allocated=False)
 
         #for resource_group in self._resource_groups:
         #    print("\n%s" % str(resource_group))
 
         ########################################
-        # Update requester pool state
+        # Requester state transitions
         ########################################
         tentatively_alive = True
         for resource_group in self._resource_groups:
@@ -130,14 +148,18 @@ class ResourcePoolRequester(object):
                 break
         # alive state changes
         if self._state == self.State.PENDING and tentatively_alive:
-            rospy.loginfo("Requester : gone live.")
             self._state = self.State.ALIVE
+            rospy.loginfo("Requester : state change [%s->%s]" % (self.State.PENDING, self.State.ALIVE))
         elif self._state == self.State.ALIVE and not tentatively_alive:
-            self._state = self.State.PENDING
-            # @todo : should cancel all requests and issue a brand new one
-            # or have a timeout state that gives it a chance to recover alive status
-            # before cancelling.
-            rospy.logwarn("Requester : we died.")
+            rospy.loginfo("Requester : state change [%s->%s]" % (self.State.ALIVE, self.State.RECOVERING))
+            self._state = self.State.RECOVERING
+            self._recovery_start = rospy.Time.now()
+            thread = threading.Thread(target=self._check_recovery_timeout)
+            thread.start()
+        elif self._state == self.State.RECOVERING and tentatively_alive:
+            self._state = self.State.ALIVE
+        # else moving from RECOVERING to PENDING is handled by the thread function
+
         ########################################
         # Check optional request requirements
         ########################################
@@ -148,7 +170,30 @@ class ResourcePoolRequester(object):
                     priority = self._high_priority if high_priority_flag else self._low_priority
                     unused_request_uuid = self._requester.new_request([resource], priority=priority)
 
-    def _flag_resource_trackers(self, resources, tracking, allocated, high_priority_flag):
+    def _check_recovery_timeout(self):
+        '''
+          Thread worker function that monitors the requester state while it's trying to
+          recover the minimum necessary requirements to run the resource pool. If
+          nothing happens for the duration of this wait, then it cancels all requests (deallocating
+          any resources) and reissues brand new requests as needed.
+
+          In the future this probably has to change as we can't dictate to the service how long
+          it should wait before cancelling requests. Ultimately the service itself should handle
+          what happens if this timeout is reached - it needs to cleanup (i.e. finalise
+          whatever it is doing first such as sending robots back to home base) before finally issuing
+          the cancel order for the request.
+        '''
+        while (rospy.Time.now() - self._recovery_start) < self.State.timeout and not rospy.is_shutdown() and self._state == self.State.RECOVERING:
+            rospy.rostime.wallsleep(1.0)
+            if (rospy.Time.now() - self._recovery_start) > self.State.timeout:
+                self.cancel_all_requests()
+                rospy.logwarn("Requester : timed out trying to recover necessary resource pool state.")
+                time.sleep(3)  # temporary, https://github.com/utexas-bwi/rocon_scheduler_requests/issues/19
+                rospy.logwarn("Requester : issuing new minimum request.")
+                self._issue_minimum_request()
+                self._state = self.State.PENDING
+
+    def _flag_resource_trackers(self, resources, tracking, allocated, high_priority_flag=False):
         '''
           Update the flags in the resource trackers for each resource. This is used to
           follow whether a particular resource is getting tracked, or is already allocated so
@@ -158,7 +203,6 @@ class ResourcePoolRequester(object):
             # do a quick check to make sure individual resources haven't been previously allocated, and then lost
             # WARNING : this unallocated check doesn't actually work - the requester isn't sending us back this info yet.
             if rocon_utilities.platform_info.get_name(resource.platform_info) == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
-                rospy.logwarn("Requester : unallocated resource %s" % resource.platform_info)
                 tracking = False
                 allocated = False
             resource_tracker = self._find_resource_tracker(unique_id.toHexString(resource.id))
