@@ -207,4 +207,5 @@ class CompatibilityTreeScheduler(object):
                     self._clients[rocon_utilities.platform_info.get_name(resource.platform_info)].abandon()
                 except KeyError:
                     pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
+            reply.free()
             reply.msg.status = scheduler_msgs.Request.RELEASED
