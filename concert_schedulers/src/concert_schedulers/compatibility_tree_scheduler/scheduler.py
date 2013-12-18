@@ -87,6 +87,9 @@ class CompatibilityTreeScheduler(object):
         for client in lost_clients:
             if client.allocated:
                 rospy.logwarn("Scheduler : lost allocated concert client [%s]" % client.name)
+                # WARNINGg, this code actually doesn't work - it doesn't force the scheduler to send the updated information
+                # back to the requester. Instead, the requester sends its heartbeat updates, which end up overwriting these
+                # changes in _requester_update.
                 platform_info_tuple = rocon_utilities.platform_info.set_name(client.msg.platform_info, client.msg.gateway_name)
                 for request in self._request_set.values():
                     found = False

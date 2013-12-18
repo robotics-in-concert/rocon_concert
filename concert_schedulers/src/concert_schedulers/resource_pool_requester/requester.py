@@ -12,7 +12,9 @@ import rospy
 import unique_id
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
+import concert_msgs.msg as concert_msgs
 import threading
+import rocon_utilities
 
 ##############################################################################
 # Methods
@@ -153,6 +155,12 @@ class ResourcePoolRequester(object):
           that we can determine if new requests should be made and at what priority.
         '''
         for resource in resources:
+            # do a quick check to make sure individual resources haven't been previously allocated, and then lost
+            # WARNING : this unallocated check doesn't actually work - the requester isn't sending us back this info yet.
+            if rocon_utilities.platform_info.get_name(resource.platform_info) == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+                rospy.logwarn("Requester : unallocated resource %s" % resource.platform_info)
+                tracking = False
+                allocated = False
             resource_tracker = self._find_resource_tracker(unique_id.toHexString(resource.id))
             if resource_tracker is None:
                 pass  # should raise an exception
