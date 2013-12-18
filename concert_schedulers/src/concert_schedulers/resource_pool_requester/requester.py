@@ -22,17 +22,21 @@ import rocon_utilities
 ##############################################################################
 
 
-def request_unallocated(resources):
+def request_completely_unallocated(request):
     '''
       Quick check to see if a request's resources have been entirely
       lost (i.e. unallocated). This will trigger the responder to
       cleanup (i.e. release the request).
 
       @param resources
-      @type scheduler_msgs.Resource[]
+      @type scheduler_msgs.Request
 
       @return true or false if entirely unallocated or not.
     '''
+    for resource in request.msg.resources:
+        if rocon_utilities.platform_info.get_name(resource.platform_info) != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+            return False
+    return True
 
 ##############################################################################
 # Classes
@@ -93,6 +97,7 @@ class ResourcePoolRequester(object):
         self._low_priority = low_priority
         self._lock = threading.Lock()
         self._issue_minimum_request()
+        self._requester.send_requests()
 
     def _issue_minimum_request(self):
         initial_resources = []
@@ -132,6 +137,8 @@ class ResourcePoolRequester(object):
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=False, high_priority_flag=high_priority_flag)
             elif request.msg.status == scheduler_msgs.Request.GRANTED:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
+                if request_completely_unallocated(request):
+                    request.cancel()
             elif request.msg.status == scheduler_msgs.Request.RELEASED:
                 self._flag_resource_trackers(request.msg.resources, tracking=False, allocated=False)
 
@@ -154,8 +161,10 @@ class ResourcePoolRequester(object):
             rospy.loginfo("Requester : state change [%s->%s]" % (self.State.ALIVE, self.State.RECOVERING))
             self._state = self.State.RECOVERING
             self._recovery_start = rospy.Time.now()
-            thread = threading.Thread(target=self._check_recovery_timeout)
-            thread.start()
+            self._requester.cancel_all()
+            self._issue_minimum_request()
+            #thread = threading.Thread(target=self._check_recovery_timeout)
+            #thread.start()
         elif self._state == self.State.RECOVERING and tentatively_alive:
             self._state = self.State.ALIVE
         # else moving from RECOVERING to PENDING is handled by the thread function
