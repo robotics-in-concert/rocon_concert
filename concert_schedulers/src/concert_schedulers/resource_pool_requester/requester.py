@@ -19,31 +19,27 @@ import threading
 ##############################################################################
 
 
-class ResourceTracker(object):
-    __slots__ = [
-            '_resource',
-        ]
-
-    def __init__(self, resource):
-        self._resource = resource
-
-
-class ResourcePoolRequester():
+class ResourcePoolRequester(object):
     '''
       A variant on the basic requester that can handle some higher level
       formulation and management of requests.
     '''
     __slots__ = [
-            '_requester',  # the base requester class from rocon_scheduler_requests
+            '_requester',        # the base requester class from rocon_scheduler_requests
             '_resource_groups',
+            '_state',            # state of the requester (see State class)
             '_feedback',
-            '_high_priority',
-            '_low_priority',
+            '_high_priority',    # priority to set for necessary (minimum) resource requirements
+            '_low_priority',     # priority to set for optional resource requirements
             '_initial_request_uuid',
-            'alive',
             '_request_set',
             '_lock'
         ]
+
+    class State(object):
+        PENDING = 'pending'        # pending resource allocations for minimum requirements of the resource groups
+        ALIVE = 'alive'            # minimum resource requirements have been allocated - it is now functioning
+        RECOVERING = 'recovering'  # was alive, but resource allocations fell below minimum requirements and trying to recover
 
     def __init__(self,
                  resource_groups,
@@ -54,13 +50,25 @@ class ResourcePoolRequester():
                  topic=rocon_scheduler_requests.common.SCHEDULER_TOPIC,
                  frequency=rocon_scheduler_requests.common.HEARTBEAT_HZ):
         '''
-          @param resource_groups : many resource groups that will form a single request
+          Loads the requester up with a collecation of resource groups that have min/max requirements
+          for each resource type.
+
+          @param resource_groups : many resource groups that will form the bases for this requester
           @type resource_group.MinMaxResourceGroup[]
+
+          @param feedback : external feedback callback function
+          @type method
+
+          @param high_priority : priority to set for necessary (minimum) resource requirements
+          @type int
+
+          @param low_priority : priority to set for optional resource requirements
+          @type int
         '''
         self._requester = rocon_scheduler_requests.Requester(self._requester_feedback, uuid, 0, topic, frequency)
         self._resource_groups = resource_groups
         self._feedback = feedback
-        self._alive = False
+        self._state = self.State.PENDING
         self._high_priority = high_priority
         self._low_priority = low_priority
         self._request_set = None
@@ -78,11 +86,6 @@ class ResourcePoolRequester():
           Note - called by external processes, so make sure it's protected.
         '''
         #self._lock.acquire()
-        #for request in self._request_set.values():
-        #    if request.msg.status == scheduler_msgs.Request.GRANTED:
-        #        request.release()
-        #self._requester.rset.merge(self._request_set)
-        # Will update self._request_set when the feedback comes back
         self._requester.cancel_all()
         self._requester.send_requests()
         #self._lock.release()
@@ -100,7 +103,9 @@ class ResourcePoolRequester():
         self._lock.release()
         # call self._feedback in here
         #print("Request set: %s" % request_set)
-        # should we reset all tracking, allocated flags in all resources here, then enable them below?
+        ########################################
+        # Update all resource tracking info
+        ########################################
         for resource_group in self._resource_groups:
             resource_group.reset_scheduler_flags()
         for request in request_set.values():
@@ -113,21 +118,28 @@ class ResourcePoolRequester():
         #for resource_group in self._resource_groups:
         #    print("\n%s" % str(resource_group))
 
-        # check alive status
+        ########################################
+        # Update requester pool state
+        ########################################
         tentatively_alive = True
         for resource_group in self._resource_groups:
             if not resource_group.is_alive():
                 tentatively_alive = False
                 break
         # alive state changes
-        if not self._alive and tentatively_alive:
+        if self._state == self.State.PENDING and tentatively_alive:
             rospy.loginfo("Requester : gone live.")
-            self._alive = True
-        elif self._alive and not tentatively_alive:
-            self._alive = False
-            # should cancel all requests and issue a new one.
+            self._state = self.State.ALIVE
+        elif self._state == self.State.ALIVE and not tentatively_alive:
+            self._state = self.State.PENDING
+            # @todo : should cancel all requests and issue a brand new one
+            # or have a timeout state that gives it a chance to recover alive status
+            # before cancelling.
             rospy.logwarn("Requester : we died.")
-        if self._alive:
+        ########################################
+        # Check optional request requirements
+        ########################################
+        if self._state == self.State.ALIVE:
             for resource_group in self._resource_groups:
                 (resource, high_priority_flag) = resource_group.requires_new_request()
                 if resource is not None:
