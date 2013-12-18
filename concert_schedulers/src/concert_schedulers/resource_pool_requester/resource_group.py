@@ -23,7 +23,7 @@ from .resource_tracker import ResourceTracker
 class ResourcePoolGroup(object):
 
     __slots__ = [
-            '_resources',  # the base requester class from rocon_scheduler_requests
+            '_resources',  # resources this group must care for.
             '_min',
             '_max',
         ]
@@ -35,7 +35,7 @@ class ResourcePoolGroup(object):
           @param minimum
           @type int
 
-          @param resources : list of resources to pass to the requester.
+          @param resources : list of resources eligible for use in constructing scheduler requests
           @type scheduler_msgs.Resource[]
         '''
         self._resources = {}

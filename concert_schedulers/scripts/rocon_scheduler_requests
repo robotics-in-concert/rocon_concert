@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+#       
+# License: BSD
+#   https://raw.github.com/robotics-in-concert/rocon_multimaster/license/LICENSE 
+#
+
+##############################################################################
+# Imports
+##############################################################################
+
+import sys
+import re
+import argparse
+import rospy
+import rosgraph
+import unique_id
+import scheduler_msgs.msg as scheduler_msgs
+import rocon_utilities
+import rocon_utilities.console as console
+
+##############################################################################
+# Functions
+##############################################################################
+    
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Scans for and prettifies scheduler request feedback information')
+    args = parser.parse_args()
+    return args
+
+def resolve_scheduler_request_topics():
+    master = rosgraph.Master(rospy.get_name())
+    publishers, unused_subscribers, unused_services = master.getSystemState()
+    topics = set()
+    published_topics = master.getPublishedTopics(subgraph='')
+    for topic_info in published_topics:
+        topic_name = topic_info[0]
+        topic_type = topic_info[1]
+        if topic_type == 'scheduler_msgs/SchedulerRequests':
+            topics.add(topic_name)
+    return topics
+
+def retrieve_scheduler_requests(topic_name):
+    '''
+      @raise rocon_gateway.GatewayError: if no remote gateways or no matching gateways available. 
+    '''
+    scheduler_requests = rocon_utilities.SubscriberProxy(topic_name, scheduler_msgs.SchedulerRequests)(rospy.Duration(0.5))
+    return scheduler_requests
+
+##############################################################################
+# Main
+##############################################################################
+
+if __name__ == '__main__':
+    status_strings = ["new", "waiting", "granted", "preempted", "aborted", "rejected", "preempting", "releasing", "released", "reserved"]
+    rospy.init_node('rocon_scheduler_requests')
+    args = parse_arguments()
+    topics = resolve_scheduler_request_topics()
+    scheduler_requests = {}
+    for topic_name in topics:
+        msg = retrieve_scheduler_requests(topic_name)
+        if msg is not None:
+            scheduler_requests[unique_id.toHexString(msg.requester)] = msg.requests
+    
+    for requester_id, requests in scheduler_requests.iteritems():
+        console.pretty_println("Requester [%s]" % requester_id, console.bold)
+        #print(console.cyan + "  Id" + console.reset + " : " + console.yellow + "%s" % requester_id + console.reset)
+        for request in requests:
+            console.pretty_println("  Request", console.green)
+            print(console.cyan + "    Id       " + console.reset + " : " + console.yellow + "%s" % unique_id.toHexString(request.id) + console.reset)
+            print(console.cyan + "    Priority " + console.reset + " : " + console.yellow + "%s" % str(request.priority) + console.reset)
+            print(console.cyan + "    Status   " + console.reset + " : " + console.yellow + "%s" % status_strings[request.status] + console.reset)
+            print(console.cyan + "    Resources" + console.reset + " :"),
+            prefix = ''
+            if request.resources:
+                for resource in request.resources:
+                    print(prefix),
+                    console.pretty_print(unique_id.toHexString(resource.id), console.red)
+                    print("-"),
+                    console.pretty_print(resource.platform_info, console.green)
+                    print("-"),
+                    console.pretty_print(resource.name + "\n", console.yellow)
+                    prefix = prefix if prefix else "              : "
+            else:
+                print('-')

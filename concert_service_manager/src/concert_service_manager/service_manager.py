@@ -46,11 +46,10 @@ class ServiceManager(object):
         for service_description in service_descriptions:
             self._concert_services[service_description.name] = ConcertServiceInstance(service_description=service_description,
                                                                                       update_callback=self.update)
-            self._setup_service_parameters(service_description)
         self.lock.release()
         if self._param['auto_enable_services']:
-            for service in self._concert_services.values():
-                service.enable(self._role_app_loader)
+            for name in self._concert_services.keys():
+                self._ros_service_enable_concert_service(concert_srvs.EnableConcertServiceRequest(name, True))
         self.update()
 
     def _setup_ros_parameters(self):
@@ -59,18 +58,30 @@ class ServiceManager(object):
         self._param['service_lists']        = [x for x in rospy.get_param('~service_lists', '').split(';') if x != '']  #@IgnorePep8
         self._param['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
 
-    def _setup_service_parameters(self, service_description):
+    def _setup_service_parameters(self, name, description, unique_identifier):
         '''
           Dump some important information for the services to self-introspect on in the namespace in which
           they will be started.
 
-          @param service_description : entity with the configured fields for a service
-          @type concert_msgs.ConcertService
+          @param name : text name for the service (unique)
+          @type str
+
+          @param description : text description of the service
+          @type str
+
+          @param unique_identifier : unique id for the service
+          @type uuid.UUID
         '''
-        namespace = '/services/' + service_description.name
-        rospy.set_param(namespace + "/name", service_description.name)
-        rospy.set_param(namespace + "/description", service_description.description)
-        rospy.set_param(namespace + "/uuid", unique_id.toHexString(service_description.uuid))
+        namespace = '/services/' + name
+        rospy.set_param(namespace + "/name", name)
+        rospy.set_param(namespace + "/description", description)
+        rospy.set_param(namespace + "/uuid", unique_id.toHexString(unique_id.toMsg(unique_identifier)))
+
+    def _cleanup_service_parameters(self, name):
+        namespace = '/services/' + name
+        rospy.delete_param(namespace + "/name")
+        rospy.delete_param(namespace + "/description")
+        rospy.delete_param(namespace + "/uuid")
 
     def _setup_ros_api(self):
         self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self._ros_service_enable_concert_service)
@@ -85,7 +96,7 @@ class ServiceManager(object):
         #self._publishers['request_resources'].publish(request_resources)
 
     def _ros_service_enable_concert_service(self, req):
-        name = req.concertservice_name
+        name = req.name
 
         success = False
         message = "unknown error"
@@ -96,8 +107,15 @@ class ServiceManager(object):
             self.loginfo("serving request to disable '%s'" % name)
         if name in self._concert_services:
             if req.enable:
-                success, message = self._concert_services[name].enable(self._role_app_loader)
+                unique_identifier = unique_id.fromRandom()
+                self._setup_service_parameters(self._concert_services[name].description.name,
+                                               self._concert_services[name].description.description,
+                                               unique_identifier)
+                success, message = self._concert_services[name].enable(unique_identifier, self._role_app_loader)
+                if not success:
+                    self._cleanup_service_parameters(self._concert_services[name].description.name)
             else:
+                self._cleanup_service_parameters(self._concert_services[name].description.name)
                 success, message = self._concert_services[name].disable(self._role_app_loader, self._unload_resources)
         else:
             service_names = self._concert_services.keys()
