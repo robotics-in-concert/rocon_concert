@@ -9,11 +9,13 @@
 ##############################################################################
 
 import sys
+import socket
 import re
 import argparse
 import rospy
 import rosgraph
 import unique_id
+import threading
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_utilities
 import rocon_utilities.console as console
@@ -36,33 +38,33 @@ def resolve_scheduler_request_topics():
         topic_name = topic_info[0]
         topic_type = topic_info[1]
         if topic_type == 'scheduler_msgs/SchedulerRequests':
-            topics.add(topic_name)
+            (unused_leading, unused_separator, trailing_name) = topic_name.rpartition('/')
+            # really ugly rough hack to make sure we don't listen to requester publishers (only want scheduler publishers)
+            if len(trailing_name) > 16:
+                topics.add(topic_name)
     return topics
 
-def retrieve_scheduler_requests(topic_name):
-    '''
-      @raise rocon_gateway.GatewayError: if no remote gateways or no matching gateways available. 
-    '''
-    scheduler_requests = rocon_utilities.SubscriberProxy(topic_name, scheduler_msgs.SchedulerRequests)(rospy.Duration(0.5))
-    return scheduler_requests
+#def retrieve_scheduler_requests(topic_name):
+#    '''
+#      @raise rocon_gateway.GatewayError: if no remote gateways or no matching gateways available. 
+#    '''
+#    scheduler_requests = rocon_utilities.SubscriberProxy(topic_name, scheduler_msgs.SchedulerRequests)(rospy.Duration(0.5))
+#    return scheduler_requests
 
-##############################################################################
-# Main
-##############################################################################
+def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
+    '''
+      @param scheduler_requests dic of hex string : scheduler_msgs.SchedulerRequests
 
-if __name__ == '__main__':
-    status_strings = ["new", "waiting", "granted", "preempted", "aborted", "rejected", "preempting", "releasing", "released", "reserved"]
-    rospy.init_node('rocon_scheduler_requests')
-    args = parse_arguments()
-    topics = resolve_scheduler_request_topics()
-    scheduler_requests = {}
-    for topic_name in topics:
-        msg = retrieve_scheduler_requests(topic_name)
-        if msg is not None:
-            scheduler_requests[unique_id.toHexString(msg.requester)] = msg.requests
-    
+      @param updated_requester_id : id of the requester that received a callback.
+    '''
+    console.pretty_println("##############################################################################", console.bold)
+    console.pretty_println("#                 Scheduler Request Feedback                                 #", console.bold)
+    console.pretty_println("##############################################################################", console.bold)
     for requester_id, requests in scheduler_requests.iteritems():
-        console.pretty_println("Requester [%s]" % requester_id, console.bold)
+        if updated_requester_id == requester_id:
+            console.pretty_println("Requester [%s]" % requester_id, console.bold_yellow)
+        else:
+            console.pretty_println("Requester [%s]" % requester_id, console.bold)
         #print(console.cyan + "  Id" + console.reset + " : " + console.yellow + "%s" % requester_id + console.reset)
         for request in requests:
             console.pretty_println("  Request", console.green)
@@ -82,3 +84,51 @@ if __name__ == '__main__':
                     prefix = prefix if prefix else "              : "
             else:
                 print('-')
+
+##############################################################################
+# Class
+##############################################################################
+
+class Gatherer(object):
+    
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._subscribers = {}
+        self._refresh()
+        self._timer = rospy.Timer(rospy.Duration(5.0), self._refresh)
+        self._scheduler_requests = {}
+    
+    def _refresh(self, unused_event=None):
+        try:
+            topics = resolve_scheduler_request_topics()
+            difference = lambda l1, l2: [x for x in l1 if x not in l2]
+            new_topics = difference(topics, self._subscribers.keys())
+            lost_topics = difference(self._subscribers.keys(), topics)
+            for topic_name in new_topics:
+                self._subscribers[topic_name] = rospy.Subscriber(topic_name, scheduler_msgs.SchedulerRequests, self._listener_callback)
+            for topic_name in lost_topics:
+                self._subscribers[topic_name].unregister()
+                del self._subscribers[topic_name]
+        except socket.error:
+            pass  # ros is shutting down
+    
+    def _listener_callback(self, msg):
+        self._lock.acquire()
+        self._scheduler_requests[unique_id.toHexString(msg.requester)] = msg.requests
+        pretty_print_scheduler_requests(self._scheduler_requests, unique_id.toHexString(msg.requester))
+        self._lock.release()
+    
+    def shutdown(self):
+        self._timer.shutdown()
+
+##############################################################################
+# Main
+##############################################################################
+
+if __name__ == '__main__':
+    status_strings = ["new", "waiting", "granted", "preempted", "aborted", "rejected", "preempting", "releasing", "released", "reserved"]
+    rospy.init_node('rocon_scheduler_requests')
+    args = parse_arguments()
+    gatherer = Gatherer()
+    rospy.spin()
+    gatherer.shutdown()

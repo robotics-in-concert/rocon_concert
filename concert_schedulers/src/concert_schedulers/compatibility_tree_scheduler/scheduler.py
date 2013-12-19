@@ -37,6 +37,7 @@ class CompatibilityTreeScheduler(object):
             '_scheduler',
             '_clients',
             '_requests',
+            '_debug_show_compatibility_tree'
         ]
 
     ##########################################################################
@@ -57,6 +58,7 @@ class CompatibilityTreeScheduler(object):
 
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
         self._setup_ros_api(concert_clients_topic_name)
+        self._debug_show_compatibility_tree = True
 
         # aliases
         self.spin = rospy.spin
@@ -99,9 +101,10 @@ class CompatibilityTreeScheduler(object):
                             found = True
                             break
                     if found:
+                        self._scheduler.notify(self._request_set.requester_id)
                         # @todo might want to consider changing the request status if all resources have been unallocated
                         break
-                # @todo might want to validate that we unallocated since we did detect an allocated flag 
+                # @todo might want to validate that we unallocated since we did detect an allocated flag
             del self._clients[client.gateway_name]
         # should check for some things here, e.g. can we verify a client is allocated or not?
         self._update()
@@ -116,11 +119,11 @@ class CompatibilityTreeScheduler(object):
           @param request_set : a snapshot of all requests from a single requester in their current state.
           @type rocon_scheduler_requests.transition.RequestSet
         '''
-        #rospy.logwarn("Scheduler : requester update")
-        #print("Request status: %s" % [r.msg.status for r in request_set.requests.values()])
-        #for r in request_set.requests.values():
-        #    print("Request: %s" % r.msg.status)
+        #rospy.logwarn("Scheduler : requester update callback")
         self._lock.acquire()
+        # this might cause a problem if this gets blocked while in the middle of processing a lost
+        # allocation (where we change the request set's resource info). Would this next line overwrite
+        # our changes or would we be getting the updated request set?
         self._request_set = request_set
         self._update()
         self._lock.release()
@@ -131,14 +134,22 @@ class CompatibilityTreeScheduler(object):
           available concert clients or the incoming resource requests.
 
           Note : this must be protected by being called inside locked code
+
+          @todo test use of rlocks here
         """
         if self._request_set is None:
             return  # Nothing to do
+
         ########################################
         # Allocating Concert Clients
         ########################################
+        new_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW]
         unallocated_clients = [client for client in self._clients.values() if not client.allocated]
-        if unallocated_clients:
+        if not unallocated_clients and new_replies:
+            for reply in new_replies:
+                # should do something here (maybe validation)?
+                reply.wait()
+        elif unallocated_clients:
             # get all requests for compatibility tree processing and sort by priority
             # this is a bit inefficient, should just sort the request set directly? modifying it directly may be not right though
             pending_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.NEW or r.msg.status == scheduler_msgs.Request.WAITING]
@@ -151,12 +162,14 @@ class CompatibilityTreeScheduler(object):
                     break
                 request_id = unique_id.toHexString(request.id)
                 compatibility_tree = create_compatibility_tree(request.resources, unallocated_clients)
-                compatibility_tree.print_branches("Compatibility Tree")
-                pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=True)
+                if self._debug_show_compatibility_tree:
+                    compatibility_tree.print_branches("Compatibility Tree")
+                pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=self._debug_show_compatibility_tree)
                 pruned_compatibility_tree = CompatibilityTree(pruned_branches)
-                pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
+                if self._debug_show_compatibility_tree:
+                    pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
                 if pruned_compatibility_tree.is_valid():
-                    rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate...")
+                    rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate [%s]" % request_id)
                     last_failed_priority = None
                     resources = []
                     failed_to_allocate = False

@@ -17,7 +17,7 @@ import unique_id
 class ResourceTracker(object):
     __slots__ = [
             'resource',            # the object we want to track
-            'high_priority_flag',  # if tracking, what priority it was assigned
+            'high_priority_flag',  # if tracking, boolean for whether it is high or low priority
             'tracking',            # it is part of a currently issued request
             'allocated',           # it is tracking and has been allocated by the scheduler
             'name',                # name of the resource, for easy reference (ros_package/rapp name)
