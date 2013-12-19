@@ -63,7 +63,7 @@ class ResourcePoolRequester(object):
         PENDING = 'pending'             # pending resource allocations for minimum requirements of the resource groups
         ALIVE = 'alive'                 # minimum resource requirements have been allocated - it is now functioning
         RECOVERING = 'recovering'       # was alive, but resource allocations fell below minimum requirements and trying to recover
-        timeout = rospy.Duration(2.0)  # timeout for dropping 'alive' state status.
+        timeout = rospy.Duration(10.0)  # timeout for dropping 'alive' state status.
 
     def __init__(self,
                  resource_groups,
@@ -161,10 +161,13 @@ class ResourcePoolRequester(object):
             rospy.loginfo("Requester : state change [%s->%s]" % (self.State.ALIVE, self.State.RECOVERING))
             self._state = self.State.RECOVERING
             self._recovery_start = rospy.Time.now()
-            self._requester.cancel_all()
-            self._issue_minimum_request()
-            #thread = threading.Thread(target=self._check_recovery_timeout)
-            #thread.start()
+            # Not practical, but currently the safe non-thread way.
+            #self._requester.cancel_all()
+            #self._issue_minimum_request()
+            # maybe not such a great idea - the requester is not officially thread-safe,
+            # but it's interesting to test the problems with doing this
+            thread = threading.Thread(target=self._check_recovery_timeout)
+            thread.start()
         elif self._state == self.State.RECOVERING and tentatively_alive:
             self._state = self.State.ALIVE
         # else moving from RECOVERING to PENDING is handled by the thread function
@@ -197,7 +200,6 @@ class ResourcePoolRequester(object):
             if (rospy.Time.now() - self._recovery_start) > self.State.timeout:
                 self.cancel_all_requests()
                 rospy.logwarn("Requester : timed out trying to recover necessary resource pool state.")
-                time.sleep(3)  # temporary, https://github.com/utexas-bwi/rocon_scheduler_requests/issues/19
                 rospy.logwarn("Requester : issuing new minimum request.")
                 self._issue_minimum_request()
                 self._state = self.State.PENDING

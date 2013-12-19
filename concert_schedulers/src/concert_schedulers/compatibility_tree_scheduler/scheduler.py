@@ -58,7 +58,7 @@ class CompatibilityTreeScheduler(object):
 
         self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
         self._setup_ros_api(concert_clients_topic_name)
-        self._debug_show_compatibility_tree = False
+        self._debug_show_compatibility_tree = True
 
         # aliases
         self.spin = rospy.spin
@@ -169,7 +169,7 @@ class CompatibilityTreeScheduler(object):
                 if self._debug_show_compatibility_tree:
                     pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
                 if pruned_compatibility_tree.is_valid():
-                    rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate...")
+                    rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate [%s]" % request_id)
                     last_failed_priority = None
                     resources = []
                     failed_to_allocate = False
