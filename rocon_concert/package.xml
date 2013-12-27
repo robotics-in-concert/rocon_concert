@@ -16,7 +16,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>concert_conductor</run_depend>
-  <run_depend>concert_orchestra</run_depend>
   <run_depend>rocon_tf_reconstructor</run_depend>
   
   <export>
