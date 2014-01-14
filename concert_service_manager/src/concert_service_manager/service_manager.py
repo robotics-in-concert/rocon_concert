@@ -11,7 +11,7 @@ import threading
 import roslaunch.pmon
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
-import concert_roles
+import rocon_interactions
 import unique_id
 
 # Local imports
@@ -32,7 +32,7 @@ class ServiceManager(object):
         self._concert_services = {}
         self._setup_ros_parameters()
         self.lock = threading.Lock()
-        self._role_app_loader = concert_roles.RoleAppLoader()
+        self._role_app_loader = rocon_interactions.RoleAppLoader()
         roslaunch.pmon._init_signal_handlers()
         self._setup_ros_api()
         self._initialise_concert_services()

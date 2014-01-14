@@ -53,7 +53,7 @@
       display_name: Map Annotation
       description: Add semantic information to a metric map
       icon:
-        resource_name: concert_roles/map_annotation_icon.png
+        resource_name: rocon_interactions/map_annotation_icon.png
       parameters: "{pickup_point: pickup, map_frame: /map}"
       max: 1
       remappings:
@@ -82,7 +82,7 @@
       display_name: Google
       description: Our beloved Google browser
       icon:
-        resource_name: concert_roles/google_icon.png
+        resource_name: rocon_interactions/google_icon.png
       parameters: "{pickup_point: pickup, map_frame: /map}"
       remappings:
         - remap_from: /fosters
@@ -98,7 +98,7 @@
       display_name: Cafe Dorothy
       description: Cafe Dorothy web menu
       icon:
-        resource_name: concert_roles/coffee_icon.png
+        resource_name: rocon_interactions/coffee_icon.png
       parameters: "{'masterip':'192.168.10.233','bridgeport':9090,'tableid':3}"
       remappings:
         - remap_from: /fosters

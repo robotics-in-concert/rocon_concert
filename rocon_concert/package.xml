@@ -16,6 +16,12 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>concert_conductor</run_depend>
+  <run_depend>concert_master</run_depend>
+  <run_depend>concert_schedulers</run_depend>
+  <run_depend>concert_service_manager</run_depend>
+  <run_depend>concert_service_roslaunch</run_depend>
+  <run_depend>concert_service_utilities</run_depend>
+  <run_depend>rocon_interactions</run_depend>
   <run_depend>rocon_tf_reconstructor</run_depend>
   
   <export>

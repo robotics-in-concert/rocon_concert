@@ -13,7 +13,7 @@ import sys
 import argparse
 import rospy
 import rocon_utilities
-import concert_roles
+import rocon_interactions
 
 ##############################################################################
 # Functions
@@ -39,7 +39,7 @@ def parse_arguments():
 if __name__ == '__main__':
     rospy.init_node('roles_and_apps')
     try:
-        role_app_loader = concert_roles.RoleAppLoader()
+        role_app_loader = rocon_interactions.RoleAppLoader()
     except rospy.exceptions.ROSException as e:
         rospy.logerr("Role Loader : aborting, %s." % str(e))
         sys.exit(1)
@@ -51,6 +51,6 @@ if __name__ == '__main__':
     except rocon_utilities.exceptions.ResourceNotFoundException as e:
         rospy.logerr("Role Loader : %s." % str(e))
         sys.exit(1)
-    except concert_roles.exceptions.InvalidRoleAppYaml as e:
+    except rocon_interactions.exceptions.InvalidRoleAppYaml as e:
         rospy.logwarn("Role Loader : %s" % str(e))
         sys.exit(1)

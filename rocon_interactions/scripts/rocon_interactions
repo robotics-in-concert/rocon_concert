@@ -11,7 +11,7 @@
 import sys
 import argparse
 import rospy
-import concert_roles
+import rocon_interactions
 import rocon_utilities.console as console
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs

@@ -17,7 +17,7 @@ import roslaunch
 import rocon_utilities
 import concert_msgs.msg as concert_msgs
 import std_msgs.msg as std_msgs
-import concert_roles
+import rocon_interactions
 
 ##############################################################################
 # Methods
@@ -72,7 +72,7 @@ class ConcertServiceInstance(object):
         @type : uuid.UUID
 
         @param role_app_loader : used to load role-app configurations on the role manager
-        @type concert_roles.RoleAppLoader
+        @type rocon_interactions.RoleAppLoader
         '''
         self._lock.acquire()
         if self.description.enabled:
@@ -90,7 +90,7 @@ class ConcertServiceInstance(object):
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.description.name)
             message = "success"
-        except (rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
+        except (rocon_utilities.exceptions.ResourceNotFoundException, rocon_interactions.exceptions.InvalidRoleAppYaml) as e:
             message = "failed to enable service [%s][%s]" % (self.description.name, str(e))
             self.logwarn(message)
         self._lock.release()
@@ -99,7 +99,7 @@ class ConcertServiceInstance(object):
     def disable(self, role_app_loader, unload_resources):
         '''
         @param role_app_loader : used to load role-app configurations on the role manager
-        @type concert_roles.RoleAppLoader
+        @type rocon_interactions.RoleAppLoader
 
         @param unload_resources callback to the scheduler's request resource which will unload all resources for that service.
         @type _foo_(service_name)
@@ -143,7 +143,7 @@ class ConcertServiceInstance(object):
             unload_resources(self.description.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
-        except (rocon_utilities.exceptions.ResourceNotFoundException, concert_roles.exceptions.InvalidRoleAppYaml) as e:
+        except (rocon_utilities.exceptions.ResourceNotFoundException, rocon_interactions.exceptions.InvalidRoleAppYaml) as e:
             success = False
             message = "error while disabling [%s][%s]" % (self.description.name, str(e))
         self._lock.release()
