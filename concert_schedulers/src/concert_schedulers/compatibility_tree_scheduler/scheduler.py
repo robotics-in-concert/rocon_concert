@@ -208,7 +208,7 @@ class CompatibilityTreeScheduler(object):
         ########################################
         # Releasing Allocated Concert Clients
         ########################################
-        releasing_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.RELEASING]
+        releasing_replies = [r for r in self._request_set.values() if r.msg.status == scheduler_msgs.Request.CANCELING]
         for reply in releasing_replies:
             #print("Releasing Resources: %s" % [r.name for r in reply.msg.resources])
             #print("  Releasing Resources: %s" % [r.platform_info for r in reply.msg.resources])

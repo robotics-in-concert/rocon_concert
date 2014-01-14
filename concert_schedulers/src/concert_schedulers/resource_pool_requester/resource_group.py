@@ -36,7 +36,7 @@ class ResourcePoolGroup(object):
           @type int
 
           @param resources : list of resources eligible for use in constructing scheduler requests
-          @type scheduler_msgs.Resource[]
+          @type { uuid hextstring : scheduler_msgs.Resource }
         '''
         self._resources = {}
         for resource in resources:
