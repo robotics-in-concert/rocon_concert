@@ -12,7 +12,8 @@ import sys
 import copy
 import unittest
 import concert_schedulers
-import concert_schedulers.impl
+import concert_schedulers.common
+import concert_schedulers.compatibility_tree_scheduler as compatibility_tree_scheduler
 import rosunit
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
@@ -48,7 +49,7 @@ concert_client_msgs['dudette'] = concert_msgs.ConcertClient(name='dudette', gate
 
 concert_clients = {}
 for name, msg in concert_client_msgs.iteritems():
-    concert_clients[name] = concert_schedulers.impl.ConcertClient(msg)
+    concert_clients[name] = concert_schedulers.common.ConcertClient(msg)
 
 resources = {}
 resources['dude']    = scheduler_msgs.Resource(name="rocon_apps/listener",    platform_info="linux.*.ros.pc.*")
@@ -78,11 +79,11 @@ class TestCompatibilityTreeSchedulers(unittest.TestCase):
     def test_chatter_configuration(self):
         console.pretty_println("\n*************** Chatter Configuration ************\n", console.bold)
         chatter_resources, chatter_clients = setup_chatter_configuration()
-        compatibility_tree = concert_schedulers.impl.create_compatibility_tree(chatter_resources, chatter_clients.values())
+        compatibility_tree = compatibility_tree_scheduler.create_compatibility_tree(chatter_resources, chatter_clients.values())
         compatibility_tree.print_branches("\nCompatibility Tree\n", '')
         print("")
-        pruned_branches = concert_schedulers.impl.prune_compatibility_tree(compatibility_tree, verbosity=True)
-        concert_schedulers.impl.print_branches(pruned_branches, "\nPruned Compatibility Tree\n", '  ')
+        pruned_branches = compatibility_tree_scheduler.prune_compatibility_tree(compatibility_tree, verbosity=True)
+        compatibility_tree_scheduler.print_branches(pruned_branches, "\nPruned Compatibility Tree\n", '  ')
         for branch in pruned_branches:
             if branch.name == 'dudette':
                self.assertEquals(1, len(branch.leaves))

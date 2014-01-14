@@ -7,7 +7,7 @@
 # Imports
 ##############################################################################
 
-import rocon_utilities.console as console
+import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 
 # local imports
