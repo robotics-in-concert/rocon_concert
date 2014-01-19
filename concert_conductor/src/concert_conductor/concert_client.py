@@ -131,9 +131,9 @@ class ConcertClient(object):
         except rospy.ServiceException, e:
             raise ConcertClientException(str(e))
             self.cancel_pulls()
-        platform_info_msg = platform_info_service().platform_info
-        self.data.name = platform_info_msg.name
-        self.data.platform_info = rocon_utilities.platform_tuples.to_string(platform_info_msg)
+        # this call needs a timeout and also try/except block
+        self.data.platform_info = platform_info_service().platform_info
+        self.data.name = self.data.platform_info.tuple.name
 
         # List Apps
         try:

@@ -22,7 +22,7 @@ import scheduler_msgs.msg as scheduler_msgs
 import std_msgs.msg as std_msgs
 import concert_schedulers
 import yaml
-
+from rocon_utilities import platform_tuples
 
 ##############################################################################
 # Classes
@@ -219,11 +219,8 @@ def _node_to_resource(node, linkgraph):
       @rtype scheduler_msgs.Resource
     '''
     resource = scheduler_msgs.Resource()
-    (platform_part, unused_separator, resource.name) = node.tuple.rpartition('.')
-    resource.platform_info = platform_part + "." + node.id
-    if node.force_name_matching:
-        resource.platform_info = platform_part + "." + node.id
-    else:
-        resource.platform_info = platform_part + "." + rocon_std_msgs.PlatformInfo.NAME_ANY
+    resource.name = resource.platform_tuple.name
+    (platform_tuple, unused_separator, resource.name) = node.tuple.rpartition('.')
+    resource.platform_tuple = platform_tuples.to_msg(platform_tuple)
     resource.remappings = [rocon_std_msgs.Remapping(e.remap_from, e.remap_to) for e in linkgraph.edges if e.start == node.id or e.finish == node.id]
     return resource

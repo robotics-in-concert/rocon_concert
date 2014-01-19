@@ -21,9 +21,9 @@ def is_wildcard(element):
 
 
 def is_smart_device(element):
-    return (element == rocon_std_msgs.PlatformInfo.PLATFORM_PHONE or
-        element == rocon_std_msgs.PlatformInfo.PLATFORM_TABLET or
-        element == rocon_std_msgs.PlatformInfo.PLATFORM_SMART_DEVICE)
+    return (element == rocon_std_msgs.PlatformTuple.PLATFORM_PHONE or
+        element == rocon_std_msgs.PlatformTuple.PLATFORM_TABLET or
+        element == rocon_std_msgs.PlatformTuple.PLATFORM_SMART_DEVICE)
 
 
 def is_runnable(remocon_app, remocon_platform_info):

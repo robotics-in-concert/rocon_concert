@@ -8,6 +8,7 @@
 ##############################################################################
 
 import unique_id
+from rocon_utilities import platform_tuples
 
 ##############################################################################
 # Methods
@@ -21,7 +22,7 @@ class ResourceTracker(object):
             'tracking',            # it is part of a currently issued request
             'allocated',           # it is tracking and has been allocated by the scheduler
             'name',                # name of the resource, for easy reference (ros_package/rapp name)
-            'platform_info'        # platform info of this resource, for easy reference (os.version.system.platform.name)
+            'platform_tuple'       # platform info of this resource, for easy reference (rocon_std_msgs/PlatformTuple)
         ]
 
     def __init__(self, resource):
@@ -29,7 +30,7 @@ class ResourceTracker(object):
 
         # aliases
         self.name = self.resource.name
-        self.platform_info = self.resource.platform_info
+        self.platform_tuple = self.resource.platform_tuple
         self.reset_scheduler_flags()
 
     def __str__(self):
@@ -37,7 +38,7 @@ class ResourceTracker(object):
         return 'Resource Tracker' \
             + '\n    key: ' + str(self.key()) \
             + '\n    name: ' + str(self.name) \
-            + '\n    platform_info: ' + str(self.platform_info) \
+            + '\n    platform_tuple: ' + platform_tuples.to_string(self.platform_tuple) \
             + '\n    tracking|allocated|high_priority: ' + str(self.tracking) + "|" + str(self.allocated) + "|" + str(self.high_priority_flag)
 
     def key(self):

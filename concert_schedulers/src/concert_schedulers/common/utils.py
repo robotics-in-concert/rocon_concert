@@ -26,7 +26,7 @@ def is_compatible(concert_client, resource):
       @param concert_client
       @type concert_msgs.ConcertClient
     '''
-    if not platform_tuples.string_matches(concert_client.platform_info, resource.platform_info):
+    if not platform_tuples.is_compatible(resource.platform_tuple, concert_client.platform_info.tuple):
         return False
     for client_app in concert_client.apps:
         if resource.name == client_app.name:
@@ -43,4 +43,4 @@ def resource_uri_from_msg(msg):
       @param msg
       @type scheduler_msgs.Resource
     '''
-    return msg.platform_info + "/" + msg.name
+    return platform_tuples.to_string(msg.platform_tuple) + "/" + msg.name
