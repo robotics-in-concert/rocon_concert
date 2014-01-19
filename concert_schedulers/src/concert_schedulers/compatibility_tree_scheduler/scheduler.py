@@ -92,12 +92,12 @@ class CompatibilityTreeScheduler(object):
                 # WARNINGg, this code actually doesn't work - it doesn't force the scheduler to send the updated information
                 # back to the requester. Instead, the requester sends its heartbeat updates, which end up overwriting these
                 # changes in _requester_update.
-                platform_info_tuple = rocon_utilities.platform_info.set_name(client.msg.platform_info, client.msg.gateway_name)
+                platform_info_tuple = rocon_utilities.platform_tuples.set_name(client.msg.platform_info, client.msg.gateway_name)
                 for request in self._request_set.values():
                     found = False
                     for resource in request.msg.resources:
                         if resource.platform_info == platform_info_tuple:
-                            resource.platform_info = rocon_utilities.platform_info.set_name(platform_info_tuple, concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE)
+                            resource.platform_info = rocon_utilities.platform_tuples.set_name(platform_info_tuple, concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE)
                             found = True
                             break
                     if found:
@@ -186,7 +186,7 @@ class CompatibilityTreeScheduler(object):
                                 failed_to_allocate = True
                                 break
                             resource = copy.deepcopy(branch.limb)
-                            resource.platform_info = rocon_utilities.platform_info.set_name(leaf.msg.platform_info, leaf.msg.gateway_name)
+                            resource.platform_info = rocon_utilities.platform_tuples.set_name(leaf.msg.platform_info, leaf.msg.gateway_name)
                             resources.append(resource)
                     if failed_to_allocate:
                         rospy.logwarn("Scheduler : aborting request allocation [%s]" % request_id)
@@ -217,7 +217,7 @@ class CompatibilityTreeScheduler(object):
             #    print(str(client))
             for resource in reply.msg.resources:
                 try:
-                    self._clients[rocon_utilities.platform_info.get_name(resource.platform_info)].abandon()
+                    self._clients[rocon_utilities.platform_tuples.get_name(resource.platform_info)].abandon()
                 except KeyError:
                     pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
             reply.free()

@@ -34,7 +34,7 @@ def request_completely_unallocated(request):
       @return true or false if entirely unallocated or not.
     '''
     for resource in request.msg.resources:
-        if rocon_utilities.platform_info.get_name(resource.platform_info) != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+        if rocon_utilities.platform_tuples.get_name(resource.platform_info) != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
             return False
     return True
 
@@ -213,7 +213,7 @@ class ResourcePoolRequester(object):
         for resource in resources:
             # do a quick check to make sure individual resources haven't been previously allocated, and then lost
             # WARNING : this unallocated check doesn't actually work - the requester isn't sending us back this info yet.
-            if rocon_utilities.platform_info.get_name(resource.platform_info) == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+            if rocon_utilities.platform_tuples.get_name(resource.platform_info) == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
                 tracking = False
                 allocated = False
             resource_tracker = self._find_resource_tracker(unique_id.toHexString(resource.id))

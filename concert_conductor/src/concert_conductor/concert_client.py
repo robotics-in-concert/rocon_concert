@@ -133,7 +133,7 @@ class ConcertClient(object):
             self.cancel_pulls()
         platform_info_msg = platform_info_service().platform_info
         self.data.name = platform_info_msg.name
-        self.data.platform_info = rocon_utilities.platform_info.to_string(platform_info_msg)
+        self.data.platform_info = rocon_utilities.platform_tuples.to_string(platform_info_msg)
 
         # List Apps
         try:

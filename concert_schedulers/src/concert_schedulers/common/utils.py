@@ -7,8 +7,7 @@
 # Imports
 ##############################################################################
 
-import rospy
-import rocon_utilities.platform_info as platform_info
+import rocon_utilities.platform_tuples as platform_tuples
 
 # local imports
 
@@ -27,7 +26,7 @@ def is_compatible(concert_client, resource):
       @param concert_client
       @type concert_msgs.ConcertClient
     '''
-    if not platform_info.string_matches(concert_client.platform_info, resource.platform_info):
+    if not platform_tuples.string_matches(concert_client.platform_info, resource.platform_info):
         return False
     for client_app in concert_client.apps:
         if resource.name == client_app.name:

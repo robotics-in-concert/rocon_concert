@@ -10,8 +10,9 @@
 
 import argparse
 import rospy
+import rocon_python_comms
 import rocon_utilities
-import rocon_utilities.console as console
+import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     
     rospy.init_node('concert_info')
     args = parse_arguments()
-    concert_info_proxy = rocon_utilities.SubscriberProxy(topic_name, concert_msgs.ConcertInfo)
+    concert_info_proxy = rocon_python_comms.SubscriberProxy(topic_name, concert_msgs.ConcertInfo)
     try:
         concert_info_proxy.wait_for_publishers()
     except rospy.exceptions.ROSInterruptException:

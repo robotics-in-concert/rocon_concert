@@ -145,7 +145,7 @@ class RoleManager(object):
                 interactive_client = concert_msgs.InteractiveClient()
                 interactive_client.name = remocon.name
                 interactive_client.id = unique_id.toMsg(uuid.UUID(remocon.status.uuid))
-                interactive_client.platform_info = rocon_utilities.platform_info.to_string(remocon.status.platform_info)
+                interactive_client.platform_info = rocon_utilities.platform_tuples.to_string(remocon.status.platform_info)
                 if remocon.status.running_app:
                     interactive_client.app_name = remocon.status.app_name
                     interactive_clients.running_clients.append(interactive_client)

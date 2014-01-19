@@ -18,7 +18,7 @@ import rosunit
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_app_manager_msgs.msg as rocon_app_manager_msgs
-import rocon_utilities.console as console
+import rocon_console.console as console
 
 ##############################################################################
 # Apps

@@ -13,6 +13,7 @@ import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
 import std_srvs.srv as std_srvs
+import rocon_python_comms
 import rocon_utilities
 
 # local imports
@@ -284,7 +285,7 @@ class Conductor(object):
 
     def _get_concert_name(self):
         # Get concert name (i.e. gateway name)
-        gateway_info_proxy = rocon_utilities.SubscriberProxy("~gateway_info", gateway_msgs.GatewayInfo)
+        gateway_info_proxy = rocon_python_comms.SubscriberProxy("~gateway_info", gateway_msgs.GatewayInfo)
         try:
             gateway_info_proxy.wait_for_publishers()
         except rospy.exceptions.ROSInterruptException:

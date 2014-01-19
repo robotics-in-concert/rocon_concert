@@ -18,7 +18,7 @@ import unique_id
 import threading
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_utilities
-import rocon_utilities.console as console
+import rocon_console.console as console
 
 ##############################################################################
 # Functions
@@ -43,13 +43,6 @@ def resolve_scheduler_request_topics():
             if len(trailing_name) > 16:
                 topics.add(topic_name)
     return topics
-
-#def retrieve_scheduler_requests(topic_name):
-#    '''
-#      @raise rocon_gateway.GatewayError: if no remote gateways or no matching gateways available. 
-#    '''
-#    scheduler_requests = rocon_utilities.SubscriberProxy(topic_name, scheduler_msgs.SchedulerRequests)(rospy.Duration(0.5))
-#    return scheduler_requests
 
 def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
     '''

@@ -12,7 +12,7 @@ import uuid
 import sys
 import argparse
 import rospy
-import rocon_utilities.console as console
+import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 
