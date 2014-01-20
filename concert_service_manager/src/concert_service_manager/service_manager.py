@@ -49,7 +49,7 @@ class ServiceManager(object):
         self.lock.release()
         if self._param['auto_enable_services']:
             for name in self._concert_services.keys():
-                self._ros_service_enable_concert_service(concert_srvs.EnableConcertServiceRequest(name, True))
+                self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
         self.update()
 
     def _setup_ros_parameters(self):
@@ -84,7 +84,7 @@ class ServiceManager(object):
         rospy.delete_param(namespace + "/uuid")
 
     def _setup_ros_api(self):
-        self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableConcertService, self._ros_service_enable_concert_service)
+        self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableService, self._ros_service_enable_concert_service)
         self._publishers['list_concert_services'] = rospy.Publisher('list_concert_services', concert_msgs.ConcertServices, latch=True)
 
     def _unload_resources(self, service_name):
@@ -123,7 +123,7 @@ class ServiceManager(object):
             self.logwarn(message)
             success = False
 
-        return concert_srvs.EnableConcertServiceResponse(success, message)
+        return concert_srvs.EnableServiceResponse(success, message)
 
     def update(self):
         rs = [v.to_msg() for v in self._concert_services.values()]
