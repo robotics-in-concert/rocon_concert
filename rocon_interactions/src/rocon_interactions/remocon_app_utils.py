@@ -41,21 +41,21 @@ def is_runnable(remocon_app, remocon_platform_info):
     '''
     if remocon_platform_info is None:
         return True
-    if (not is_wildcard(remocon_platform_info.os) and
-        not is_wildcard(remocon_app.platform_info.os) and
-        remocon_platform_info.os != remocon_app.platform_info.os):
+    if (not is_wildcard(remocon_platform_info.tuple.os) and
+        not is_wildcard(remocon_app.platform_info.tuple.os) and
+        remocon_platform_info.tuple.os != remocon_app.platform_info.tuple.os):
         return False
     # Not worrying about version check yet (should need it for android soon)
 
-    if (not is_wildcard(remocon_platform_info.platform) and
-        not is_wildcard(remocon_app.platform_info.platform)):
-        if is_smart_device(remocon_platform_info.platform) and not is_smart_device(remocon_app.platform_info.platform):
+    if (not is_wildcard(remocon_platform_info.tuple.platform) and
+        not is_wildcard(remocon_app.platform_info.tuple.platform)):
+        if is_smart_device(remocon_platform_info.tuple.platform) and not is_smart_device(remocon_app.platform_info.tuple.platform):
             return False
-        elif not is_smart_device(remocon_platform_info.platform) and is_smart_device(remocon_app.platform_info.platform):
+        elif not is_smart_device(remocon_platform_info.tuple.platform) and is_smart_device(remocon_app.platform_info.tuple.platform):
             return False
-        elif is_smart_device(remocon_platform_info.platform) and is_smart_device(remocon_app.platform_info.platform):
+        elif is_smart_device(remocon_platform_info.tuple.platform) and is_smart_device(remocon_app.platform_info.tuple.platform):
             pass
-        elif remocon_platform_info.platform != remocon_app.platform_info.platform:
+        elif remocon_platform_info.tuple.platform != remocon_app.platform_info.tuple.platform:
             return False
     # Not worrying about system check yet
     # Not worrying about name check yet
