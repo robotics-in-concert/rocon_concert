@@ -9,10 +9,12 @@
 import uuid
 import rospy
 import rosgraph
+import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import unique_id
 import rocon_utilities
+import rocon_uri
 
 # Local imports
 import remocon_app_utils
@@ -132,7 +134,7 @@ class RoleManager(object):
         for role in roles:
             role_app_list = concert_msgs.RoleAppList(role, [])
             for app in self.role_and_app_table[role]:
-                if remocon_app_utils.is_runnable(app, request.platform_info):
+                if request.uri is None or rocon_uri.is_compatible(app.uri, request.uri):
                     role_app_list.remocon_apps.append(app)
             roles_and_apps.data.append(role_app_list)
         #print 'roles_and_apps service result: %s' % roles_and_apps
@@ -145,7 +147,7 @@ class RoleManager(object):
                 interactive_client = concert_msgs.InteractiveClient()
                 interactive_client.name = remocon.name
                 interactive_client.id = unique_id.toMsg(uuid.UUID(remocon.status.uuid))
-                interactive_client.platform_info = rocon_utilities.platform_tuples.to_string(remocon.status.platform_info)
+                interactive_client.platform_info = remocon.status.platform_info
                 if remocon.status.running_app:
                     interactive_client.app_name = remocon.status.app_name
                     interactive_clients.running_clients.append(interactive_client)
@@ -162,7 +164,7 @@ class RoleManager(object):
         for role in self.role_and_app_table.keys():
             for app in self.role_and_app_table[role]:
                 if request.hash == app.hash:
-                    if remocon_app_utils.is_runnable(app, request.platform_info):
+                    if request.uri is None or rocon_uri.is_compatible(app.uri, request.uri):
                         response.app = app
                         response.result = True
                         break
@@ -190,7 +192,7 @@ class RoleManager(object):
                     if remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role]) is None:
                         self.role_and_app_table[role].append(app)
                         rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
-        else: # clean
+        else:  # clean
             for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
                 role = role_app_list.role
                 for app in role_app_list.remocon_apps:

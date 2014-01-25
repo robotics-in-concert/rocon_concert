@@ -22,5 +22,12 @@
     <node pkg="rocon_interactions" type="load_roles_and_apps" name="load_roles_and_apps" args="rocon_interactions test_roles_and_apps"/>
     <node pkg="rocon_interactions" type="attach_test_remocon" name="attach_test_remocon"/>
   </group>
+
+  <!-- ****************************** Zeroconf ******************************* -->
+  <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
+    <rosparam param="services" subst_value="true">
+        [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "$(arg concert_description)" } ] 
+    </rosparam>
+  </node>
 </launch>
 

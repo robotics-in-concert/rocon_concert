@@ -17,6 +17,7 @@ import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_std_msgs.msg as rocon_std_msgs
+import rocon_uri
 
 ##############################################################################
 # Functions
@@ -37,16 +38,7 @@ if __name__ == '__main__':
     rospy.init_node('roles_and_apps')
     args = parse_arguments()
     get_roles_and_apps = rospy.ServiceProxy(concert_msgs.Strings.GET_ROLES_AND_APPS, concert_srvs.GetRolesAndApps)
-    request = concert_srvs.GetRolesAndAppsRequest()
-    request.roles = []
-    platform_tuple = rocon_std_msgs.PlatformTuple(
-                            os='*',
-                            version='*',
-                            system='*',
-                            platform='*',
-                            name='*'
-                            )
-    request.platform_info = rocon_std_msgs.PlatformInfo(tuple=platform_tuple, icon=rocon_std_msgs.Icon())
+    request = concert_srvs.GetRolesAndAppsRequest(roles=[], uri=rocon_uri.default_uri_string)
     response = get_roles_and_apps(request)
     for d in response.data:
         console.pretty_println("%s" % d.role, console.bold)
@@ -54,7 +46,7 @@ if __name__ == '__main__':
             console.pretty_println("  %s" % remocon_app.display_name, console.green)
             print(console.cyan + "    Name" + console.reset + "         : " + console.yellow + "%s" % remocon_app.name + console.reset)
             print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
-            print(console.cyan + "    PlatformTuple" + console.reset + ": " + console.yellow + "%s" % platform_tuples.to_string(remocon_app.platform_info.tuple) + console.reset)
+            print(console.cyan + "    Rocon URI" + console.reset + "    : " + console.yellow + "%s" % remocon_app.uri + console.reset)
             print(console.cyan + "    Service" + console.reset + "      : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
             if remocon_app.max == -1:
                 print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset)
