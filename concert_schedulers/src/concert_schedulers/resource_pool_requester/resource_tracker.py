@@ -22,15 +22,19 @@ class ResourceTracker(object):
             'tracking',            # it is part of a currently issued request
             'allocated',           # it is tracking and has been allocated by the scheduler
             'name',                # name of the resource, for easy reference (ros_package/rapp name)
-            'platform_tuple'       # platform info of this resource, for easy reference (rocon_std_msgs/PlatformTuple)
+            'uri'                  # rocon uri representation of this resource for easy reference (rocon uri string)
         ]
 
     def __init__(self, resource):
+        '''
+          @param resource : resource object to track.
+          @type scheduler_msgs.Resource
+        '''
         self.resource = resource
 
         # aliases
         self.name = self.resource.name
-        self.platform_tuple = self.resource.platform_tuple
+        self.uri = self.resource.uri
         self.reset_scheduler_flags()
 
     def __str__(self):
@@ -38,7 +42,7 @@ class ResourceTracker(object):
         return 'Resource Tracker' \
             + '\n    key: ' + str(self.key()) \
             + '\n    name: ' + str(self.name) \
-            + '\n    platform_tuple: ' + platform_tuples.to_string(self.platform_tuple) \
+            + '\n    uri: ' + self.uri \
             + '\n    tracking|allocated|high_priority: ' + str(self.tracking) + "|" + str(self.allocated) + "|" + str(self.high_priority_flag)
 
     def key(self):

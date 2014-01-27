@@ -22,5 +22,6 @@
   <run_depend>scheduler_msgs</run_depend>
   <run_depend>rocon_utilities</run_depend>
   <run_depend>rocon_scheduler_requests</run_depend>
+  <run_depend>rocon_uri</run_depend>
 
 </package>

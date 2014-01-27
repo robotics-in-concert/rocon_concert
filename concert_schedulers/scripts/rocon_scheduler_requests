@@ -71,7 +71,7 @@ def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
                     print(prefix),
                     console.pretty_print(unique_id.toHexString(resource.id), console.red)
                     print("-"),
-                    console.pretty_print(resource.platform_info, console.green)
+                    console.pretty_print(resource.uri, console.green)
                     print("-"),
                     console.pretty_print(resource.name + "\n", console.yellow)
                     prefix = prefix if prefix else "              : "
@@ -119,7 +119,7 @@ class Gatherer(object):
 ##############################################################################
 
 if __name__ == '__main__':
-    status_strings = ["new", "waiting", "granted", "preempted", "aborted", "rejected", "preempting", "releasing", "released", "reserved"]
+    status_strings = ["new", "reserved", "waiting", "granted", "preempting", "canceling", "closed"]
     rospy.init_node('rocon_scheduler_requests')
     args = parse_arguments()
     gatherer = Gatherer()

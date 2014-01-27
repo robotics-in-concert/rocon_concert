@@ -14,7 +14,7 @@ import rocon_std_msgs.srv as rocon_std_srvs
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
-import rocon_utilities
+import rocon_uri
 
 ##############################################################################
 # Exceptions
@@ -133,7 +133,7 @@ class ConcertClient(object):
             self.cancel_pulls()
         # this call needs a timeout and also try/except block
         self.data.platform_info = platform_info_service().platform_info
-        self.data.name = self.data.platform_info.tuple.name
+        self.data.name = rocon_uri.parse(self.data.platform_info.uri).name.string
 
         # List Apps
         try:

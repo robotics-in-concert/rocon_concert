@@ -11,7 +11,6 @@ import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 
 # local imports
-import concert_schedulers.common.utils as utils
 
 ##############################################################################
 # Classes
@@ -63,7 +62,7 @@ class CompatibilityBranch(object):
         return len(self.leaves) - CompatibilityBranch.minimum_leaves
 
     def __str__(self):
-        return console.cyan + utils.resource_uri_from_msg(self.limb) + console.reset + " : " + console.yellow + "%s" % [leaf.name for leaf in self.leaves] + console.reset
+        return console.cyan + self.limb.uri + console.reset + " : " + console.yellow + "%s" % [leaf.name for leaf in self.leaves] + console.reset
 
 
 def create_compatibility_tree(resources, concert_clients):

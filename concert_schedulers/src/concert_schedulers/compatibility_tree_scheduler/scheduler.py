@@ -15,7 +15,7 @@ import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_scheduler_requests
 import rocon_utilities
-from rocon_utilities import platform_tuples
+import rocon_uri
 
 # local imports
 import concert_schedulers.common as common
@@ -93,14 +93,15 @@ class CompatibilityTreeScheduler(object):
                 # WARNINGg, this code actually doesn't work - it doesn't force the scheduler to send the updated information
                 # back to the requester. Instead, the requester sends its heartbeat updates, which end up overwriting these
                 # changes in _requester_update.
-                client_platform_tuple = client.msg.platform_info.tuple
-                client_platform_tuple.name = client.msg.gateway_name
+                client_platform_uri = rocon_uri.parse(client.msg.platform_info.uri)
+                client_platform_uri.name = client.msg.gateway_name
                 for request in self._request_set.values():
                     found = False
                     for resource in request.msg.resources:
                         # could use a better way to check for equality than this
-                        if platform_tuples.to_string(resource.platform_tuple) == platform_tuples.to_string(client_platform_tuple):
-                            resource.platform_tuple.name = concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE
+                        if resource.uri == str(client_platform_uri):
+                            client_platform_uri.name = concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE
+                            resource.uri = str(client_platform_uri)
                             found = True
                             break
                     if found:
@@ -189,8 +190,9 @@ class CompatibilityTreeScheduler(object):
                                 failed_to_allocate = True
                                 break
                             resource = copy.deepcopy(branch.limb)
-                            resource.platform_tuple = leaf.msg.platform_info.tuple  # leaf.msg is concert_msgs/ConcertClient
-                            resource.platform_tuple.name = leaf.msg.gateway_name    # store the unique name of the concert client
+                            uri = rocon_uri.parse(leaf.msg.platform_info.uri)  # leaf.msg is concert_msgs/ConcertClient
+                            uri.name = leaf.msg.gateway_name  # store the unique name of the concert client
+                            resource.uri = str(uri)
                             resources.append(resource)
                     if failed_to_allocate:
                         rospy.logwarn("Scheduler : aborting request allocation [%s]" % request_id)
@@ -221,8 +223,8 @@ class CompatibilityTreeScheduler(object):
             #    print(str(client))
             for resource in reply.msg.resources:
                 try:
-                    self._clients[rocon_utilities.platform_tuples.get_name(resource.platform_info)].abandon()
+                    self._clients[rocon_uri.parse(resource.uri).name.string].abandon()
                 except KeyError:
                     pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
-            reply.free()
-            reply.msg.status = scheduler_msgs.Request.RELEASED
+            reply.close()
+            #reply.msg.status = scheduler_msgs.Request.RELEASED

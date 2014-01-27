@@ -74,7 +74,7 @@ def _finalise_role_app_list(role_app_list, service_name):
             remocon_app.icon.resource_name = 'concert_master/rocon_text.png'
         remocon_app.icon = rocon_utilities.icon_resource_to_msg(remocon_app.icon.resource_name)
         remocon_app.service_name = service_name
-        # Give it a hash id unqiuely corresponding to the unique service_name-role-name triple.
+        # Give it a hash id uniquely corresponding to the unique service_name-role-name triple.
         # Might be worth checking here http://docs.python.org/2.7/library/zlib.html#zlib.crc32 if
         # this doesn't produce the same hash on all platforms.
         remocon_app.hash = zlib.crc32(remocon_app.service_name + "-" + role_app_list.role + "-" + remocon_app.name)
