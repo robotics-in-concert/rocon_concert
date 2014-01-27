@@ -10,6 +10,7 @@
 import rospy
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_std_msgs.srv as rocon_std_srvs
 import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
@@ -133,6 +134,8 @@ class ConcertClient(object):
             self.cancel_pulls()
         # this call needs a timeout and also try/except block
         self.data.platform_info = platform_info_service().platform_info
+        if self.data.platform_info.version != rocon_std_msgs.Strings.ROCON_VERSION:
+            raise ConcertClientException("concert client and conductor rocon versions do not match [%s][%s]" % (self.data.platform_info.version, rocon_std_msgs.Strings.ROCON_VERSION))
         self.data.name = rocon_uri.parse(self.data.platform_info.uri).name.string
 
         # List Apps
