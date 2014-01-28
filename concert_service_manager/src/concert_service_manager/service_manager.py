@@ -6,7 +6,6 @@
 ##############################################################################
 
 import rospy
-import traceback
 import threading
 import roslaunch.pmon
 import concert_msgs.msg as concert_msgs
@@ -16,7 +15,7 @@ import unique_id
 
 # Local imports
 from .concert_service_instance import ConcertServiceInstance
-from .service_list import load_service_descriptions_from_service_lists
+from concert_service_manager.service_profiles import load_service_profiles
 
 ##############################################################################
 # ServiceManager
@@ -41,10 +40,10 @@ class ServiceManager(object):
         '''
           Currently only called at the end of service manager construction.
         '''
+        service_profiles = load_service_profiles(self._param['services'])
         self.lock.acquire()
-        service_descriptions = load_service_descriptions_from_service_lists(self._param['service_lists'])
-        for service_description in service_descriptions:
-            self._concert_services[service_description.name] = ConcertServiceInstance(service_description=service_description,
+        for service_profile in service_profiles:
+            self._concert_services[service_profile.name] = ConcertServiceInstance(service_profile=service_profile,
                                                                                       update_callback=self.update)
         self.lock.release()
         if self._param['auto_enable_services']:
@@ -55,7 +54,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         self._param = {}
-        self._param['service_lists']        = [x for x in rospy.get_param('~service_lists', '').split(';') if x != '']  #@IgnorePep8
+        self._param['services']        = rospy.get_param('~services', [])  #@IgnorePep8
         self._param['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
 
     def _setup_service_parameters(self, name, description, unique_identifier):
@@ -108,14 +107,14 @@ class ServiceManager(object):
         if name in self._concert_services:
             if req.enable:
                 unique_identifier = unique_id.fromRandom()
-                self._setup_service_parameters(self._concert_services[name].description.name,
-                                               self._concert_services[name].description.description,
+                self._setup_service_parameters(self._concert_services[name].profile.name,
+                                               self._concert_services[name].profile.description,
                                                unique_identifier)
                 success, message = self._concert_services[name].enable(unique_identifier, self._role_app_loader)
                 if not success:
-                    self._cleanup_service_parameters(self._concert_services[name].description.name)
+                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
             else:
-                self._cleanup_service_parameters(self._concert_services[name].description.name)
+                self._cleanup_service_parameters(self._concert_services[name].profile.name)
                 success, message = self._concert_services[name].disable(self._role_app_loader, self._unload_resources)
         else:
             service_names = self._concert_services.keys()

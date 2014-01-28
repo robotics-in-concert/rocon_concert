@@ -13,11 +13,13 @@
   <author>Jihoon Lee</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>concert_msgs</run_depend>
   <run_depend>rocon_interactions</run_depend>
   <run_depend>genpy</run_depend>
   <run_depend>python-rospkg</run_depend>
+  <run_depend>rocon_utilities</run_depend>
 
 </package>
