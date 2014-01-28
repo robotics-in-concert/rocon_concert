@@ -137,7 +137,7 @@ class ResourcePoolRequester(object):
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
                 if request_completely_unallocated(request):
                     request.cancel()
-            elif request.msg.status == scheduler_msgs.Request.RELEASED:
+            elif request.msg.status == scheduler_msgs.Request.CLOSED:
                 self._flag_resource_trackers(request.msg.resources, tracking=False, allocated=False)
 
         #for resource_group in self._resource_groups:
