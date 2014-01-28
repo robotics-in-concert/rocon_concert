@@ -134,7 +134,7 @@ class RoleManager(object):
         for role in roles:
             role_app_list = concert_msgs.RoleAppList(role, [])
             for app in self.role_and_app_table[role]:
-                if request.uri is None or rocon_uri.is_compatible(app.uri, request.uri):
+                if request.uri is None or rocon_uri.is_compatible(app.compatibility, request.uri):
                     role_app_list.remocon_apps.append(app)
             roles_and_apps.data.append(role_app_list)
         #print 'roles_and_apps service result: %s' % roles_and_apps
