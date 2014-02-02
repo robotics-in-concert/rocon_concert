@@ -3,33 +3,33 @@
 - role: 'Admin'
   remocon_apps:
     - name: com.github.robotics_in_concert.rocon_android.SolutionManager
-      compatibility: rocon:///mega/*/hydro/jellybean
+      compatibility: rocon:/mega/*/hydro/jellybean
       display_name: Solution Manager
       description: Configuration manager for the concert
       max: -1
     - name: com.github.robotics_in_concert.rocon_android.SolutionMonitor
-      compatibility: rocon:///*/*/hydro/jellybean
+      compatibility: rocon:/*/*/hydro/jellybean
       display_name: Solution Monitor
       description: Monitors various aspects of the solution
       max: -1
 - role: 'Dev'
   remocon_apps:
     - name: com.github.robotics_in_concert.rocon_android.Pizza
-      compatibility: rocon:///*/*/hydro/jellybean|ice_cream_sandwich
+      compatibility: rocon:/*/*/hydro/jellybean|ice_cream_sandwich
       display_name: Pizza Delivery
       description: Tantalises and tickles the taste buds with a virtual pizza
       parameters: "{type: super_supreme}"
 - role: 'Pirate'
   remocon_apps:
     - name: com.github.robotics_in_concert.rocon_android.Beer
-      compatibility: rocon:///*/*/hydro/jellybean|ice_cream_sandwich
+      compatibility: rocon:/*/*/hydro/jellybean|ice_cream_sandwich
       display_name: Beer
       description: The super sopper
       remappings:
         - remap_from: /fosters
           remap_to: /beer/leffe
     - name: com.github.robotics_in_concert.rocon_android_apps.map_annotation.MainActivity
-      compatibility: rocon:///*/*/hydro/jellybean|ice_cream_sandwich
+      compatibility: rocon:/*/*/hydro/jellybean|ice_cream_sandwich
       display_name: Map Annotation
       description: Add semantic information to a metric map
       icon:
@@ -54,7 +54,7 @@
         - remap_from: walls
           remap_to: annotations/walls
     - name: http://www.google.com
-      compatibility: rocon:///*/*/*/*
+      compatibility: rocon:/*/*/*/*
       display_name: Google
       description: Our beloved Google browser
       icon:
@@ -66,7 +66,7 @@
         - remap_from: /kk
           remap_to: /pedo
     - name: http://chimek.yujinrobot.com/dorothy/dorothy_web_menu.html
-      compatibility: rocon:///*/*/hydro/jellybean|ice_cream_sandwich
+      compatibility: rocon:/*/*/hydro/jellybean|ice_cream_sandwich
       display_name: Cafe Dorothy
       description: Cafe Dorothy web menu
       icon:
