@@ -45,7 +45,7 @@ if __name__ == '__main__':
             console.pretty_println("  %s" % remocon_app.display_name, console.green)
             print(console.cyan + "    Name" + console.reset + "         : " + console.yellow + "%s" % remocon_app.name + console.reset)
             print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
-            print(console.cyan + "    Rocon URI" + console.reset + "    : " + console.yellow + "%s" % remocon_app.uri + console.reset)
+            print(console.cyan + "    Rocon URI" + console.reset + "    : " + console.yellow + "%s" % remocon_app.compatibility + console.reset)
             print(console.cyan + "    Service" + console.reset + "      : " + console.yellow + "%s" % remocon_app.service_name + console.reset)
             if remocon_app.max == -1:
                 print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset)
