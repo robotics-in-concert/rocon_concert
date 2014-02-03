@@ -35,7 +35,6 @@ class StaticLinkGraphHandler(object):
         '_uuid',
         '_linkgraph',
         '_requester',
-        '_param',
         'spin',
         '_subscribers',
         '_disabled'
@@ -83,11 +82,7 @@ class StaticLinkGraphHandler(object):
           @type std_msgs.Empty
         '''
         rospy.loginfo("Service : disabling [%s]" % self._name)
-        if (self._param['requester_type'] == 'resource_pool_requester'):
-            self._requester.cancel_all_requests()
-        else:
-            pass  # just pass quietly - multiple requester support isn't really configurable yet
-            #rospy.logerr("Service : an invalid requester type was configured [%s]" % self._param['requester_type'])
+        self._requester.cancel_all_requests()
         self._disabled = True
 
     def _setup_resource_pool_requester(self):
