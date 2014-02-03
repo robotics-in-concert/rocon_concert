@@ -102,8 +102,8 @@ class ResourcePoolGroup(object):
             raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [ %s < %s(min)]" % (len(self._resources.keys()), self._min))
         template = self._resources.values()[0]
         for resource in self._resources.values():
-            if template.name != resource.name:
-                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.name, resource.name))
+            if template.rapp != resource.rapp:
+                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.rapp, resource.rapp))
             if template.uri != resource.uri:
                 raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.uri, resource.uri))
 

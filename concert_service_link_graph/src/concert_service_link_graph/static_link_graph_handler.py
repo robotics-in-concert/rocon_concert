@@ -3,7 +3,7 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
-# Used for runnings services that are defined by a multi-master style
+# Used for running services that are defined by a multi-master style
 # roslaunch - aka a link graph. In these services, the entities are all
 # fixed and locked in (as well as their connections) from the start of the
 # service to its termination.
@@ -86,13 +86,8 @@ class StaticLinkGraphHandler(object):
         if (self._param['requester_type'] == 'resource_pool_requester'):
             self._requester.cancel_all_requests()
         else:
-            # we don't have a function stub, have to implement it here ourselves.
-            for request in self._requester.rset.values():
-                # This is actually a hack because we don't use the real scheduler on the other
-                # side, we just publish these messages. The other scheduler is our demo
-                # scheduler, which will be aware of checking for the releasing flag.
-                request.msg.status = scheduler_msgs.Request.RELEASING
-            self._requester.send_requests()
+            pass  # just pass quietly - multiple requester support isn't really configurable yet
+            #rospy.logerr("Service : an invalid requester type was configured [%s]" % self._param['requester_type'])
         self._disabled = True
 
     def _setup_resource_pool_requester(self):
@@ -180,7 +175,7 @@ def _node_to_resource(node, linkgraph):
       @rtype scheduler_msgs.Resource
     '''
     resource = scheduler_msgs.Resource()
-    resource.name = rocon_uri.parse(node.resource).rapp_name
+    resource.rapp = rocon_uri.parse(node.resource).rapp
     resource.uri = node.resource
     resource.remappings = [rocon_std_msgs.Remapping(e.remap_from, e.remap_to) for e in linkgraph.edges if e.start == node.id or e.finish == node.id]
     return resource

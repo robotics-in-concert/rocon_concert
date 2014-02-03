@@ -228,19 +228,19 @@ class CompatibilityTreeScheduler(object):
                         reply.wait()
                     last_failed_priority = request.priority
                     rospy.loginfo("Scheduler : insufficient resources to satisfy request [%s]" % request_id)
-            ########################################
-            # Releasing Allocated Concert Clients
-            ########################################
-            for reply in releasing_replies:
-                #print("Releasing Resources: %s" % [r.name for r in reply.msg.resources])
-                #print("  Releasing Resources: %s" % [r.platform_info for r in reply.msg.resources])
-                #print("  Clients: %s" % self._clients.keys())
-                #for client in self._clients.values():
-                #    print(str(client))
-                for resource in reply.msg.resources:
-                    try:
-                        self._clients[rocon_uri.parse(resource.uri).name.string].abandon()
-                    except KeyError:
-                        pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
-                reply.close()
-                #reply.msg.status = scheduler_msgs.Request.RELEASED
+        ########################################
+        # Releasing Allocated Concert Clients
+        ########################################
+        for reply in releasing_replies:
+            #print("Releasing Resources: %s" % [r.rapp for r in reply.msg.resources])
+            #print("  Releasing Resources: %s" % [r.uri for r in reply.msg.resources])
+            #print("  Clients: %s" % self._clients.keys())
+            for client in self._clients.values():
+                print(str(client))
+            for resource in reply.msg.resources:
+                try:
+                    self._clients[rocon_uri.parse(resource.uri).name.string].abandon()
+                except KeyError:
+                    pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
+            reply.close()
+            #reply.msg.status = scheduler_msgs.Request.RELEASED

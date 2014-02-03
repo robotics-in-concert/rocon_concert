@@ -77,7 +77,7 @@ class ConcertClient(object):
             raise FailedToStartAppsException("this client hasn't been allocated yet [%s]" % self.name)
         start_app = rospy.ServiceProxy('/' + gateway_name + '/start_app', rapp_manager_srvs.StartApp)
         request = rapp_manager_srvs.StartAppRequest()
-        request.name = resource.name
+        request.name = resource.rapp
         request.remappings = resource.remappings
         try:
             start_app(request)

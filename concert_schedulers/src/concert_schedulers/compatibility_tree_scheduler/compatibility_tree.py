@@ -42,7 +42,7 @@ class CompatibilityBranch(object):
         self.leaves = []
 
         # aliases
-        self.name = self.limb.name
+        self.name = self.limb.rapp
 
     def prune_leaves(self, leaves):
         '''

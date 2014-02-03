@@ -73,7 +73,7 @@ def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
                     print("-"),
                     console.pretty_print(resource.uri, console.green)
                     print("-"),
-                    console.pretty_print(resource.name + "\n", console.yellow)
+                    console.pretty_print(resource.rapp + "\n", console.yellow)
                     prefix = prefix if prefix else "              : "
             else:
                 print('-')
