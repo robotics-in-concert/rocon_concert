@@ -14,7 +14,7 @@
   <arg name="conductor_auto_invite" default="true"/>
   <arg name="conductor_local_clients_only" default="false"/>
   <!-- Service Manager -->
-  <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
+  <arg name="services" default="[]"/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
   <!-- Scheduler -->
   <arg name="scheduler_type" default="demo"/>  <!-- options are demo, compatibility_tree -->
@@ -30,7 +30,7 @@
 
     <!-- ***************************** Service Manager *************************** -->
     <include file="$(find concert_service_manager)/launch/service_manager.launch">
-      <arg name="service_lists" value="$(arg service_lists)" />
+      <arg name="services" value="$(arg services)" />
       <arg name="auto_enable_services" value="$(arg auto_enable_services" />
     </include>
 

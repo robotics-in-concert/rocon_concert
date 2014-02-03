@@ -15,6 +15,7 @@ import rospy
 import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
+import rocon_uri
 
 ##############################################################################
 # Globals
@@ -38,11 +39,9 @@ def parse_arguments():
 
 def remocon_platform_info():
     platform_info = rocon_std_msgs.PlatformInfo(
-                    os=rocon_std_msgs.PlatformInfo.OS_ANDROID,
-                    version=rocon_std_msgs.PlatformInfo.VERSION_ANDROID_JELLYBEAN,
-                    platform=rocon_std_msgs.PlatformInfo.PLATFORM_SMART_DEVICE,
-                    system=rocon_std_msgs.PlatformInfo.SYSTEM_ROSJAVA,
-                    name=remocon_name,  # Not relevant to this list
+                        uri="rocon:/*/" + remocon_name + "/hydro/" + rocon_std_msgs.Strings.OS_JELLYBEAN,
+                        icon=rocon_std_msgs.Icon(),
+                        version=rocon_std_msgs.Strings.ROCON_VERSION
                     )
     return platform_info
 

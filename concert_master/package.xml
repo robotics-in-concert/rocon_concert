@@ -24,6 +24,7 @@
   <run_depend>rocon_interactions</run_depend>
   <run_depend>concert_schedulers</run_depend>
   <run_depend>concert_msgs</run_depend>
+  <run_depend>rocon_std_msgs</run_depend>
   <!-- 
     Hardcode this dependency for now since we only test it on linux 
     Ideally, I wouldn't hardcode the zeroconf implementation though.

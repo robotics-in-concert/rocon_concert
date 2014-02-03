@@ -9,7 +9,6 @@
 
 import copy
 import unique_id
-import rospy
 
 # local imports
 from concert_schedulers.common.exceptions import InvalidResourceGroupException
@@ -95,7 +94,7 @@ class ResourcePoolGroup(object):
     def _validate(self):
         '''
           Check that the stored resources are all of the same type:
-          i.e. name, platform_info (not parameters or remappings)
+          i.e. name, uri (not parameters or remappings)
         '''
         if self._min < 0:
             raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s < 0]" % self._min)
@@ -103,10 +102,10 @@ class ResourcePoolGroup(object):
             raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [ %s < %s(min)]" % (len(self._resources.keys()), self._min))
         template = self._resources.values()[0]
         for resource in self._resources.values():
-            if template.name != resource.name:
-                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.name, resource.name))
-            if template.platform_info != resource.platform_info:
-                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.platform_info, resource.platform_info))
+            if template.rapp != resource.rapp:
+                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.rapp, resource.rapp))
+            if template.uri != resource.uri:
+                raise InvalidResourceGroupException("Requester : attempted to create invalid min-max request [%s != %s]" % (template.uri, resource.uri))
 
     def initial_resources(self):
         '''

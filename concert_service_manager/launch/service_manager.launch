@@ -1,9 +1,9 @@
 <launch>
-  <arg name="service_lists" default=""/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default="false"/> <!-- autoenable services, e.g. true/false -->
+  <arg name="services" default="[]"/>  <!-- comma separated list of service resource names (e.g. 'chatter_concert/chatter') -->
 
   <node pkg="concert_service_manager" name="services" type="service_manager">
-    <param name="service_lists" value="$(arg service_lists)"/>
+    <rosparam param="services" subst_value="True">$(arg services)</rosparam>
     <param name="auto_enable_services" value="$(arg auto_enable_services)"/>
   </node>
 </launch>

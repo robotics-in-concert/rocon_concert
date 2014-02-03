@@ -9,7 +9,7 @@
   <url type="website">http://ros.org/wiki/rocon_interactions</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
-  <author email="d.stonier@gmail.com">Daniel Stonier</author>
+  <author>Daniel Stonier</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -19,5 +19,6 @@
   <run_depend>concert_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>rocon_std_msgs</run_depend>
+  <run_depend>rocon_uri</run_depend>
   <run_depend>unique_id</run_depend>
 </package>

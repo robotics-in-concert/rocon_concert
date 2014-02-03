@@ -20,24 +20,28 @@ class ResourceTracker(object):
             'high_priority_flag',  # if tracking, boolean for whether it is high or low priority
             'tracking',            # it is part of a currently issued request
             'allocated',           # it is tracking and has been allocated by the scheduler
-            'name',                # name of the resource, for easy reference (ros_package/rapp name)
-            'platform_info'        # platform info of this resource, for easy reference (os.version.system.platform.name)
+            'rapp',                # name of the resource (rapp), for easy reference (ros_package/rapp name)
+            'uri'                  # rocon uri representation of this resource for easy reference (rocon uri string)
         ]
 
     def __init__(self, resource):
+        '''
+          @param resource : resource object to track.
+          @type scheduler_msgs.Resource
+        '''
         self.resource = resource
 
         # aliases
-        self.name = self.resource.name
-        self.platform_info = self.resource.platform_info
+        self.rapp = self.resource.rapp
+        self.uri = self.resource.uri
         self.reset_scheduler_flags()
 
     def __str__(self):
         """ Generate string representation. """
         return 'Resource Tracker' \
             + '\n    key: ' + str(self.key()) \
-            + '\n    name: ' + str(self.name) \
-            + '\n    platform_info: ' + str(self.platform_info) \
+            + '\n    name: ' + str(self.rapp) \
+            + '\n    uri: ' + self.uri \
             + '\n    tracking|allocated|high_priority: ' + str(self.tracking) + "|" + str(self.allocated) + "|" + str(self.high_priority_flag)
 
     def key(self):

@@ -7,15 +7,13 @@
 # Imports
 ##############################################################################
 
-import time
-import copy
 import rospy
 import unique_id
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
 import concert_msgs.msg as concert_msgs
 import threading
-import rocon_utilities
+import rocon_uri
 
 ##############################################################################
 # Methods
@@ -34,7 +32,7 @@ def request_completely_unallocated(request):
       @return true or false if entirely unallocated or not.
     '''
     for resource in request.msg.resources:
-        if rocon_utilities.platform_tuples.get_name(resource.platform_info) != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+        if rocon_uri.parse(resource.uri).name.string != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
             return False
     return True
 
@@ -139,7 +137,7 @@ class ResourcePoolRequester(object):
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
                 if request_completely_unallocated(request):
                     request.cancel()
-            elif request.msg.status == scheduler_msgs.Request.RELEASED:
+            elif request.msg.status == scheduler_msgs.Request.CLOSED:
                 self._flag_resource_trackers(request.msg.resources, tracking=False, allocated=False)
 
         #for resource_group in self._resource_groups:
@@ -213,7 +211,7 @@ class ResourcePoolRequester(object):
         for resource in resources:
             # do a quick check to make sure individual resources haven't been previously allocated, and then lost
             # WARNING : this unallocated check doesn't actually work - the requester isn't sending us back this info yet.
-            if rocon_utilities.platform_tuples.get_name(resource.platform_info) == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
+            if rocon_uri.parse(resource.uri).name.string == concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
                 tracking = False
                 allocated = False
             resource_tracker = self._find_resource_tracker(unique_id.toHexString(resource.id))

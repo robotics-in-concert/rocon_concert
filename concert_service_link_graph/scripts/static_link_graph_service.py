@@ -9,7 +9,7 @@
 
 import rospy
 import yaml
-import concert_service_roslaunch
+import concert_service_link_graph
 import concert_service_utilities
 
 from concert_msgs.srv import *
@@ -26,10 +26,10 @@ if __name__ == '__main__':
     (name, description, uuid) = concert_service_utilities.get_service_info()
     filename = rospy.get_param('~filename')
 
-    impl_name, impl = concert_service_roslaunch.load_linkgraph_from_file(filename)
+    impl_name, impl = concert_service_link_graph.load_linkgraph_from_file(filename)
 
     if not name:
         name = impl_name
 
-    static_link_graph_service =  concert_service_roslaunch.StaticLinkGraphHandler(name, description, uuid, impl)
+    static_link_graph_service =  concert_service_link_graph.StaticLinkGraphHandler(name, description, uuid, impl)
     static_link_graph_service.spin()

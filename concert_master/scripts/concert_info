@@ -41,11 +41,12 @@ def parse_arguments():
 
 class Window(QtGui.QWidget):
  
-    def __init__(self, name, description, icon):
+    def __init__(self, name, description, version, icon):
         super(Window, self).__init__()
-        self.description = description
+        self._description = description
         self._icon = icon
         self._name = name
+        self._version = version
         self.initUI()
  
     def initUI(self):
@@ -58,9 +59,9 @@ class Window(QtGui.QWidget):
         self.text = QtGui.QLabel(self)
         self.text.resize(200, pixmap.height())
         self.text.move(pixmap.width()+10,0)
-        self.text.setText(self.description)
+        self.text.setText("<b>Version:</b> %s<br/><b>Description:</b> %s" %(self._version, self._description))
         self.text.setWordWrap(True)
-        self.text.setAlignment(QtCore.Qt.AlignCenter)
+        self.text.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
 
         self.setWindowTitle(self._name)
         self.setWindowIcon(QtGui.QIcon(self._icon))
@@ -97,12 +98,13 @@ if __name__ == '__main__':
     console.pretty_println("Concert Information", console.bold)
     print(console.cyan + "  Name: " + console.yellow + concert_info.name + console.reset)
     print(console.cyan + "  Description: " + console.yellow + concert_info.description + console.reset)
+    print(console.cyan + "  Version: " + console.yellow + concert_info.version + console.reset)
 
 
     icon = rocon_utilities.find_resource_from_string(rospy.get_param('/concert/icon'))
 
     signal.signal(signal.SIGINT, signal.SIG_DFL) # make sure this comes after the rospy call, otherwise it will handle signals.
     app = QtGui.QApplication(sys.argv)
-    window = Window(concert_info.name, concert_info.description, icon)
+    window = Window(concert_info.name, concert_info.description, concert_info.version, icon)
     window.show()
     sys.exit(app.exec_())

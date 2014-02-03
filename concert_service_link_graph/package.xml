@@ -1,25 +1,27 @@
 <?xml version="1.0"?>
 <package>
-  <name>concert_service_manager</name>
+  <name>concert_service_link_graph</name>
   <version>0.5.5</version>
-  <description>Component responsible for launching and managing concert services.</description>
-
+  <description>Service type support for link graphs</description>
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
+  <maintainer email="jihoonlee.in@gmail.com">Jihoon Lee</maintainer>
   <license>BSD</license>
-  <url type="website">http://www.ros.org/wiki/concert_service_manager</url>
+  <url type="website">http://ros.org/wiki/rocon_interactions</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
   <author>Daniel Stonier</author>
   <author>Jihoon Lee</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-
   <run_depend>rospy</run_depend>
-  <run_depend>std_msgs</run_depend>
+  <run_depend>rocon_std_msgs</run_depend>
   <run_depend>concert_msgs</run_depend>
-  <run_depend>rocon_interactions</run_depend>
-  <run_depend>genpy</run_depend>
-  <run_depend>python-rospkg</run_depend>
+  <run_depend>unique_id</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>uuid_msgs</run_depend>
+  <run_depend>scheduler_msgs</run_depend>
   <run_depend>rocon_utilities</run_depend>
+  <run_depend>rocon_scheduler_requests</run_depend>
+  <run_depend>rocon_uri</run_depend>
 
 </package>

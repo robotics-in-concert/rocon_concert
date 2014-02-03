@@ -3,7 +3,7 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
-# Used for runnings services that are defined by a multi-master style
+# Used for running services that are defined by a multi-master style
 # roslaunch - aka a link graph. In these services, the entities are all
 # fixed and locked in (as well as their connections) from the start of the
 # service to its termination.
@@ -17,12 +17,11 @@ import rospy
 
 import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
-import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
 import std_msgs.msg as std_msgs
 import concert_schedulers
 import yaml
-
+import rocon_uri
 
 ##############################################################################
 # Classes
@@ -60,12 +59,8 @@ class StaticLinkGraphHandler(object):
         self._description = description
         self._uuid = key
         self._linkgraph = linkgraph
-        self._param = setup_ros_parameters()
         self._disabled = False
-        if (self._param['requester_type'] == 'resource_pool_requester'):
-            self._setup_resource_pool_requester()
-        else:
-            self._setup_requester()
+        self._setup_resource_pool_requester()
         self._setup_ros_subscribers()
 
     def spin(self):
@@ -91,13 +86,8 @@ class StaticLinkGraphHandler(object):
         if (self._param['requester_type'] == 'resource_pool_requester'):
             self._requester.cancel_all_requests()
         else:
-            # we don't have a function stub, have to implement it here ourselves.
-            for request in self._requester.rset.values():
-                # This is actually a hack because we don't use the real scheduler on the other
-                # side, we just publish these messages. The other scheduler is our demo
-                # scheduler, which will be aware of checking for the releasing flag.
-                request.msg.status = scheduler_msgs.Request.RELEASING
-            self._requester.send_requests()
+            pass  # just pass quietly - multiple requester support isn't really configurable yet
+            #rospy.logerr("Service : an invalid requester type was configured [%s]" % self._param['requester_type'])
         self._disabled = True
 
     def _setup_resource_pool_requester(self):
@@ -119,34 +109,6 @@ class StaticLinkGraphHandler(object):
                                             topic=concert_msgs.Strings.SCHEDULER_REQUESTS
                                             )
 
-    def _setup_requester(self):
-        '''
-          Initialise the requester, then feed it a sequence of requests - 1 for the
-          essential resources (up to min) and 1 each for any resource thereafter.
-        '''
-        self._requester = rocon_scheduler_requests.Requester(feedback=self._requester_feedback,
-                                            uuid=self._uuid,
-                                            topic=concert_msgs.Strings.SCHEDULER_REQUESTS
-                                            )
-        resources = []
-        for node in self._linkgraph.nodes:
-            # node.tuple is of the form 'linux.*.ros.pc.rocon_apps/talker'
-            resource = _node_to_resource(node, self._linkgraph)
-            for unused_i in range(node.min):
-                resources.append(resource)
-        unused_request_uuid = self._requester.new_request(resources)
-
-        # provide extra requests for over min, and under max
-        # unfortunately no priority settable here yet so this doesn't
-        # yet work well - they get in the way of each other.
-        # in fact it works horribly, since dudette in chatter_concert will often get assigned
-        # to the listener here.
-        #for node in self._linkgraph.nodes:
-        #    for unused_i in range(node.max - node.min):
-        #        resource = _node_to_resource(node, self._linkgraph)
-        #        # could use a way of setting the request priority here.
-        #        unused_request_uuid = self._requester.new_request([resource])
-
     def _requester_feedback(self, request_set):
         '''
           Callback used to act on feedback coming from the scheduler request handler.
@@ -159,12 +121,6 @@ class StaticLinkGraphHandler(object):
 ##############################################################################
 # Methods
 ##############################################################################
-
-
-def setup_ros_parameters():
-    param = {}
-    param['requester_type'] = rospy.get_param('~requester_type', 'demo')
-    return param
 
 
 def load_linkgraph_from_file(filename):
@@ -191,7 +147,7 @@ def load_linkgraph_from_file(filename):
             node['max'] = node['max'] if 'max' in node else 1
             node['force_name_matching'] = node['force_name_matching'] if 'force_name_matching' in node else False
 
-            lg.nodes.append(concert_msgs.LinkNode(node['id'], node['tuple'], node['min'], node['max'], node['force_name_matching']))
+            lg.nodes.append(concert_msgs.LinkNode(node['id'], node['uri'], node['min'], node['max'], node['force_name_matching']))
         for topic in impl['topics']:
             lg.topics.append(concert_msgs.LinkConnection(topic['id'], topic['type']))
 
@@ -219,11 +175,7 @@ def _node_to_resource(node, linkgraph):
       @rtype scheduler_msgs.Resource
     '''
     resource = scheduler_msgs.Resource()
-    (platform_part, unused_separator, resource.name) = node.tuple.rpartition('.')
-    resource.platform_info = platform_part + "." + node.id
-    if node.force_name_matching:
-        resource.platform_info = platform_part + "." + node.id
-    else:
-        resource.platform_info = platform_part + "." + rocon_std_msgs.PlatformInfo.NAME_ANY
+    resource.rapp = rocon_uri.parse(node.resource).rapp
+    resource.uri = node.resource
     resource.remappings = [rocon_std_msgs.Remapping(e.remap_from, e.remap_to) for e in linkgraph.edges if e.start == node.id or e.finish == node.id]
     return resource
