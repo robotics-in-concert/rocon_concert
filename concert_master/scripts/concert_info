@@ -32,8 +32,8 @@ topic_name = '/concert/info'
     
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Prettifies concert information.')
-    args = parser.parse_args()
-    return args
+    myargs = rospy.myargv(argv=sys.argv)
+    return parser.parse_args(args=myargs[1:])
 
 ##############################################################################
 # Classes
