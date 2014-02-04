@@ -58,9 +58,12 @@ def load_service_profiles(service_resource_names):
             service_yaml = yaml.load(f)
             genpy.message.fill_message_args(service_profile, service_yaml)
             # Validation
+            if service_profile.launcher_type == '':  # not set
+                service_profile.launcher_type = concert_msgs.ConcertService.TYPE_SHADOW
             if service_profile.launcher_type != concert_msgs.ConcertService.TYPE_ROSLAUNCH and \
+               service_profile.launcher_type != concert_msgs.ConcertService.TYPE_SHADOW and \
                service_profile.launcher_type != concert_msgs.ConcertService.TYPE_CUSTOM:
-                rospy.logwarn("Service Manager : invalid service description [%s]" % (filename))
+                rospy.logwarn("Service Manager : invalid service launcher type [%s]" % (filename))
                 continue
             # Fill in missing fields or modify correctly some values
             service_profile.uuid = unique_id.toMsg(unique_id.fromRandom())

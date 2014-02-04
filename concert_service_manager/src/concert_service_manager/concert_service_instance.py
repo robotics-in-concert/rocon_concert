@@ -139,6 +139,8 @@ class ConcertServiceInstance(object):
                         self._roslaunch.shutdown()
                     rospy.rostime.wallsleep(0.5)
                     count = count + 1
+            elif launcher_type == concert_msgs.ConcertService.TYPE_SHADOW:
+                pass  # no processes to kill
             self.profile.enabled = False
             unload_resources(self.profile.name)
             success = True
@@ -159,6 +161,8 @@ class ConcertServiceInstance(object):
             self._proc = subprocess.Popen(launcher)  # perhaps needs env=os.environ as an argument
         elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
             self._start_roslaunch()
+        elif launcher_type == concert_msgs.ConcertService.TYPE_SHADOW:
+            pass  # no processes to start
         else:
             # Don't care - load_service_descriptions_from_service_lists will have validated the service description file.
             pass
