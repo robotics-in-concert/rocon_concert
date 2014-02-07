@@ -105,7 +105,7 @@ class RoleAppLoader(object):
         '''
         self._set_roles_and_apps_proxy = rospy.ServiceProxy(concert_msgs.Strings.SET_ROLES_AND_APPS, concert_srvs.SetRolesAndApps)
         try:
-            self._set_roles_and_apps_proxy.wait_for_service(5.0)
+            self._set_roles_and_apps_proxy.wait_for_service(15.0)
         except rospy.exceptions.ROSException:
             # timeout exceeded
             raise rospy.exceptions.ROSException("timed out waiting for service [%s]" % self._set_roles_and_apps_proxy.resolved_name)
