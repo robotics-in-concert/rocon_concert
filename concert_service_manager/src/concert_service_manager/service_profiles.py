@@ -56,7 +56,10 @@ def load_service_profiles(service_resource_names):
         with open(filename) as f:
             service_profile = concert_msgs.ConcertService()
             service_yaml = yaml.load(f)
-            genpy.message.fill_message_args(service_profile, service_yaml)
+            # replace icon resource name to real icon
+            replace = {}
+            replace[service_yaml['icon']] = rocon_utilities.icon_resource_to_msg(service_yaml['icon'])
+            genpy.message.fill_message_args(service_profile, service_yaml, replace)
             # Validation
             if service_profile.launcher_type == '':  # not set
                 service_profile.launcher_type = concert_msgs.ConcertService.TYPE_SHADOW
