@@ -2,4 +2,5 @@ name: Admin
 description: Administrative services and tools 
 author: DanielStonier
 priority: 1
+icon: concert_services/admin.png
 interactions: concert_services/admin
