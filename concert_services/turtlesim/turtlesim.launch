@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="turtlesim" type="turtlesim_node" name="turtles" required="true"/>
+  <!-- 
+  <node pkg="turtle_concert" type="spawn_turtles.py" name="spawn_turtles"/>
+  <node pkg="concert_service_link_graph" name="static_link_graph" type="static_link_graph_service.py">
+    <param name="filename" value="$(find concert_services)/turtlesim.link_graph"/>
+  </node>
+   -->
+</launch>
