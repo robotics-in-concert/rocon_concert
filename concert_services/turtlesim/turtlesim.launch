@@ -1,9 +1,12 @@
 <launch>
-  <node pkg="turtlesim" type="turtlesim_node" name="turtles" required="true"/>
-  <!-- 
-  <node pkg="turtle_concert" type="spawn_turtles.py" name="spawn_turtles"/>
-  <node pkg="concert_service_link_graph" name="static_link_graph" type="static_link_graph_service.py">
-    <param name="filename" value="$(find concert_services)/turtlesim.link_graph"/>
+  <node pkg="turtlesim" type="turtlesim_node" name="turtlesim" required="true">
+    <remap from="kill" to="internal/kill"/>
+    <remap from="spawn" to="internal/spawn"/>
+    <remap from="reset" to="internal/reset"/>
+    <remap from="clear" to="internal/clear"/>
   </node>
-   -->
+  <node pkg="turtle_concert" type="turtle_herder.py" name="turtle_herder">
+    <remap from="turtle_herder/internal/kill" to="internal/kill"/>
+    <remap from="turtle_herder/internal/spawn" to="internal/spawn"/>
+  </node>
 </launch>
