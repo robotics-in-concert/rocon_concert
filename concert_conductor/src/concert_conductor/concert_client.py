@@ -196,6 +196,8 @@ class ConcertClient(object):
             remote_gateway_info = self._remote_gateway_info_service()
         except rospy.service.ServiceException:
             raise ConcertClientException("remote client statistics unavailable")
+        except rospy.ROSInterruptException:
+            raise ConcertClientException("remote client statistics unavailable, ros shutdown")
         gateway_found = False
         for gateway in remote_gateway_info.gateways:
             if gateway.name == self.gateway_name:
