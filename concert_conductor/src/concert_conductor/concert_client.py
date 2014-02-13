@@ -143,7 +143,7 @@ class ConcertClient(object):
             list_app_service.wait_for_service(0.5)
         except rospy.ROSException, e:
             self.cancel_pulls()
-            raise ConcertClientException("timed out on remote concert client services")
+            raise ConcertClientException("timed out on remote concert client 'list app' services")
         self.data.apps = list_app_service().available_apps
 
     def to_msg_format(self):
@@ -196,6 +196,8 @@ class ConcertClient(object):
             remote_gateway_info = self._remote_gateway_info_service()
         except rospy.service.ServiceException:
             raise ConcertClientException("remote client statistics unavailable")
+        except rospy.ROSInterruptException:
+            raise ConcertClientException("remote client statistics unavailable, ros shutdown")
         gateway_found = False
         for gateway in remote_gateway_info.gateways:
             if gateway.name == self.gateway_name:

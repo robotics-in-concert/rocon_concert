@@ -13,9 +13,10 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- <run_depend>rospy</run_depend> -->
+  <!-- Going to get very messy very quickly, break this into a repo asap. -->
 
   <export>
     <rocon_service>admin/admin.service</rocon_service>
+    <rocon_service>turtlesim/turtlesim.service</rocon_service>
   </export>
 </package>
