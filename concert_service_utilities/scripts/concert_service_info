@@ -25,6 +25,7 @@ from PyQt4 import QtGui, QtCore
 ##############################################################################
 
 topic_name = '/concert/services/list'
+ROCON_ICON = 'concert_service_utilities/rocon_logo.png'
 
 ##############################################################################
 # Functions
@@ -44,13 +45,12 @@ def print_info(name, attribute):
 
 class Window(QtGui.QWidget):
  
-    def __init__(self, name, description, version, icon):
+    def __init__(self, title, icon, services):
         super(Window, self).__init__()
-        self._description = description
+
+        self._title = title
         self._icon = icon
-        self._name = name
-        self._version = version
-        self.initUI()
+        self._services = services
  
     def initUI(self):
         pixmap = QtGui.QPixmap(self._icon)
@@ -59,14 +59,16 @@ class Window(QtGui.QWidget):
         self.pic.resize(pixmap.width(), pixmap.height())
         #self.pic.setGeometry(10, 10, pixmap.width(), pixmap.height())
 
+        """
         self.text = QtGui.QLabel(self)
         self.text.resize(200, pixmap.height())
         self.text.move(pixmap.width()+10,0)
-        self.text.setText("<b>Version:</b> %s<br/><b>Description:</b> %s" %(self._version, self._description))
+        self.text.setText('<b>Version:</b> %s<br/><b>Description:</b> %s' %(self._version, self._description))
         self.text.setWordWrap(True)
         self.text.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        """
 
-        self.setWindowTitle(self._name)
+        self.setWindowTitle(self._title)
         self.setWindowIcon(QtGui.QIcon(self._icon))
         self.putUnderMouse();
  
@@ -88,7 +90,7 @@ if __name__ == '__main__':
     try:
         service_info_proxy.wait_for_publishers()
     except rospy.exceptions.ROSInterruptException:
-        rospy.logwarn("Concert Info : ros shut down before concert info could be found.")
+        rospy.logwarn('Concert Info : ros shut down before concert info could be found.')
 
     concert_service_info = concert_msgs.ConcertServices()
     while not rospy.is_shutdown():
@@ -98,22 +100,26 @@ if __name__ == '__main__':
             break
         rospy.rostime.wallsleep(1.0)  # human time
 
-    console.pretty_println("Service Information", console.bold)
+    console.pretty_println('Concert Service Information', console.bold)
     for s in service_info.services:
-        print_info("  Name          : ", s.name)
-        print_info("  Description   : ", s.description)
-        print_info("  Author        : ", s.author)
-        print_info("  Priority      : ", s.priority)
-        print_info("  Launcher Type : ", s.launcher_type)
-        print_info("  Status        : ", s.status)
-        print_info("  Enabled       : ", s.enabled)
-        print ""
-
+        print_info('  Name          : ', s.name)
+        print_info('  Description   : ', s.description)
+        print_info('  Author        : ', s.author)
+        print_info('  Priority      : ', s.priority)
+        print_info('  Launcher Type : ', s.launcher_type)
+        print_info('  Status        : ', s.status)
+        print_info('  Enabled       : ', s.enabled)
+        print ''
 
     """
+    TODO Disable Qt later.
+
+    icon = rocon_utilities.find_resource_from_string(ROCON_ICON)
+
     signal.signal(signal.SIGINT, signal.SIG_DFL) # make sure this comes after the rospy call, otherwise it will handle signals.
     app = QtGui.QApplication(sys.argv)
-    window = Window(concert_info.name, concert_info.description, concert_info.version, icon)
+    window = Window('Concert Service Information', icon, service_info.services)
+    window.initUI()
     window.show()
     sys.exit(app.exec_())
     """
