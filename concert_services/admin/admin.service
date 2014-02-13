@@ -1,5 +1,0 @@
-name: Admin
-description: Administrative services and tools 
-author: DanielStonier
-priority: 1
-interactions: concert_services/admin
