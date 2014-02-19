@@ -112,7 +112,7 @@ if __name__ == '__main__':
         print ''
 
     """
-    TODO Disable Qt later.
+    TODO enable Qt later.
 
     icon = rocon_utilities.find_resource_from_string(ROCON_ICON)
 
