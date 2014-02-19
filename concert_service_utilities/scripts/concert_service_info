@@ -90,15 +90,22 @@ if __name__ == '__main__':
     try:
         service_info_proxy.wait_for_publishers()
     except rospy.exceptions.ROSInterruptException:
-        rospy.logwarn('Concert Info : ros shut down before concert info could be found.')
+        rospy.logwarn('Concert Service Info : ros shut down before concert info could be found.')
 
     concert_service_info = concert_msgs.ConcertServices()
+    trial = 0
+    MAX_TRIAL = 5
     while not rospy.is_shutdown():
         result = service_info_proxy(rospy.Duration(0.2))
         if result:
             service_info = result
             break
         rospy.rostime.wallsleep(1.0)  # human time
+        trial = trial + 1
+
+        if trial > MAX_TRIAL:
+            rospy.logerr('Concert Service info : concert is not found within ' + MAX_TRIAL + ' trials')
+            sys.exit(1)
 
     console.pretty_println('Concert Service Information', console.bold)
     for s in service_info.services:
