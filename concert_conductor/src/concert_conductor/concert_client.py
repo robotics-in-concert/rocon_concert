@@ -209,6 +209,12 @@ class ConcertClient(object):
 
     def invite(self, concert_gateway_name, client_local_name, cancel):
         '''
+          One perhaps unexpected behaviour here is that we let the client know it's local
+          concert alias so that it can use that for it's application namespace. We do this
+          rather than let the concert client use its unique name + uuid combination to set
+          the namespace simply for convenience. It's far more practical and easier to introspect
+          the concert client name aliases than having to jump around a new uuid each time.
+
           @param concert_gateway_name : have to let the client know the concert gateway name
                                         so they can flip us topics...
           @type str
