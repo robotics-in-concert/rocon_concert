@@ -1,15 +1,15 @@
 ###############################################################################
-# Admin
+# Android
 ###############################################################################
 
 - name: com.github.robotics_in_concert.rocon_android.SolutionManager
-  role: 'Admin'
+  role: 'Android'
   compatibility: rocon:/mega/*/hydro/jellybean
   display_name: Solution Manager
   description: Configuration manager for the concert
   max: -1
 - name: com.github.robotics_in_concert.rocon_android.SolutionMonitor
-  role: 'Admin'
+  role: 'Android'
   compatibility: rocon:/*/*/hydro/jellybean
   display_name: Solution Monitor
   description: Monitors various aspects of the solution

@@ -65,7 +65,7 @@ def test_android_apps():
     msg_interactions = assign_namespace('/android', msg_interactions)
     interactions_table.load(msg_interactions)
     print("%s" % interactions_table)
-    assert 'Admin' in interactions_table.roles()
+    assert 'Android' in interactions_table.roles()
     assert 'Dev' in interactions_table.roles()
 
  

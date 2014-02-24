@@ -18,9 +18,9 @@
     <node pkg="concert_master" type="master.py" name="master"/>
 
     <!-- ************************ Rocon Interactions *************************** -->
-    <node pkg="rocon_interactions" type="rocon_interactions_manager.py" name="interactions"/>
-    <node pkg="rocon_interactions" type="load_roles_and_apps" name="load_roles_and_apps" args="rocon_interactions test_roles_and_apps"/>
-    <node pkg="rocon_interactions" type="attach_test_remocon" name="attach_test_remocon"/>
+    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
+    <!-- <node pkg="rocon_interactions" type="load_roles_and_apps" name="load_roles_and_apps" args="rocon_interactions example"/>  -->
+    <!-- <node pkg="rocon_interactions" type="attach_test_remocon" name="attach_test_remocon"/>  -->
   </group>
 
   <!-- ****************************** Zeroconf ******************************* -->

@@ -9,5 +9,5 @@ import rocon_interactions
 if __name__ == '__main__':
 
     rospy.init_node('rocon_interactions')
-    role_manager = rocon_interactions.RoleManager()
-    role_manager.spin()
+    interactions_manager = rocon_interactions.InteractionsManager()
+    interactions_manager.spin()

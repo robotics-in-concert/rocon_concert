@@ -6,7 +6,7 @@
 # Imports
 ##############################################################################
 
-from .manager import RoleManager
+from .manager import InteractionsManager
 from .role_app_loader import RoleAppLoader, load_role_apps_from_yaml
 from .interactions_table import InteractionsTable
 from .interactions import load_msgs_from_yaml_resource

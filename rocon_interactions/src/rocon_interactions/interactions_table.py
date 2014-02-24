@@ -10,6 +10,7 @@
 
 # ros
 import rocon_console.console as console
+import rocon_uri
 
 # local
 import interactions
@@ -83,6 +84,26 @@ class InteractionsTable(object):
             role_view[interaction.role].append(interaction)
         return role_view
 
+    def filter(self, roles=None, compatibility_uri='rocon:/'):
+        '''
+          Filter the interactions in the table according to role and/or compatibility uri.
+
+          @param roles : a list of roles to filter against, use all roles if None
+          @type str[]
+
+          @param compatibility_uri : compatibility rocon uri, eliminates interactions that don't match this uri.
+          @type str (rocon_uri)
+
+          @return interactions : subset of all interactions that survived the filter
+          @rtype interactions.Interactions[]
+        '''
+        if roles:   # works for classifying non-empty list vs either of None or empty list
+            role_filtered_interactions = [i for i in self.interactions if i.role in roles]
+        else:
+            role_filtered_interactions = list(self.interactions)
+        filtered_interactions = [i for i in role_filtered_interactions if rocon_uri.is_compatible(i.compatibility, compatibility_uri)]
+        return filtered_interactions
+
     def load(self, msgs):
         '''
           Load some interactions into the interaction table. This involves some initialisation
@@ -120,8 +141,15 @@ class InteractionsTable(object):
         removed = []
         for msg in msgs:
             msg_hash = interactions.generate_hash(msg.name, msg.role, msg.namespace)
-            found = next((interaction for interaction in self.interactions if interaction.hash == msg_hash), None)
+            found = self.find(msg_hash)
             if found is not None:
                 removed.append(msg)
                 self.interactions.remove(found)
         return removed
+
+    def find(self, interaction_hash):
+        '''
+          Find the interaction with the corresponding crc32 hash.
+        '''
+        interaction = next((interaction for interaction in self.interactions if interaction.hash == interaction_hash), None)
+        return interaction

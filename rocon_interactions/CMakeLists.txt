@@ -18,9 +18,7 @@ catkin_python_setup()
 # Unit Tests
 ##############################################################################
 
-if (CATKIN_ENABLE_TESTING)
-  catkin_add_nosetests(tests)
-endif()
+add_subdirectory(tests)
 
 ##############################################################################
 # Installs

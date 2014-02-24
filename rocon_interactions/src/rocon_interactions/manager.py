@@ -17,19 +17,20 @@ import rocon_uri
 # Local imports
 from rocon_interactions import remocon_apps
 from .remocon_monitor import RemoconMonitor
+from .interactions_table import InteractionsTable
 
 ##############################################################################
 # Role Manager
 ##############################################################################
 
 
-class RoleManager(object):
+class InteractionsManager(object):
     '''
       Manages connectivity information provided by services and provides this
-      for human interactive agent (aka remocon) connections.
+      for human interactive (aka remocon) connections.
     '''
     __slots__ = [
-            'role_and_app_table',  # Dictionary of string : concert_msgs.RemoconApp[]
+            'interactions_table',  # Dictionary of string : concert_msgs.RemoconApp[]
             'publishers',
             'parameters',
             'services',
@@ -44,7 +45,7 @@ class RoleManager(object):
     ##########################################################################
 
     def __init__(self):
-        self.role_and_app_table = {}
+        self.interactions_table = InteractionsTable()
         self.publishers = self._setup_publishers()
         self.services = self._setup_services()
         self.parameters = self._setup_parameters()
@@ -94,15 +95,15 @@ class RoleManager(object):
           namespace.
         '''
         services = {}
-        services['get_roles_and_apps'] = rospy.Service('~get_roles_and_apps',
-                                                       concert_srvs.GetRolesAndApps,
-                                                       self._ros_service_filter_roles_and_apps)
-        services['get_app'] = rospy.Service('~get_app',
-                                                       concert_srvs.GetApp,
-                                                       self._ros_service_get_app)
-        services['set_roles_and_apps'] = rospy.Service('~set_roles_and_apps',
-                                                       concert_srvs.SetRolesAndApps,
-                                                       self._ros_service_set_roles_and_apps)
+        services['get_interactions'] = rospy.Service('~get_interactions',
+                                                       concert_srvs.GetInteractions,
+                                                       self._ros_service_get_interactions)
+        services['get_interaction'] = rospy.Service('~get_interaction',
+                                                       concert_srvs.GetInteraction,
+                                                       self._ros_service_get_interaction)
+        services['set_interactions'] = rospy.Service('~set_interactions',
+                                                       concert_srvs.SetInteractions,
+                                                       self._ros_service_set_interactions)
         services['request_interaction'] = rospy.Service('~request_interaction',
                                                        concert_srvs.RequestInteraction,
                                                        self._ros_service_request_interaction)
@@ -110,33 +111,13 @@ class RoleManager(object):
 
     def _setup_parameters(self):
         param = {}
-        #param['auto_invite'] = rospy.get_param('~auto_invite', False)
+        param['rosbridge_address'] = rospy.get_param('~rosbridge_address', "")
+        param['rosbridge_port'] = rospy.get_param('~rosbridge_port', 9090)
         return param
 
     ##########################################################################
     # Ros Api Functions
     ##########################################################################
-
-    def _ros_service_filter_roles_and_apps(self, request):
-        '''
-          Handle incoming requests to provide a role-applist dictionary
-          filtered for the requesting platform.
-        '''
-        roles_and_apps = concert_srvs.GetRolesAndAppsResponse()
-        roles_and_apps.data = []
-        if request.roles:  # works for None or empty list
-            # Validate that each role is in self.role_and_app_table here
-            roles = request.roles
-        else:
-            roles = self.role_and_app_table.keys()
-        for role in roles:
-            role_app_list = concert_msgs.RoleAppList(role, [])
-            for app in self.role_and_app_table[role]:
-                if request.uri is None or rocon_uri.is_compatible(app.compatibility, request.uri):
-                    role_app_list.remocon_apps.append(app)
-            roles_and_apps.data.append(role_app_list)
-        #print 'roles_and_apps service result: %s' % roles_and_apps
-        return roles_and_apps
 
     def _ros_publish_interactive_clients(self):
         interactive_clients = concert_msgs.InteractiveClients()
@@ -153,66 +134,54 @@ class RoleManager(object):
                     interactive_clients.idle_clients.append(interactive_client)
         self.publishers['interactive_clients'].publish(interactive_clients)
 
-    def _ros_service_get_app(self, request):
+    def _ros_service_get_interaction(self, request):
         '''
           Handle incoming requests for a single app.
         '''
-        response = concert_srvs.GetAppResponse()
-        response.result = False
-        for role in self.role_and_app_table.keys():
-            for app in self.role_and_app_table[role]:
-                if request.hash == app.hash:
-                    if request.uri is None or rocon_uri.is_compatible(app.uri, request.uri):
-                        response.app = app
-                        response.result = True
-                        break
+        response = concert_srvs.GetInteractionResponse()
+        response.interaction = self.interactions_table.find(request.hash)
+        response.result = False if response.interaction is None else True
         return response
 
-    def _ros_service_set_roles_and_apps(self, request):
+    def _ros_service_get_interactions(self, request):
         '''
-          Add or remove role-app entries from the role-app table.
+          Handle incoming requests to provide a role-applist dictionary
+          filtered for the requesting platform.
+
+          @param request
+          @type concert_srvs.GetInteractionsRequest
+        '''
+        response = concert_srvs.GetInteractionsResponse()
+        response.interactions = []
+        response.interactions = self.interactions_table.filter(request.roles, request.uri)
+        if request.roles:  # works for None or empty list
+            unavailable_roles = [x for x in request.roles if x not in self.interactions_table.roles()]
+            for role in unavailable_roles:
+                rospy.logwarn("Interactions : received request for interactions of an unregistered role [%s]" % role)
+        return response
+
+    def _ros_service_set_interactions(self, request):
+        '''
+          Add or remove interactions from the interactions table.
 
           Note: uniquely identifying apps by name (not very sane).
 
           @param request list of roles-apps to set
-          @type concert_srvs.SetRolesAndAppsRequest
+          @type concert_srvs.SetInteractionsRequest
         '''
-        self._set_roles_and_apps(request.data, request.add)
-        response = concert_srvs.SetRolesAndAppsResponse()
+        if request.add:
+            (new_interactions, invalid_interactions) = self.interactions_table.load(request.interactions)
+            for i in new_interactions:
+                rospy.loginfo("Interactions : loading %s [%s-%s-%s]" % (i.display_name, i.name, i.role, i.namespace))
+            for i in invalid_interactions:
+                rospy.logwarn("Interactions : failed to load %s [%s-%s-%s]" (i.display_name, i.name, i.role, i.namespace))
+        else:
+            removed_interactions = self.interactions_table.unload(request.interactions)
+            for i in removed_interactions:
+                rospy.loginfo("Interactions : unloading %s [%s-%s-%s]" % (i.display_name, i.name, i.role, i.namespace))
+        response = concert_srvs.SetInteractionsResponse()
         response.result = True
         return response
-
-    def _set_roles_and_apps(self, role_app_lists, add):
-        '''
-          Add or clear the specified list from the rocon interactions table. This function
-          is defined separately from the service callback so we can test with nosetests
-          instead of ros unit tests.
-
-          @param role_app_lists : a list of remocon'able applications.
-          @type concert_msgs.RoleAppList[]
-
-          @param add : add or clear them from the rocon interactions table.
-          @type bool
-        '''
-        if add:
-            for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
-                role = role_app_list.role
-                if not role in self.role_and_app_table.keys():
-                    rospy.loginfo("Role Manager : creating a new role [%s]" % role)
-                    self.role_and_app_table[role] = []
-                    self.publishers['roles'].publish(concert_msgs.Roles(self.role_and_app_table.keys()))
-                for app in role_app_list.remocon_apps:
-                    if remocon_apps.is_app_in_app_list(app, self.role_and_app_table[role]) is None:
-                        self.role_and_app_table[role].append(app)
-                        rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
-        else:  # clean
-            for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
-                role = role_app_list.role
-                for app in role_app_list.remocon_apps:
-                    if role in self.role_and_app_table.keys():
-                        app = remocon_apps.is_app_in_app_list(app, self.role_and_app_table[role])
-                        if app is not None:
-                            self.role_and_app_table[role].remove(app)
 
     def _ros_service_request_interaction(self, request):
         response = concert_srvs.RequestInteractionResponse()
