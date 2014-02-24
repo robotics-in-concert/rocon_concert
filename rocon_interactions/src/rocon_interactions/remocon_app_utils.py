@@ -6,8 +6,8 @@
 # Imports
 ##############################################################################
 
-import rocon_std_msgs.msg as rocon_std_msgs
-import rocon_uri
+#import rocon_std_msgs.msg as rocon_std_msgs
+#import rocon_uri
 
 ##############################################################################
 # Methods Used on concert_msgs.RemoconApp classes

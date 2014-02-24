@@ -9,11 +9,9 @@
 import uuid
 import rospy
 import rosgraph
-import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import unique_id
-import rocon_utilities
 import rocon_uri
 
 # Local imports
@@ -174,14 +172,29 @@ class RoleManager(object):
         '''
           Add or remove role-app entries from the role-app table.
 
-          Note: only setting for the moment.
           Note: uniquely identifying apps by name (not very sane).
 
           @param request list of roles-apps to set
           @type concert_srvs.SetRolesAndAppsRequest
         '''
-        role_app_lists = request.data  # concert_msgs.RoleAppList[]
-        if request.add:
+        self._set_roles_and_apps(request.data, request.add)
+        response = concert_srvs.SetRolesAndAppsResponse()
+        response.result = True
+        return response
+
+    def _set_roles_and_apps(self, role_app_lists, add):
+        '''
+          Add or clear the specified list from the rocon interactions table. This function
+          is defined separately from the service callback so we can test with nosetests
+          instead of ros unit tests.
+
+          @param role_app_lists : a list of remocon'able applications.
+          @type concert_msgs.RoleAppList[]
+
+          @param add : add or clear them from the rocon interactions table.
+          @type bool
+        '''
+        if add:
             for role_app_list in role_app_lists:  # concert_msgs.RemoconApp[]
                 role = role_app_list.role
                 if not role in self.role_and_app_table.keys():
@@ -200,9 +213,6 @@ class RoleManager(object):
                         app = remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role])
                         if app is not None:
                             self.role_and_app_table[role].remove(app)
-        response = concert_srvs.SetRolesAndAppsResponse()
-        response.result = True
-        return response
 
     def _ros_service_request_interaction(self, request):
         response = concert_srvs.RequestInteractionResponse()
