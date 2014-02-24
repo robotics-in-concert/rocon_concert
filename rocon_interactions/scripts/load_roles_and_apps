@@ -23,9 +23,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Load a list of roles and apps from yaml')
     parser.add_argument('package', type=str, help="package containing the yaml file")
     parser.add_argument('yaml', type=str, help="interactions configuration yaml (.interactions)")
-    parser.add_argument('-s', '--service-name', action='store',
-                   default='cybernetic_piracy',
-                   help='service that is loading the role-app table [Cybernetic Piracy]')
+    parser.add_argument('-n', '--namespace', action='store',
+                   default='/interactions',
+                   help='namespace to push connections down into [/interactions]')
     myargs = rospy.myargv(argv=sys.argv)
     args = parser.parse_args(args=myargs[1:])
     if os.path.splitext(args.yaml)[-1] == '':  # no ext given
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         sys.exit(1)
     args = parse_arguments()
     try:
-        role_app_loader.load(args.package + '/' + args.yaml, args.service_name)
+        role_app_loader.load(args.package + '/' + args.yaml, args.namespace)
     except rocon_utilities.exceptions.ResourceNotFoundException as e:
         rospy.logerr("Role Loader : %s." % str(e))
         sys.exit(1)

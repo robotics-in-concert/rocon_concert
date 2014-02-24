@@ -13,6 +13,7 @@ import concert_msgs.srv as concert_srvs
 import rocon_utilities
 import yaml
 import zlib  # crc32
+
 from .exceptions import InvalidRoleAppYaml
 
 ##############################################################################
@@ -29,15 +30,12 @@ def load_role_apps_from_yaml(role_app_yaml_resource, service_name):
                             registered differently if there are multiple instances
                             of a service
       @type str
-
-      @return role_app_lists : merged role app lists (merging over each role)
-      @type : concert_msgs.RoleAppList[]
     '''
     role_app_lists = []
     try:
         yaml_filename = rocon_utilities.find_resource_from_string(role_app_yaml_resource, extension='interactions')
     except IOError as e:  # resource not found.
-        raise rocon_utilities.ResourceNotFoundException(str(e))
+        raise rocon_utilities.exceptions.ResourceNotFoundException(str(e))
     with open(yaml_filename) as f:
         role_app_yaml = yaml.load(f)
     for role_app_list_yaml in role_app_yaml:
@@ -64,9 +62,6 @@ def _finalise_role_app_list(role_app_list, service_name):
 
       @param service_name : unique name for the service
       @type str
-
-      @return role_app_list : the modified role app list
-      @type : concert_msgs.RoleAppList
     '''
     # Validate
     for remocon_app in role_app_list.remocon_apps:

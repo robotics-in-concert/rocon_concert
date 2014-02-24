@@ -15,7 +15,7 @@ import unique_id
 import rocon_uri
 
 # Local imports
-import remocon_app_utils
+from rocon_interactions import remocon_apps
 from .remocon_monitor import RemoconMonitor
 
 ##############################################################################
@@ -202,7 +202,7 @@ class RoleManager(object):
                     self.role_and_app_table[role] = []
                     self.publishers['roles'].publish(concert_msgs.Roles(self.role_and_app_table.keys()))
                 for app in role_app_list.remocon_apps:
-                    if remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role]) is None:
+                    if remocon_apps.is_app_in_app_list(app, self.role_and_app_table[role]) is None:
                         self.role_and_app_table[role].append(app)
                         rospy.loginfo("Role Manager : adding to the app list [%s][%s]" % (role, app.name))
         else:  # clean
@@ -210,7 +210,7 @@ class RoleManager(object):
                 role = role_app_list.role
                 for app in role_app_list.remocon_apps:
                     if role in self.role_and_app_table.keys():
-                        app = remocon_app_utils.is_app_in_app_list(app, self.role_and_app_table[role])
+                        app = remocon_apps.is_app_in_app_list(app, self.role_and_app_table[role])
                         if app is not None:
                             self.role_and_app_table[role].remove(app)
 
@@ -221,7 +221,7 @@ class RoleManager(object):
         maximum_quota = None
         if request.role in self.role_and_app_table.keys():
             for app in self.role_and_app_table[request.role]:  # app is concert_msgs.RemoconApp
-                if app.name == request.application and app.service_name == request.service_name:
+                if app.name == request.application and app.namespace == request.namespace:
                     if app.max == 0:
                         return response
                     else:

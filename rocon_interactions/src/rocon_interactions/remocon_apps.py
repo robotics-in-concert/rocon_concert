@@ -6,8 +6,15 @@
 # Imports
 ##############################################################################
 
-#import rocon_std_msgs.msg as rocon_std_msgs
-#import rocon_uri
+# system
+import zlib  # crc32
+
+# ros
+import rocon_console.console as console
+import rocon_utilities
+
+# local
+#from .exceptions import InvalidRemoconAppConfiguration
 
 ##############################################################################
 # Methods Used on concert_msgs.RemoconApp classes
@@ -63,6 +70,30 @@
     # Not worrying about system check yet
     # Not worrying about name check yet
 #     return True
+
+# def to_str(app):
+#     '''
+#       Converts a remocon app to a pretty printed multi-line string for debugging purposes.
+# 
+#       @param app
+#       @type concert_msgs.RemoconApp
+#     '''
+#     s = ''
+#     s += console.green + "%s" % app.display_name + console.reset + '\n'
+#     s += console.cyan + "  Name" + console.reset + "         : " + console.yellow + "%s" % app.name + console.reset + '\n'
+#     s += console.cyan + "  Description" + console.reset + "  : " + console.yellow + "%s" % app.description + console.reset + '\n'
+#     s += console.cyan + "  Rocon URI" + console.reset + "    : " + console.yellow + "%s" % app.compatibility + console.reset + '\n'
+#     s += console.cyan + "  Service" + console.reset + "      : " + console.yellow + "%s" % app.namespace + console.reset + '\n'
+#     if app.max == -1:
+#         s += console.cyan + "  Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset + '\n'
+#     else:
+#         s += console.cyan + "  Max" + console.reset + "          : " + console.yellow + "%s" % app.max + console.reset + '\n'
+#     for remapping in app.remappings:
+#         s += console.cyan + "  Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset + '\n'
+#     if app.parameters != '':
+#         s += console.cyan + "  Parameters" + console.reset + "   : " + console.yellow + "%s" % app.parameters + console.reset + '\n'
+#     s += console.cyan + "  Hash" + console.reset + "         : " + console.yellow + "%s" % str(app.hash) + console.reset + '\n'
+#     return s
 
 
 def matches(remocon_app_a, remocon_app_b):
