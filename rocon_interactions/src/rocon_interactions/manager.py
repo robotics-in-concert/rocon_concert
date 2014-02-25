@@ -12,15 +12,15 @@ import rosgraph
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import unique_id
-import rocon_uri
 
 # Local imports
-from rocon_interactions import remocon_apps
 from .remocon_monitor import RemoconMonitor
 from .interactions_table import InteractionsTable
+import interactions
+from .exceptions import MalformedInteractionsYaml, YamlResourceNotFoundException
 
 ##############################################################################
-# Role Manager
+# Interactions
 ##############################################################################
 
 
@@ -52,6 +52,20 @@ class InteractionsManager(object):
         self._watch_loop_period = 1.0
         self._remocon_monitors = {}  # topic_name : RemoconMonitor
 
+        # Load pre-configured interactions
+        for resource_name in self.parameters['interactions']:
+            try:
+                msg_interactions = interactions.load_msgs_from_yaml_resource(resource_name)
+                (new_interactions, invalid_interactions) = self.interactions_table.load(msg_interactions)
+                for i in new_interactions:
+                    rospy.loginfo("Interactions : loading %s [%s-%s-%s]" % (i.display_name, i.name, i.role, i.namespace))
+                for i in invalid_interactions:
+                    rospy.logwarn("Interactions : failed to load %s [%s-%s-%s]" (i.display_name, i.name, i.role, i.namespace))
+            except YamlResourceNotFoundException as e:
+                rospy.logerr("Interactions : failed to load resource %s [%s]" % (resource_name, str(e)))
+            except MalformedInteractionsYaml as e:
+                rospy.logerr("Interactions : pre-configured interactions yaml malformed [%s][%s]" % (resource_name, str(e)))
+
     def spin(self):
         '''
           Parse the set of /remocons/<name>_<uuid> connections.
@@ -67,16 +81,16 @@ class InteractionsManager(object):
                 for remocon_topic in new_remocon_topics:
                     self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic, self._ros_publish_interactive_clients)
                     self._ros_publish_interactive_clients()
-                    rospy.loginfo("Role Manager : new remocon connected [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Interactions : new remocon connected [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
                 for remocon_topic in lost_remocon_topics:
                     self._remocon_monitors[remocon_topic].unregister()
                     del self._remocon_monitors[remocon_topic]  # careful, this mutates the dictionary http://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
                     self._ros_publish_interactive_clients()
-                    rospy.loginfo("Role Manager : remocon left [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Interactions : remocon left [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
             except rosgraph.masterapi.Error:
-                rospy.logerr("Role Manager : error trying to retrieve information from the local master.")
+                rospy.logerr("Interactions : error trying to retrieve information from the local master.")
             except rosgraph.masterapi.Failure:
-                rospy.logerr("Role Manager : failure trying to retrieve information from the local master.")
+                rospy.logerr("Interactions : failure trying to retrieve information from the local master.")
             rospy.rostime.wallsleep(self._watch_loop_period)
 
     def _setup_publishers(self):
@@ -113,6 +127,7 @@ class InteractionsManager(object):
         param = {}
         param['rosbridge_address'] = rospy.get_param('~rosbridge_address', "")
         param['rosbridge_port'] = rospy.get_param('~rosbridge_port', 9090)
+        param['interactions'] = rospy.get_param('~interactions', [])
         return param
 
     ##########################################################################

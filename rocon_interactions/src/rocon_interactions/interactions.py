@@ -17,7 +17,7 @@ import rocon_utilities
 import concert_msgs.msg as concert_msgs
 
 # local
-from .exceptions import InvalidInteraction, MalformedInteractionsYaml
+from .exceptions import InvalidInteraction, MalformedInteractionsYaml, YamlResourceNotFoundException
 
 ##############################################################################
 # Utility Methods
@@ -47,15 +47,17 @@ def load_msgs_from_yaml_resource(resource_name):
 
       @return a list of ros msg interaction specifications
       @rtype concert_msgs.Interaction[]
+
+      @raise rocon_interactions.MalformedInteractionsYaml, rocon_interactions.YamlResourceNotFoundException
     '''
     interactions = []
     try:
         yaml_filename = rocon_utilities.find_resource_from_string(resource_name, extension='interactions')
     except IOError as e:  # resource not found.
-        raise rocon_utilities.ResourceNotFoundException(str(e))
+        raise YamlResourceNotFoundException(str(e))
     with open(yaml_filename) as f:
         interactions_yaml = yaml.load(f)
-        for interaction_yaml in interactions_yaml['interactions']:
+        for interaction_yaml in interactions_yaml:
             interaction = concert_msgs.Interaction()
             try:
                 genpy.message.fill_message_args(interaction, interaction_yaml)

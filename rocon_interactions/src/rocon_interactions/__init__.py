@@ -10,4 +10,4 @@ from .manager import InteractionsManager
 from .loader import Loader
 from .interactions_table import InteractionsTable
 from .interactions import load_msgs_from_yaml_resource
-from .exceptions import MalformedInteractionsYaml
+from .exceptions import *

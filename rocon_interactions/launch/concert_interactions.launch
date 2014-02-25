@@ -18,8 +18,11 @@
     <node pkg="concert_master" type="master.py" name="master"/>
 
     <!-- ************************ Rocon Interactions *************************** -->
-    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
-    <node pkg="rocon_interactions" type="load_interactions" name="load_interactions" args="-n '/interactions' rocon_interactions example">
+    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions">
+      <rosparam param="interactions">[rocon_interactions/android, rocon_interactions/qt, rocon_interactions/web_apps]</rosparam>
+    </node>
+    <!-- alternatively use the external loader and configure groups with default namespaces -->
+    <node pkg="rocon_interactions" type="load_interactions" name="load_interactions" args="-n '/web' rocon_interactions web">
       <remap from="load_interactions/set_interactions" to="interactions/set_interactions"/>
     </node>
     <node pkg="rocon_interactions" type="attach_test_remocon" name="attach_test_remocon"/>

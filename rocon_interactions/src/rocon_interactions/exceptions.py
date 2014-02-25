@@ -13,6 +13,12 @@ class InvalidInteraction(Exception):
     """
 
 
+class YamlResourceNotFoundException(IOError):
+    """
+      The requested yaml resource could not be found.
+    """
+
+
 class MalformedInteractionsYaml(Exception):
     """
       Whenever malformed yaml is used in loading a set of interactions.

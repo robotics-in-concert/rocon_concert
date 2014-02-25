@@ -29,7 +29,7 @@ install(
         scripts/rocon_interactions
         scripts/interactions_manager.py
         scripts/load_interactions
-        scripts/attach_test_remocon
+        scripts/fake_remocon
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
