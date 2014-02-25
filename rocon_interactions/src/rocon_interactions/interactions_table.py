@@ -34,7 +34,14 @@ class InteractionsTable(object):
         self.interactions = []
 
     def roles(self):
-        return set([i.role for i in self.interactions])
+        '''
+          List all roles for the currently stored interactions.
+
+          @return a list of all roles
+          @rtype str[]
+        '''
+        # uniquify the set
+        return list(set([i.role for i in self.interactions]))
 
 #     def __getitem__(self, role):
 #         '''
