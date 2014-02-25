@@ -39,10 +39,10 @@ class InteractionsTable(object):
 #     def __getitem__(self, role):
 #         '''
 #           Get an app list for the specified role using the square bracket accessor.
-# 
+#
 #           @param role
 #           @type str
-# 
+#
 #           @return a list of remocon apps
 #           @rtype concert_msgs.RemoconApp[]
 #         '''

@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 #       
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_multimaster/master/rocon_gateway/LICENSE 
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
-
 ##############################################################################
 # Imports
 ##############################################################################
 
 import sys
 import argparse
+import time
 import rospy
+from rosservice import rosservice_find
 import rocon_interactions
 import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
@@ -23,35 +24,54 @@ import rocon_uri
 ##############################################################################
     
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Prettifies concert roles and apps information.')
+    parser = argparse.ArgumentParser(description='Prettifies rocon interactions information.')
     args = parser.parse_args()
     return args
 
+def find_service(service_type, timeout=rospy.rostime.Duration(5.0)):
+    service_name = None
+    timeout_time = time.time() + timeout.to_sec()
+    while not rospy.is_shutdown() and time.time() < timeout_time and not service_name:
+        service_names = rosservice_find(service_type)
+        if len(service_names) > 1:
+            print(console.red + "Non-unique '%s' services found, aborting %s." % (service_type, service_names) + console.reset)
+            sys.exit(1)
+        elif len(service_names) == 1:
+            service_name = service_names[0]
+        else:
+            rospy.rostime.wallsleep(0.1)
+    if service_name is None:
+        print(console.red + "Timed out waiting for an interactions manager" + console.reset)
+        sys.exit(1)
+    return service_name
 
 ##############################################################################
 # Main
 ##############################################################################
 
 if __name__ == '__main__':
-    
-    rospy.init_node('roles_and_apps')
+    rospy.init_node('rocon_interactions')
     args = parse_arguments()
-    get_roles_and_apps = rospy.ServiceProxy(concert_msgs.Strings.GET_ROLES_AND_APPS, concert_srvs.GetRolesAndApps)
-    request = concert_srvs.GetRolesAndAppsRequest(roles=[], uri=rocon_uri.default_uri_string)
-    response = get_roles_and_apps(request)
-    for d in response.data:
-        console.pretty_println("%s" % d.role, console.bold)
-        for remocon_app in d.remocon_apps:
-            console.pretty_println("  %s" % remocon_app.display_name, console.green)
-            print(console.cyan + "    Name" + console.reset + "         : " + console.yellow + "%s" % remocon_app.name + console.reset)
-            print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
-            print(console.cyan + "    Rocon URI" + console.reset + "    : " + console.yellow + "%s" % remocon_app.compatibility + console.reset)
-            print(console.cyan + "    Namespace" + console.reset + "    : " + console.yellow + "%s" % remocon_app.namespace + console.reset)
-            if remocon_app.max == -1:
-                print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset)
-            else:
-                print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "%s" % remocon_app.max + console.reset)
-            for remapping in remocon_app.remappings:
-                print(console.cyan + "    Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
-            print(console.cyan + "    Parameters" +  console.reset + "   : " + console.yellow + "%s" % remocon_app.parameters + console.reset)
-            print(console.cyan + "    Hash" + console.reset + "         : " + console.yellow + "%s" % remocon_app.hash + console.reset)
+    service_name = find_service('concert_msgs/GetInteractions')
+    get_interactions = rospy.ServiceProxy(service_name, concert_srvs.GetInteractions)
+    request = concert_srvs.GetInteractionsRequest(roles=[], uri=rocon_uri.default_uri_string)
+    response = get_interactions(request)
+    interactions_table = rocon_interactions.InteractionsTable()
+    interactions_table.load(response.interactions)
+    print("%s" % interactions_table)
+#     for msg in response.interactions:
+#         console.pretty_println("%s" % msg.role, console.bold)
+#         for remocon_app in d.remocon_apps:
+#             console.pretty_println("  %s" % remocon_app.display_name, console.green)
+#             print(console.cyan + "    Name" + console.reset + "         : " + console.yellow + "%s" % remocon_app.name + console.reset)
+#             print(console.cyan + "    Description" + console.reset + "  : " + console.yellow + "%s" % remocon_app.description + console.reset)
+#             print(console.cyan + "    Rocon URI" + console.reset + "    : " + console.yellow + "%s" % remocon_app.compatibility + console.reset)
+#             print(console.cyan + "    Namespace" + console.reset + "    : " + console.yellow + "%s" % remocon_app.namespace + console.reset)
+#             if remocon_app.max == -1:
+#                 print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "infinity" + console.reset)
+#             else:
+#                 print(console.cyan + "    Max" + console.reset + "          : " + console.yellow + "%s" % remocon_app.max + console.reset)
+#             for remapping in remocon_app.remappings:
+#                 print(console.cyan + "    Remapping" + console.reset + "    : " + console.yellow + "%s->%s" % (remapping.remap_from, remapping.remap_to) + console.reset)
+#             print(console.cyan + "    Parameters" +  console.reset + "   : " + console.yellow + "%s" % remocon_app.parameters + console.reset)
+#             print(console.cyan + "    Hash" + console.reset + "         : " + console.yellow + "%s" % remocon_app.hash + console.reset)

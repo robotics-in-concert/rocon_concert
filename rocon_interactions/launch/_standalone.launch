@@ -19,7 +19,9 @@
 
     <!-- ************************ Rocon Interactions *************************** -->
     <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
-    <!-- <node pkg="rocon_interactions" type="load_roles_and_apps" name="load_roles_and_apps" args="rocon_interactions example"/>  -->
+    <node pkg="rocon_interactions" type="load_interactions" name="load_interactions" args="-n '/interactions' rocon_interactions example">
+      <remap from="load_interactions/set_interactions" to="interactions/set_interactions"/>
+    </node>
     <!-- <node pkg="rocon_interactions" type="attach_test_remocon" name="attach_test_remocon"/>  -->
   </group>
 

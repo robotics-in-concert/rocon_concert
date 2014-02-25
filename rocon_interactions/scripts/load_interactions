@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 #       
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_multimaster/master/rocon_gateway/LICENSE 
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
-
 ##############################################################################
 # Imports
 ##############################################################################
@@ -18,14 +17,18 @@ import rocon_interactions
 ##############################################################################
 # Functions
 ##############################################################################
-    
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Load a list of roles and apps from yaml')
-    parser.add_argument('package', type=str, help="package containing the yaml file")
-    parser.add_argument('yaml', type=str, help="interactions configuration yaml (.interactions)")
+    parser = argparse.ArgumentParser(description='Load a list of interactions from yaml')
+    parser.add_argument('-s', '--service-name', action='store',
+                   default='/concert/interactions/set_interactions',
+                   type=str,
+                   help="service name used to load interactions")
     parser.add_argument('-n', '--namespace', action='store',
                    default='/interactions',
                    help='namespace to push connections down into [/interactions]')
+    parser.add_argument('package', type=str, help="package containing the yaml file")
+    parser.add_argument('yaml', type=str, help="interactions configuration yaml (.interactions)")
     myargs = rospy.myargv(argv=sys.argv)
     args = parser.parse_args(args=myargs[1:])
     if os.path.splitext(args.yaml)[-1] == '':  # no ext given
@@ -37,20 +40,21 @@ def parse_arguments():
 ##############################################################################
 
 if __name__ == '__main__':
-    rospy.init_node('roles_and_apps')
+    rospy.init_node('load_interactions')
     try:
-        role_app_loader = rocon_interactions.RoleAppLoader()
+        interactions_loader = rocon_interactions.Loader()
     except rospy.exceptions.ROSException as e:
-        rospy.logerr("Role Loader : aborting, %s." % str(e))
+        rospy.logerr("Interactions Loader : aborting, %s." % str(e))
         sys.exit(1)
     except rospy.exceptions.ROSInterruptException as e:
         sys.exit(1)
     args = parse_arguments()
     try:
-        role_app_loader.load(args.package + '/' + args.yaml, args.namespace)
+        rospy.logwarn("Namespace: %s" % args.namespace)
+        interactions_loader.load(args.package + '/' + args.yaml, args.namespace)
     except rocon_utilities.exceptions.ResourceNotFoundException as e:
-        rospy.logerr("Role Loader : %s." % str(e))
+        rospy.logerr("Interactions Loader : %s." % str(e))
         sys.exit(1)
-    except rocon_interactions.exceptions.InvalidRoleAppYaml as e:
-        rospy.logwarn("Role Loader : %s" % str(e))
+    except rocon_interactions.MalformedInteractionsYaml as e:
+        rospy.logwarn("Interactions Loader : %s" % str(e))
         sys.exit(1)

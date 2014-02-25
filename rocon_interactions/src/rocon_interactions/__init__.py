@@ -7,7 +7,7 @@
 ##############################################################################
 
 from .manager import InteractionsManager
-from .role_app_loader import RoleAppLoader, load_role_apps_from_yaml
+from .loader import Loader
 from .interactions_table import InteractionsTable
 from .interactions import load_msgs_from_yaml_resource
 from .exceptions import MalformedInteractionsYaml

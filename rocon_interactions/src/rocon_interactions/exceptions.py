@@ -7,13 +7,6 @@
 ##############################################################################
 
 
-class InvalidRoleAppYaml(Exception):
-    """
-      Whenever invalid yaml is passed in for role-app lists.
-    """
-    pass
-
-
 class InvalidInteraction(Exception):
     """
       Whenever an interaction has been specified incorrectly.

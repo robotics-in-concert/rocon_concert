@@ -75,10 +75,14 @@ class Interaction(object):
       a few convenient management handles.
     '''
     __slots__ = [
-            'msg',     # concert_msgs.Interaction
-            'name',    # alias for self.msg.name
-            'role',    # alias for self.msg.role
-            'hash',    # alias for self.msg.hash
+            'msg',           # concert_msgs.Interaction
+            # aliases
+            'name',
+            'compatibility',
+            'namespace',
+            'display_name',
+            'role',
+            'hash',
         ]
 
     def __init__(self, msg):
@@ -109,7 +113,10 @@ class Interaction(object):
         # some convenient aliases
         self.role = self.msg.role
         self.name = self.msg.name
+        self.namespace = self.msg.namespace
+        self.display_name = self.msg.display_name
         self.hash = self.msg.hash
+        self.compatibility = self.msg.compatibility
 
     def _eq__(self, other):
         if type(other) is type(self):

@@ -27,8 +27,8 @@ add_subdirectory(tests)
 install(
     PROGRAMS 
         scripts/rocon_interactions
-        scripts/rocon_interactions_manager.py
-        scripts/load_roles_and_apps
+        scripts/interactions_manager.py
+        scripts/load_interactions
         scripts/attach_test_remocon
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )

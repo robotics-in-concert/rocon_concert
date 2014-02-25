@@ -153,11 +153,15 @@ class InteractionsManager(object):
         '''
         response = concert_srvs.GetInteractionsResponse()
         response.interactions = []
-        response.interactions = self.interactions_table.filter(request.roles, request.uri)
+
         if request.roles:  # works for None or empty list
             unavailable_roles = [x for x in request.roles if x not in self.interactions_table.roles()]
             for role in unavailable_roles:
                 rospy.logwarn("Interactions : received request for interactions of an unregistered role [%s]" % role)
+
+        filtered_interactions = self.interactions_table.filter(request.roles, request.uri)
+        for i in filtered_interactions:
+            response.interactions.append(i.msg)
         return response
 
     def _ros_service_set_interactions(self, request):
@@ -169,7 +173,7 @@ class InteractionsManager(object):
           @param request list of roles-apps to set
           @type concert_srvs.SetInteractionsRequest
         '''
-        if request.add:
+        if request.load:
             (new_interactions, invalid_interactions) = self.interactions_table.load(request.interactions)
             for i in new_interactions:
                 rospy.loginfo("Interactions : loading %s [%s-%s-%s]" % (i.display_name, i.name, i.role, i.namespace))
