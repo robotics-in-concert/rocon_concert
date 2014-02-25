@@ -55,7 +55,7 @@ def load_msgs_from_yaml_resource(resource_name):
         raise rocon_utilities.ResourceNotFoundException(str(e))
     with open(yaml_filename) as f:
         interactions_yaml = yaml.load(f)
-        for interaction_yaml in interactions_yaml:
+        for interaction_yaml in interactions_yaml['interactions']:
             interaction = concert_msgs.Interaction()
             try:
                 genpy.message.fill_message_args(interaction, interaction_yaml)

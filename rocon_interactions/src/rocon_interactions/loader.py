@@ -8,6 +8,7 @@
 
 import rospy
 import concert_msgs.srv as concert_srvs
+import rocon_python_comms
 
 # local
 import interactions
@@ -30,15 +31,14 @@ class Loader(object):
         '''
         Don't do any loading here, just set up infrastructure and overrides from
         the solution.
+
+        @raise rocon_python_comms.NotFoundException, rospy.exceptions.ROSException, rospy.exceptions.ROSInterruptException
         '''
-        self._set_interactions_proxy = rospy.ServiceProxy(service_name, concert_srvs.SetInteractions)
         try:
-            self._set_interactions_proxy.wait_for_service(15.0)
-        except rospy.exceptions.ROSException:
-            # timeout exceeded
-            raise rospy.exceptions.ROSException("timed out waiting for service [%s]" % self._set_interactions_proxy.resolved_name)
-        except rospy.exceptions.ROSInterruptException as e:
-            raise e
+            service_name = rocon_python_comms.find_service('concert_msgs/SetInteractions', timeout=rospy.rostime.Duration(15.0), unique=True)
+        except rocon_python_comms.NotFoundException as e:
+            raise rocon_python_comms.NotFoundException("failed to find unique service of type 'concert_msgs/SetInteractions' [%s]" % str(e))
+        self._set_interactions_proxy = rospy.ServiceProxy(service_name, concert_srvs.SetInteractions)
 
     def load(self, interactions_yaml_resource, namespace='/', load=True):
         '''
