@@ -36,7 +36,7 @@ if __name__ == '__main__':
     rospy.init_node('rocon_interactions')
     args = parse_arguments()
     try:
-        service_name = rocon_python_comms.find_unique_service('concert_msgs/GetInteractions', rospy.rostime.Duration(5.0))
+        service_name = rocon_python_comms.find_service('concert_msgs/GetInteractions', timeout=rospy.rostime.Duration(5.0), unique=True)
     except rocon_python_comms.NotFoundException:
         print(console.red + "failed to find unique service of type 'concert_msgs/GetInteractions' [%s]" % str(e))
         sys.exit(1)

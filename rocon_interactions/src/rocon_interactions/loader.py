@@ -26,7 +26,7 @@ class Loader(object):
             '_set_interactions_proxy',
         ]
 
-    def __init__(self, service_name='~set_interactions'):
+    def __init__(self):
         '''
         Don't do any loading here, just set up infrastructure and overrides from
         the solution.
@@ -40,10 +40,12 @@ class Loader(object):
         except rospy.exceptions.ROSInterruptException as e:
             raise e
 
-    def load(self, interactions_yaml_resource, namespace, load=True):
+    def load(self, interactions_yaml_resource, namespace='/', load=True):
         '''
-        Parse the service description's configuration of roles/apps and
-        pass these along to the role manager.
+        Parse a set of configurations specified in a yaml file and send the command to
+        load/unload these on the interactions manager. For convenience, it also allows
+        the setting of a namespace for the whole group which will only get applied if
+        an interaction has no setting in the yaml.
 
         @param interactions_yaml_resource : yaml resource name for role-app parameterisation
         @type yaml string
@@ -62,7 +64,8 @@ class Loader(object):
         # This can raise ResourceNotFoundException, MalformedInteractionsYaml
         request.interactions = interactions.load_msgs_from_yaml_resource(interactions_yaml_resource)
         for i in request.interactions:
-            i.namespace = namespace
+            if i.namespace == '':
+                i.namespace = namespace
 
         # Should check the response here and return some sort of true/false result.
         unused_response = self._set_interactions_proxy(request)

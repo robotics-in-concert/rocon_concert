@@ -16,6 +16,7 @@ import rocon_console.console as console
 import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_uri
+import rocon_python_utils
 
 ##############################################################################
 # Globals
@@ -39,7 +40,7 @@ def parse_arguments():
 
 def remocon_platform_info():
     platform_info = rocon_std_msgs.PlatformInfo(
-                        uri="rocon:/*/" + remocon_name + "/hydro/" + rocon_std_msgs.Strings.OS_JELLYBEAN,
+                        uri="rocon:/*/" + remocon_name + "/" + rocon_python_utils.get_rosdistro() + "/" + rocon_std_msgs.Strings.OS_JELLYBEAN,
                         icon=rocon_std_msgs.Icon(),
                         version=rocon_std_msgs.Strings.ROCON_VERSION
                     )

@@ -41,6 +41,7 @@ def parse_arguments():
 
 if __name__ == '__main__':
     rospy.init_node('load_interactions')
+    args = parse_arguments()
     try:
         interactions_loader = rocon_interactions.Loader()
     except rospy.exceptions.ROSException as e:
@@ -48,7 +49,6 @@ if __name__ == '__main__':
         sys.exit(1)
     except rospy.exceptions.ROSInterruptException as e:
         sys.exit(1)
-    args = parse_arguments()
     try:
         interactions_loader.load(args.package + '/' + args.yaml, args.namespace)
     except rocon_utilities.exceptions.ResourceNotFoundException as e:

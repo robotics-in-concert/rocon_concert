@@ -15,6 +15,7 @@
 
   <run_depend>rospy</run_depend>
   <run_depend>rocon_console</run_depend>
+  <run_depend>rocon_python_utils</run_depend>
   <run_depend>rocon_utilities</run_depend>
   <run_depend>concert_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
