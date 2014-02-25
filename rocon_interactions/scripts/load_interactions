@@ -50,7 +50,6 @@ if __name__ == '__main__':
         sys.exit(1)
     args = parse_arguments()
     try:
-        rospy.logwarn("Namespace: %s" % args.namespace)
         interactions_loader.load(args.package + '/' + args.yaml, args.namespace)
     except rocon_utilities.exceptions.ResourceNotFoundException as e:
         rospy.logerr("Interactions Loader : %s." % str(e))
