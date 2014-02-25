@@ -43,7 +43,7 @@ if __name__ == '__main__':
     rospy.init_node('load_interactions')
     args = parse_arguments()
     try:
-        interactions_loader = rocon_interactions.Loader()
+        interactions_loader = rocon_interactions.InteractionsLoader()
     except rospy.exceptions.ROSException as e:
         rospy.logerr("Interactions Loader : aborting, %s." % str(e))
         sys.exit(1)

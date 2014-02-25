@@ -31,7 +31,7 @@ class ServiceManager(object):
         self._concert_services = {}
         self._setup_ros_parameters()
         self.lock = threading.Lock()
-        self._role_app_loader = rocon_interactions.RoleAppLoader()
+        self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         self._setup_ros_api()
         self._initialise_concert_services()
@@ -110,12 +110,12 @@ class ServiceManager(object):
                 self._setup_service_parameters(self._concert_services[name].profile.name,
                                                self._concert_services[name].profile.description,
                                                unique_identifier)
-                success, message = self._concert_services[name].enable(unique_identifier, self._role_app_loader)
+                success, message = self._concert_services[name].enable(unique_identifier, self._interactions_loader)
                 if not success:
                     self._cleanup_service_parameters(self._concert_services[name].profile.name)
             else:
                 self._cleanup_service_parameters(self._concert_services[name].profile.name)
-                success, message = self._concert_services[name].disable(self._role_app_loader, self._unload_resources)
+                success, message = self._concert_services[name].disable(self._interactions_loader, self._unload_resources)
         else:
             service_names = self._concert_services.keys()
             message = "'" + str(name) + "' does not exist " + str(service_names)

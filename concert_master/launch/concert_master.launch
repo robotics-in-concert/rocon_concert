@@ -43,8 +43,8 @@
     <!-- ****************************** Scheduler ****************************** -->
     <node pkg="concert_schedulers" name="scheduler" type="$(arg scheduler_type)_scheduler.py"/>
 
-    <!-- **************************** Role Manager ***************************** -->
-    <node pkg="rocon_interactions" type="rocon_interactions_manager.py" name="interactions"/>
+    <!-- **************************** Interactions ***************************** -->
+    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
 
     <!-- ******************************** Hub ********************************** -->
     <include file="$(find rocon_hub)/launch/hub.launch">

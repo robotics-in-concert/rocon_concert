@@ -18,7 +18,7 @@ import interactions
 ##############################################################################
 
 
-class Loader(object):
+class InteractionsLoader(object):
     '''
       This class is responsible for loading the role manager with the roles
       and app specifications provided in the service definitions.
@@ -56,12 +56,12 @@ class Loader(object):
         @param load : either load or unload the interaction information.
         @type boolean
 
-        @raise ResourceNotFoundException, MalformedInteractionsYaml
+        @raise YamlResourceNotFoundException, MalformedInteractionsYaml
         '''
         request = concert_srvs.SetInteractionsRequest()
         request.load = load
 
-        # This can raise ResourceNotFoundException, MalformedInteractionsYaml
+        # This can raise YamlResourceNotFoundException, MalformedInteractionsYaml
         request.interactions = interactions.load_msgs_from_yaml_resource(interactions_yaml_resource)
         for i in request.interactions:
             if i.namespace == '':
