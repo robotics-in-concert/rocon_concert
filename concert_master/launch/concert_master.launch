@@ -17,7 +17,7 @@
   <arg name="services" default="[]"/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
   <!-- Scheduler -->
-  <arg name="scheduler_type" default="demo"/>  <!-- options are demo, compatibility_tree -->
+  <arg name="scheduler_type" default="compatibility_tree"/>  <!-- options are compatibility_tree, ... -->
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
