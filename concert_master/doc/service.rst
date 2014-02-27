@@ -17,18 +17,27 @@ The last point is important. We aren't likely to have the perfect orchestration 
 Specification
 -------------
 
-* name
-* description
-* author
-* priority
-* launcher_type - `ROS` || `Link Graphs` || `BPEL`
-* launcher
-* parameters - Service Parameters
-* interactions - Rocon Interaction
+.. code-block:: yaml
+    
+    name: <STRING>
+    description: <STRING>
+    author: <STRING>
+    priority: <INT>
+    launcher_type: <TYPES_IN_concert_msgs.CONCERT_SERVICE.msg>
+    launcher: <VARY>
+    parameters: <PACKAGE_NAME>/<.parameter>- 
+    interactions - <PACKAGE_NAME>/</interactions>
 
 **Note**
 
-Name, description, priority are required. `(launcher_type && launcher) || interactions` are required 
+* Name, description, priority are required. 
+* `(launcher_type && launcher) || interactions` are required 
+
+Supported Launcher Type
++++++++++++++++++++++++
+
+* *ROSLAUNCH* - <PACKAGE_NAME>/<LAUNCH_NAME>
+* *BPEL* - Coming Soon 
 
 Exmample
 --------
