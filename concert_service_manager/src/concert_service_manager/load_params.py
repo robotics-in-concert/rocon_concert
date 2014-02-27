@@ -23,14 +23,10 @@ def load_parameters_from_file(parameter_file, namespace, name, load):
 
     with open(filepath) as f:
         params = yaml.load(f)
-        func = _set_param
-
         for k, v in params.items():
-
             if k in INVALID_PARAM:
                 rospy.logwarn("Service Manager: %s%s [%s]" % (str(k), ' is prohibitted parameter. Ignoring...', name))
             param_name = namespace + '/' + k
-
             if load:
                 rospy.set_param(param_name, v)
             else:
