@@ -88,9 +88,9 @@ class ConcertServiceInstance(object):
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=True)
             # if there's a failure point, it will have thrown an exception before here.
-            
+
             if self.profile.parameters != '':
-                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name 
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
                 load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
 
             self.profile.enabled = True
@@ -123,7 +123,7 @@ class ConcertServiceInstance(object):
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=False)
             if self.profile.parameters != '':
-                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name 
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
                 load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=False)
 
             launcher_type = self.profile.launcher_type
@@ -205,7 +205,6 @@ class ConcertServiceInstance(object):
         launch_text += '</include>\n</launch>\n'
 
         return launch_text
-
 
     def to_msg(self):
         return self.profile
