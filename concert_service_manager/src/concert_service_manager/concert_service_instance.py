@@ -19,6 +19,8 @@ import concert_msgs.msg as concert_msgs
 import std_msgs.msg as std_msgs
 import rocon_interactions
 
+from .load_params import load_parameters_from_file
+
 ##############################################################################
 # Methods
 ##############################################################################
@@ -86,6 +88,11 @@ class ConcertServiceInstance(object):
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=True)
             # if there's a failure point, it will have thrown an exception before here.
+            
+            if self.profile.parameters != '':
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name 
+                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
+
             self.profile.enabled = True
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.profile.name)
@@ -115,6 +122,10 @@ class ConcertServiceInstance(object):
             if self.profile.interactions != '':
                 # Can raise ResourceNotFoundException, InvalidRoleAppYaml
                 role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=False)
+            if self.profile.parameters != '':
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name 
+                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=False)
+
             launcher_type = self.profile.launcher_type
             force_kill = False
 
@@ -194,6 +205,7 @@ class ConcertServiceInstance(object):
         launch_text += '</include>\n</launch>\n'
 
         return launch_text
+
 
     def to_msg(self):
         return self.profile
