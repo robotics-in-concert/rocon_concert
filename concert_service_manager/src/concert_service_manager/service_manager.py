@@ -71,13 +71,13 @@ class ServiceManager(object):
           @param unique_identifier : unique id for the service
           @type uuid.UUID
         '''
-        namespace = '/services/' + name
+        namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + name
         rospy.set_param(namespace + "/name", name)
         rospy.set_param(namespace + "/description", description)
         rospy.set_param(namespace + "/uuid", unique_id.toHexString(unique_id.toMsg(unique_identifier)))
 
     def _cleanup_service_parameters(self, name):
-        namespace = '/services/' + name
+        namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + name
         rospy.delete_param(namespace + "/name")
         rospy.delete_param(namespace + "/description")
         rospy.delete_param(namespace + "/uuid")
