@@ -3,8 +3,8 @@
 	<name>rocon_interactions</name>
 	<comment></comment>
 	<projects>
-		<project>concert_msgs</project>
 		<project>rocon_console</project>
+		<project>rocon_interaction_msgs</project>
 		<project>rocon_uri</project>
 		<project>rocon_utilities</project>
 	</projects>

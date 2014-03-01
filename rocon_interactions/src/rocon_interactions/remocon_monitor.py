@@ -7,7 +7,7 @@
 ##############################################################################
 
 import rospy
-import concert_msgs.msg as concert_msgs
+import rocon_interaction_msgs.msg as interaction_msgs
 
 
 ##############################################################################
@@ -32,13 +32,13 @@ class RemoconMonitor(object):
     ##########################################################################
 
     def __init__(self, topic_name, publish_interactive_clients_callback):
-        if topic_name.startswith(concert_msgs.Strings.REMOCONS_NAMESPACE + '/'):
-            uuid_postfixed_name = topic_name[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:]
+        if topic_name.startswith(interaction_msgs.Strings.REMOCONS_NAMESPACE + '/'):
+            uuid_postfixed_name = topic_name[len(interaction_msgs.Strings.REMOCONS_NAMESPACE) + 1:]
             (self.name, unused_separator, unused_uuid_part) = uuid_postfixed_name.rpartition('_')
         else:
             self.name = 'unknown'  # should raise an error here
             return
-        self._subscriber = rospy.Subscriber(topic_name, concert_msgs.RemoconStatus, self._callback)
+        self._subscriber = rospy.Subscriber(topic_name, interaction_msgs.RemoconStatus, self._callback)
         self.status = None
         self._publish_interactive_clients_callback = publish_interactive_clients_callback
 

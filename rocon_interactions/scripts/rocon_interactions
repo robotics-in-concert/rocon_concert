@@ -12,8 +12,7 @@ import argparse
 import rospy
 import rocon_interactions
 import rocon_console.console as console
-import concert_msgs.msg as concert_msgs
-import concert_msgs.srv as concert_srvs
+import rocon_interaction_msgs.srv as interaction_srvs
 import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_uri
 import rocon_utilities
@@ -36,12 +35,12 @@ if __name__ == '__main__':
     rospy.init_node('rocon_interactions')
     args = parse_arguments()
     try:
-        service_name = rocon_python_comms.find_service('concert_msgs/GetInteractions', timeout=rospy.rostime.Duration(5.0), unique=True)
+        service_name = rocon_python_comms.find_service('rocon_interaction_msgs/GetInteractions', timeout=rospy.rostime.Duration(5.0), unique=True)
     except rocon_python_comms.NotFoundException:
-        print(console.red + "failed to find unique service of type 'concert_msgs/GetInteractions' [%s]" % str(e))
+        print(console.red + "failed to find unique service of type 'rocon_interaction_msgs/GetInteractions' [%s]" % str(e))
         sys.exit(1)
-    get_interactions = rospy.ServiceProxy(service_name, concert_srvs.GetInteractions)
-    request = concert_srvs.GetInteractionsRequest(roles=[], uri=rocon_uri.default_uri_string)
+    get_interactions = rospy.ServiceProxy(service_name, interaction_srvs.GetInteractions)
+    request = interaction_srvs.GetInteractionsRequest(roles=[], uri=rocon_uri.default_uri_string)
     response = get_interactions(request)
     interactions_table = rocon_interactions.InteractionsTable()
     interactions_table.load(response.interactions)

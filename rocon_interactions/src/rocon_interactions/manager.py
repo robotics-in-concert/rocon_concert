@@ -9,9 +9,10 @@
 import uuid
 import rospy
 import rosgraph
-import concert_msgs.msg as concert_msgs
-import concert_msgs.srv as concert_srvs
 import unique_id
+import rocon_interaction_msgs.msg as interaction_msgs
+import rocon_interaction_msgs.srv as interaction_srvs
+
 
 # Local imports
 from .remocon_monitor import RemoconMonitor
@@ -30,7 +31,7 @@ class InteractionsManager(object):
       for human interactive (aka remocon) connections.
     '''
     __slots__ = [
-            'interactions_table',  # Dictionary of string : concert_msgs.RemoconApp[]
+            'interactions_table',  # Dictionary of string : interaction_msgs.RemoconApp[]
             'publishers',
             'parameters',
             'services',
@@ -75,18 +76,18 @@ class InteractionsManager(object):
             diff = lambda l1, l2: [x for x in l1 if x not in l2]
             try:
                 # This master call returns a filtered list of [topic_name, topic_type] elemnts (list of lists)
-                remocon_topics = [x[0] for x in master.getPublishedTopics(concert_msgs.Strings.REMOCONS_NAMESPACE)]
+                remocon_topics = [x[0] for x in master.getPublishedTopics(interaction_msgs.Strings.REMOCONS_NAMESPACE)]
                 new_remocon_topics = diff(remocon_topics, self._remocon_monitors.keys())
                 lost_remocon_topics = diff(self._remocon_monitors.keys(), remocon_topics)
                 for remocon_topic in new_remocon_topics:
                     self._remocon_monitors[remocon_topic] = RemoconMonitor(remocon_topic, self._ros_publish_interactive_clients)
                     self._ros_publish_interactive_clients()
-                    rospy.loginfo("Interactions : new remocon connected [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Interactions : new remocon connected [%s]" % remocon_topic[len(interaction_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
                 for remocon_topic in lost_remocon_topics:
                     self._remocon_monitors[remocon_topic].unregister()
                     del self._remocon_monitors[remocon_topic]  # careful, this mutates the dictionary http://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
                     self._ros_publish_interactive_clients()
-                    rospy.loginfo("Interactions : remocon left [%s]" % remocon_topic[len(concert_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
+                    rospy.loginfo("Interactions : remocon left [%s]" % remocon_topic[len(interaction_msgs.Strings.REMOCONS_NAMESPACE) + 1:])  # strips the /remocons/ part
             except rosgraph.masterapi.Error:
                 rospy.logerr("Interactions : error trying to retrieve information from the local master.")
             except rosgraph.masterapi.Failure:
@@ -99,8 +100,8 @@ class InteractionsManager(object):
           namespace.
         '''
         publishers = {}
-        publishers['roles'] = rospy.Publisher('~roles', concert_msgs.Roles, latch=True)
-        publishers['interactive_clients'] = rospy.Publisher('~interactive_clients', concert_msgs.InteractiveClients, latch=True)
+        publishers['roles'] = rospy.Publisher('~roles', interaction_msgs.Roles, latch=True)
+        publishers['interactive_clients'] = rospy.Publisher('~interactive_clients', interaction_msgs.InteractiveClients, latch=True)
         return publishers
 
     def _setup_services(self):
@@ -110,16 +111,16 @@ class InteractionsManager(object):
         '''
         services = {}
         services['get_interactions'] = rospy.Service('~get_interactions',
-                                                       concert_srvs.GetInteractions,
+                                                       interaction_srvs.GetInteractions,
                                                        self._ros_service_get_interactions)
         services['get_interaction'] = rospy.Service('~get_interaction',
-                                                       concert_srvs.GetInteraction,
+                                                       interaction_srvs.GetInteraction,
                                                        self._ros_service_get_interaction)
         services['set_interactions'] = rospy.Service('~set_interactions',
-                                                       concert_srvs.SetInteractions,
+                                                       interaction_srvs.SetInteractions,
                                                        self._ros_service_set_interactions)
         services['request_interaction'] = rospy.Service('~request_interaction',
-                                                       concert_srvs.RequestInteraction,
+                                                       interaction_srvs.RequestInteraction,
                                                        self._ros_service_request_interaction)
         return services
 
@@ -135,10 +136,10 @@ class InteractionsManager(object):
     ##########################################################################
 
     def _ros_publish_interactive_clients(self):
-        interactive_clients = concert_msgs.InteractiveClients()
+        interactive_clients = interaction_msgs.InteractiveClients()
         for remocon in self._remocon_monitors.values():
             if remocon.status is not None:  # i.e. we are monitoring it.
-                interactive_client = concert_msgs.InteractiveClient()
+                interactive_client = interaction_msgs.InteractiveClient()
                 interactive_client.name = remocon.name
                 interactive_client.id = unique_id.toMsg(uuid.UUID(remocon.status.uuid))
                 interactive_client.platform_info = remocon.status.platform_info
@@ -153,7 +154,7 @@ class InteractionsManager(object):
         '''
           Handle incoming requests for a single app.
         '''
-        response = concert_srvs.GetInteractionResponse()
+        response = interaction_srvs.GetInteractionResponse()
         response.interaction = self.interactions_table.find(request.hash)
         response.result = False if response.interaction is None else True
         return response
@@ -166,7 +167,7 @@ class InteractionsManager(object):
           @param request
           @type concert_srvs.GetInteractionsRequest
         '''
-        response = concert_srvs.GetInteractionsResponse()
+        response = interaction_srvs.GetInteractionsResponse()
         response.interactions = []
 
         if request.roles:  # works for None or empty list
@@ -198,17 +199,17 @@ class InteractionsManager(object):
             removed_interactions = self.interactions_table.unload(request.interactions)
             for i in removed_interactions:
                 rospy.loginfo("Interactions : unloading %s [%s-%s-%s]" % (i.display_name, i.name, i.role, i.namespace))
-        response = concert_srvs.SetInteractionsResponse()
+        response = interaction_srvs.SetInteractionsResponse()
         response.result = True
         return response
 
     def _ros_service_request_interaction(self, request):
-        response = concert_srvs.RequestInteractionResponse()
+        response = interaction_srvs.RequestInteractionResponse()
         response.result = True
-        response.error_code = concert_msgs.ErrorCodes.SUCCESS
+        response.error_code = interaction_msgs.ErrorCodes.SUCCESS
         maximum_quota = None
         if request.role in self.role_and_app_table.keys():
-            for app in self.role_and_app_table[request.role]:  # app is concert_msgs.RemoconApp
+            for app in self.role_and_app_table[request.role]:  # app is interaction_msgs.RemoconApp
                 if app.name == request.application and app.namespace == request.namespace:
                     if app.max == 0:
                         return response
@@ -225,10 +226,10 @@ class InteractionsManager(object):
             if count < max:
                 return response
             else:
-                response.error_code = concert_msgs.ErrorCodes.ROLE_APP_QUOTA_REACHED
-                response.message = concert_msgs.ErrorCodes.MSG_ROLE_APP_QUOTA_REACHED
+                response.error_code = interaction_msgs.ErrorCodes.INTERACTION_QUOTA_REACHED
+                response.message = interaction_msgs.ErrorCodes.MSG_INTERACTION_QUOTA_REACHED
         else:
-            response.error_code = concert_msgs.ErrorCodes.ROLE_APP_UNAVAILABLE
-            response.message = concert_msgs.ErrorCodes.MSG_ROLE_APP_UNAVAILABLE
+            response.error_code = interaction_msgs.ErrorCodes.INTERACTION_UNAVAILABLE
+            response.message = interaction_msgs.ErrorCodes.MSG_INTERACTION_UNAVAILABLE
         response.result = False
         return response

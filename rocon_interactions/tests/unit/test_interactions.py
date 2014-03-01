@@ -27,7 +27,7 @@ def assign_namespace(namespace, interactions):
 
 def load_interactions(resource_name):
     try:
-        msg_interactions = rocon_interactions.load_msgs_from_yaml_resource(resource_name)  # concert_msgs.Interaction[]
+        msg_interactions = rocon_interactions.load_msgs_from_yaml_resource(resource_name)  # interaction_msgs.Interaction[]
     except rocon_interactions.MalformedInteractionsYaml:
         msg_interactions = None
     return msg_interactions

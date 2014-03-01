@@ -7,7 +7,7 @@
 ##############################################################################
 
 import rospy
-import concert_msgs.srv as concert_srvs
+import rocon_interaction_msgs.srv as interaction_srvs
 import rocon_python_comms
 
 # local
@@ -35,10 +35,10 @@ class InteractionsLoader(object):
         @raise rocon_python_comms.NotFoundException, rospy.exceptions.ROSException, rospy.exceptions.ROSInterruptException
         '''
         try:
-            service_name = rocon_python_comms.find_service('concert_msgs/SetInteractions', timeout=rospy.rostime.Duration(15.0), unique=True)
+            service_name = rocon_python_comms.find_service('rocon_interaction_msgs/SetInteractions', timeout=rospy.rostime.Duration(15.0), unique=True)
         except rocon_python_comms.NotFoundException as e:
-            raise rocon_python_comms.NotFoundException("failed to find unique service of type 'concert_msgs/SetInteractions' [%s]" % str(e))
-        self._set_interactions_proxy = rospy.ServiceProxy(service_name, concert_srvs.SetInteractions)
+            raise rocon_python_comms.NotFoundException("failed to find unique service of type 'rocon_interaction_msgs/SetInteractions' [%s]" % str(e))
+        self._set_interactions_proxy = rospy.ServiceProxy(service_name, interaction_srvs.SetInteractions)
 
     def load(self, interactions_yaml_resource, namespace='/', load=True):
         '''
@@ -58,7 +58,7 @@ class InteractionsLoader(object):
 
         @raise YamlResourceNotFoundException, MalformedInteractionsYaml
         '''
-        request = concert_srvs.SetInteractionsRequest()
+        request = interaction_srvs.SetInteractionsRequest()
         request.load = load
 
         # This can raise YamlResourceNotFoundException, MalformedInteractionsYaml

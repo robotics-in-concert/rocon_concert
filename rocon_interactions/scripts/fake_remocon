@@ -13,7 +13,7 @@ import sys
 import argparse
 import rospy
 import rocon_console.console as console
-import concert_msgs.msg as concert_msgs
+import rocon_interaction_msgs.msg as interaction_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_uri
 import rocon_python_utils
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     
     rospy.init_node('attach_test_remocon')
     args = parse_arguments()
-    publisher = rospy.Publisher(topic_name, concert_msgs.RemoconStatus, latch=True)
-    status = concert_msgs.RemoconStatus()
+    publisher = rospy.Publisher(topic_name, interaction_msgs.RemoconStatus, latch=True)
+    status = interaction_msgs.RemoconStatus()
     status.platform_info = remocon_platform_info()
     status.running_app = False
     status.uuid = key.hex

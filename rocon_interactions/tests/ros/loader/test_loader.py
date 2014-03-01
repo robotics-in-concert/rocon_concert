@@ -21,7 +21,7 @@ import rostest
 import rosunit
 import rospy
 import rocon_console.console as console
-import concert_msgs.srv as concert_srvs
+import rocon_interaction_msgs.srv as interaction_srvs
 import rocon_uri
 import rocon_interactions
 
@@ -40,8 +40,8 @@ class TestLoader(unittest.TestCase):
             rospy.wait_for_service('~get_interactions', 3.0)
         except (rospy.ROSException, rospy.ServiceException) as e:
             self.fail("Failed to find %s" % rospy.resolve_name('~get_interactions'))
-        get_interactions = rospy.ServiceProxy('~get_interactions', concert_srvs.GetInteractions)
-        request = concert_srvs.GetInteractionsRequest(roles=[], uri=rocon_uri.default_uri_string)
+        get_interactions = rospy.ServiceProxy('~get_interactions', interaction_srvs.GetInteractions)
+        request = interaction_srvs.GetInteractionsRequest(roles=[], uri=rocon_uri.default_uri_string)
         interactions_table = None
         while not rospy.is_shutdown() and not interactions_table:
             response = get_interactions(request)

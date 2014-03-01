@@ -43,24 +43,6 @@ class InteractionsTable(object):
         # uniquify the set
         return list(set([i.role for i in self.interactions]))
 
-#     def __getitem__(self, role):
-#         '''
-#           Get an app list for the specified role using the square bracket accessor.
-#
-#           @param role
-#           @type str
-#
-#           @return a list of remocon apps
-#           @rtype concert_msgs.RemoconApp[]
-#         '''
-#         return self.role_and_app_table[role]
-
-#     def __contains__(self, resource_name):
-#         return resource_name in self.pool
-#
-#     def __getitem__(self, name):
-#         return self.pool[name]
-
     def __len__(self):
         return len(self.interactions)
 
@@ -117,10 +99,10 @@ class InteractionsTable(object):
           and validation steps.
 
           @param msgs : a list of interaction specifications to populate the table with.
-          @type concert_msgs.Interaction[]
+          @type rocon_interaction_msgs.msg.Interaction[]
 
           @return list of all additions and any that were flagged as invalid
-          @rtype (interactions.Interaction[], concert_msgs.Interaction[]) : (new, invalid)
+          @rtype (interactions.Interaction[], rocon_interaction_msgs.msg..Interaction[]) : (new, invalid)
         '''
         new = []
         invalid = []
@@ -140,10 +122,10 @@ class InteractionsTable(object):
           the same list as the user might initially send - no hashes yet generated.
 
           @param msgs : a list of interactions
-          @type concert_msgs.Interaction[]
+          @type rocon_interaction_msgs.msg..Interaction[]
 
           @return a list of removed interactions
-          @rtype concert_msgs.Interaction[]
+          @rtype rocon_interaction_msgs.msg..Interaction[]
         '''
         removed = []
         for msg in msgs:
