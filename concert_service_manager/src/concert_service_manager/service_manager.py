@@ -13,9 +13,8 @@ import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
 
-# Local imports
 from .concert_service_instance import ConcertServiceInstance
-from concert_service_manager.service_profiles import load_service_profiles
+from .service_profiles import load_service_profiles
 
 ##############################################################################
 # ServiceManager

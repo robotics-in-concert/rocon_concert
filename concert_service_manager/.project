@@ -4,6 +4,8 @@
 	<comment></comment>
 	<projects>
 		<project>rocon_interactions</project>
+		<project>rocon_python_utils</project>
+		<project>rocon_uri</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

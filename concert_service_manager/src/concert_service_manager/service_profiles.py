@@ -9,12 +9,10 @@
 import os
 import genpy
 import rospy
-import rocon_utilities
+import rocon_python_utils
 import yaml
 import concert_msgs.msg as concert_msgs
 import unique_id
-
-from .exceptions import InvalidServiceDescription
 
 ##############################################################################
 # ServiceList
@@ -35,7 +33,7 @@ def load_service_profiles(service_resource_names):
     # scan the package path
     ros_package_path = os.getenv('ROS_PACKAGE_PATH', '')
     ros_package_path = [x for x in ros_package_path.split(':') if x]
-    package_index = rocon_utilities.package_index_from_package_path(ros_package_path)
+    package_index = rocon_python_utils.ros.package_index_from_package_path(ros_package_path)
     service_filenames = []
     found_resource_names = []
     for package in package_index.values():
@@ -62,7 +60,7 @@ def load_service_profiles(service_resource_names):
             # replace icon resource name to real icon
             if 'icon' in service_yaml:
                 replace = {}
-                replace[service_yaml['icon']] = rocon_utilities.icon_resource_to_msg(service_yaml['icon'])
+                replace[service_yaml['icon']] = rocon_python_utils.ros.icon_resource_to_msg(service_yaml['icon'])
                 genpy.message.fill_message_args(service_profile, service_yaml, replace)
             else:
                 genpy.message.fill_message_args(service_profile, service_yaml)

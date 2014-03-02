@@ -3,6 +3,7 @@
 	<name>concert_service_link_graph</name>
 	<comment></comment>
 	<projects>
+		<project>rocon_uri</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

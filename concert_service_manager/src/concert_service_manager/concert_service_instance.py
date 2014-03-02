@@ -11,13 +11,13 @@ import os
 import subprocess
 import tempfile
 import threading
-import unique_id
 
 import roslaunch
-import rocon_utilities
+import rocon_python_utils
 import concert_msgs.msg as concert_msgs
 import std_msgs.msg as std_msgs
 import rocon_interactions
+import unique_id
 
 from .load_params import load_parameters_from_file
 
@@ -181,7 +181,7 @@ class ConcertServiceInstance(object):
     def _start_roslaunch(self):
         try:
             force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
-            roslaunch_file_path = rocon_utilities.find_resource_from_string(self.profile.launcher, extension='launch')
+            roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self.profile.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self._namespace)
             temp.write(launch_text)

@@ -10,7 +10,7 @@
 import rospy
 import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
-import rocon_utilities
+import rocon_python_utils
 
 ##############################################################################
 # Conductor
@@ -35,7 +35,7 @@ class ConcertMaster(object):
         concert_info = concert_msgs.ConcertInfo()
         concert_info.name = self.param['name']
         concert_info.description = self.param['description']
-        concert_info.icon = rocon_utilities.icon_resource_to_msg(self.param['icon'])
+        concert_info.icon = rocon_python_utils.ros.icon_resource_to_msg(self.param['icon'])
         concert_info.version = rocon_std_msgs.Strings.ROCON_VERSION
         self.publishers['info'].publish(concert_info)
         # Aliases
