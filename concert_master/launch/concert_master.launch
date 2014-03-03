@@ -26,7 +26,7 @@
     <param name="icon" value="$(arg concert_icon)"/>
   
     <!-- ******************************** Master ******************************* -->
-    <node pkg="concert_master" type="master.py" name="master"/>
+    <node pkg="rocon_master_info" type="master.py" name="master"/>
 
     <!-- ***************************** Service Manager *************************** -->
     <include file="$(find concert_service_manager)/launch/service_manager.launch">

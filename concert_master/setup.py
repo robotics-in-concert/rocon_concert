@@ -8,7 +8,6 @@ d = generate_distutils_setup(
     package_dir={'': 'src'},
     scripts=['scripts/concert_info',
              ],
-    requires=['rospy', 'concert_msgs', 'rocon_utilities']
 )
 
 setup(**d)
