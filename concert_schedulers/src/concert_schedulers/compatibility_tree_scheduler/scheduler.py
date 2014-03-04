@@ -7,16 +7,16 @@
 # Imports
 ##############################################################################
 
-import rospy
 import threading
 import copy
+
+import rospy
 import unique_id
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import rocon_scheduler_requests
 import rocon_uri
 
-# local imports
 import concert_schedulers.common as common
 from concert_schedulers.common.exceptions import FailedToAllocateException
 from .compatibility_tree import create_compatibility_tree, prune_compatibility_tree, CompatibilityTree

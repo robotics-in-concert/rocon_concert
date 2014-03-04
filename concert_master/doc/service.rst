@@ -39,7 +39,7 @@ Supported Launcher Type
 * *ROSLAUNCH* - <PACKAGE_NAME>/<LAUNCH_NAME>
 * *BPEL* - Coming Soon 
 
-Exmample
+Example
 --------
 
 **Admin**

@@ -14,9 +14,8 @@ import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
 import std_srvs.srv as std_srvs
 import rocon_python_comms
-import rocon_utilities
+import rocon_gateway_utils
 
-# local imports
 from .concert_client import ConcertClient, ConcertClientException
 from .ros_parameters import setup_ros_parameters
 
@@ -110,13 +109,13 @@ class Conductor(object):
                                                      and (c not in self._bad_clients)]
             # Create new clients info instance
             for gateway_hash_name in new_clients:
-                gateway_name = rocon_utilities.gateway_basename(gateway_hash_name)
+                gateway_name = rocon_gateway_utils.gateway_basename(gateway_hash_name)
                 try:
                     # remove the 16 byte hex hash from the name
                     same_name_count = 0
                     human_friendly_indices = set([])
                     for client in self._concert_clients.values():
-                        if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
+                        if gateway_name == rocon_gateway_utils.gateway_basename(client.gateway_name):
                             index = client.name.replace(gateway_name, "")
                             if index == "":
                                 human_friendly_indices.add("0")

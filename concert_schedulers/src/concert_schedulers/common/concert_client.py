@@ -10,9 +10,8 @@
 import rospy
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
 
-# local imports
-import utils
-from exceptions import FailedToStartAppsException, FailedToAllocateException
+from . import utils
+from .exceptions import FailedToStartAppsException, FailedToAllocateException
 
 ##############################################################################
 # Classes

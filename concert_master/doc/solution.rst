@@ -49,6 +49,8 @@ Solution Service Configuration
 
 *services* argument takes a resource location to specify list of services that serves solution. It includes name of services as well as parameters to override the default service parameters
 
+**Note that uuid is not overridable parameter** 
+
 
 Example
 ^^^^^^^

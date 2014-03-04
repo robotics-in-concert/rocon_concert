@@ -3,6 +3,9 @@
 	<name>concert_master</name>
 	<comment></comment>
 	<projects>
+		<project>rocon_console</project>
+		<project>rocon_python_comms</project>
+		<project>rocon_python_utils</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
