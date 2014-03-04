@@ -2,7 +2,7 @@
   <!-- ******************************* Arguments ******************************* -->
   <!-- Concert -->
   <arg name="concert_name" default="Pirate Concert"/>
-  <arg name="concert_icon" default="concert_master/rocon_text.png"/>
+  <arg name="concert_icon" default="rocon_icons/rocon.png"/>
   <arg name="concert_description" default="Pirates in concert."/>
   <!-- Gateways -->
   <arg name="hub_port" default="6380"/>
