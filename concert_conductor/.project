@@ -3,7 +3,7 @@
 	<name>concert_conductor</name>
 	<comment></comment>
 	<projects>
-		<project>rocon_utilities</project>
+		<project>rocon_gateway_utils</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -7,12 +7,13 @@
 # Imports
 ##############################################################################
 
+import threading
+
 import rospy
 import unique_id
 import rocon_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
 import concert_msgs.msg as concert_msgs
-import threading
 import rocon_uri
 
 ##############################################################################

@@ -17,7 +17,7 @@
   <arg name="services" default="[]"/> <!-- semi colon separated list of service description resource names e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
   <!-- Scheduler -->
-  <arg name="scheduler_type" default="demo"/>  <!-- options are demo, compatibility_tree -->
+  <arg name="scheduler_type" default="compatibility_tree"/>  <!-- options are compatibility_tree, ... -->
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
@@ -26,7 +26,7 @@
     <param name="icon" value="$(arg concert_icon)"/>
   
     <!-- ******************************** Master ******************************* -->
-    <node pkg="concert_master" type="master.py" name="master"/>
+    <node pkg="rocon_master_info" type="master.py" name="master"/>
 
     <!-- ***************************** Service Manager *************************** -->
     <include file="$(find concert_service_manager)/launch/service_manager.launch">
@@ -43,8 +43,8 @@
     <!-- ****************************** Scheduler ****************************** -->
     <node pkg="concert_schedulers" name="scheduler" type="$(arg scheduler_type)_scheduler.py"/>
 
-    <!-- **************************** Role Manager ***************************** -->
-    <node pkg="rocon_interactions" type="rocon_interactions_manager.py" name="interactions"/>
+    <!-- **************************** Interactions ***************************** -->
+    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
 
     <!-- ******************************** Hub ********************************** -->
     <include file="$(find rocon_hub)/launch/hub.launch">
