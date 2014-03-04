@@ -1,37 +1,38 @@
 #!/usr/bin/env python
-#       
+#
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_multimaster/license/LICENSE 
+#
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 
 ##############################################################################
 # Imports
 ##############################################################################
 
-import sys
 import socket
-import re
 import argparse
+import threading
+
 import rospy
 import rosgraph
 import unique_id
-import threading
 import scheduler_msgs.msg as scheduler_msgs
-import rocon_utilities
 import rocon_console.console as console
 
 ##############################################################################
 # Functions
 ##############################################################################
-    
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Scans for and prettifies scheduler request feedback information')
     args = parser.parse_args()
     return args
 
+
 def resolve_scheduler_request_topics():
     master = rosgraph.Master(rospy.get_name())
-    publishers, unused_subscribers, unused_services = master.getSystemState()
+    unused_publishers, unused_subscribers, unused_services = master.getSystemState()
     topics = set()
     published_topics = master.getPublishedTopics(subgraph='')
     for topic_info in published_topics:
@@ -43,6 +44,7 @@ def resolve_scheduler_request_topics():
             if len(trailing_name) > 16:
                 topics.add(topic_name)
     return topics
+
 
 def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
     '''
@@ -82,15 +84,16 @@ def pretty_print_scheduler_requests(scheduler_requests, updated_requester_id):
 # Class
 ##############################################################################
 
+
 class Gatherer(object):
-    
+
     def __init__(self):
         self._lock = threading.Lock()
         self._subscribers = {}
         self._refresh()
         self._timer = rospy.Timer(rospy.Duration(5.0), self._refresh)
         self._scheduler_requests = {}
-    
+
     def _refresh(self, unused_event=None):
         try:
             topics = resolve_scheduler_request_topics()
@@ -104,13 +107,13 @@ class Gatherer(object):
                 del self._subscribers[topic_name]
         except socket.error:
             pass  # ros is shutting down
-    
+
     def _listener_callback(self, msg):
         self._lock.acquire()
         self._scheduler_requests[unique_id.toHexString(msg.requester)] = msg.requests
         pretty_print_scheduler_requests(self._scheduler_requests, unique_id.toHexString(msg.requester))
         self._lock.release()
-    
+
     def shutdown(self):
         self._timer.shutdown()
 

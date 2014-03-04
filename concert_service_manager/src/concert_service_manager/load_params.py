@@ -8,7 +8,7 @@
 
 import rospy
 import yaml
-import rocon_utilities
+import rocon_python_utils
 
 ##############################################################################
 # Methods
@@ -19,7 +19,7 @@ INVALID_PARAM = ['name', 'description', 'uuid']
 
 def load_parameters_from_file(parameter_file, namespace, name, load):
 
-    filepath = rocon_utilities.find_resource_from_string(parameter_file)
+    filepath = rocon_python_utils.ros.find_resource_from_string(parameter_file)
 
     with open(filepath) as f:
         params = yaml.load(f)

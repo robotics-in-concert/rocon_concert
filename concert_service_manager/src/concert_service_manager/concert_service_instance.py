@@ -11,13 +11,13 @@ import os
 import subprocess
 import tempfile
 import threading
-import unique_id
 
 import roslaunch
-import rocon_utilities
+import rocon_python_utils
 import concert_msgs.msg as concert_msgs
 import std_msgs.msg as std_msgs
 import rocon_interactions
+import unique_id
 
 from .load_params import load_parameters_from_file
 
@@ -65,7 +65,7 @@ class ConcertServiceInstance(object):
     def is_enabled(self):
         return self.profile.enabled
 
-    def enable(self, unique_identifier, role_app_loader):
+    def enable(self, unique_identifier, interactions_loader):
         '''
         We don't need particularly complicated error codes and messages here as we don't do
         any decision making (yet) on the result. Just true/false.
@@ -73,8 +73,8 @@ class ConcertServiceInstance(object):
         @param unique_identifier : unique id for this instance
         @type : uuid.UUID
 
-        @param role_app_loader : used to load role-app configurations on the role manager
-        @type rocon_interactions.RoleAppLoader
+        @param interactions_loader : used to load interactions
+        @type rocon_interactions.InteractionsLoader
         '''
         self._lock.acquire()
         if self.profile.enabled:
@@ -85,8 +85,8 @@ class ConcertServiceInstance(object):
             self.profile.uuid = unique_id.toMsg(unique_identifier)
             self._start()
             if self.profile.interactions != '':
-                # Can raise ResourceNotFoundException, InvalidRoleAppYaml
-                role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=True)
+                # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
+                interactions_loader.load(self.profile.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
 
             if self.profile.parameters != '':
@@ -97,15 +97,15 @@ class ConcertServiceInstance(object):
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.profile.name)
             message = "success"
-        except (rocon_utilities.exceptions.ResourceNotFoundException, rocon_interactions.exceptions.InvalidRoleAppYaml) as e:
+        except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
             message = "failed to enable service [%s][%s]" % (self.profile.name, str(e))
             self.logwarn(message)
         self._lock.release()
         return self.profile.enabled, message
 
-    def disable(self, role_app_loader, unload_resources):
+    def disable(self, interactions_loader, unload_resources):
         '''
-        @param role_app_loader : used to load role-app configurations on the role manager
+        @param interactions_loader : used to unload interactions.
         @type rocon_interactions.RoleAppLoader
 
         @param unload_resources callback to the scheduler's request resource which will unload all resources for that service.
@@ -120,8 +120,8 @@ class ConcertServiceInstance(object):
         self._shutdown_publisher.publish(std_msgs.Empty())
         try:
             if self.profile.interactions != '':
-                # Can raise ResourceNotFoundException, InvalidRoleAppYaml
-                role_app_loader.load(self.profile.interactions, service_name=self.profile.name, load=False)
+                # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
+                interactions_loader.load(self.profile.interactions, namespace=self._namespace, load=False)
             if self.profile.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
                 load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=False)
@@ -156,7 +156,7 @@ class ConcertServiceInstance(object):
             unload_resources(self.profile.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
-        except (rocon_utilities.exceptions.ResourceNotFoundException, rocon_interactions.exceptions.InvalidRoleAppYaml) as e:
+        except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
             success = False
             message = "error while disabling [%s][%s]" % (self.profile.name, str(e))
         self._lock.release()
@@ -181,7 +181,7 @@ class ConcertServiceInstance(object):
     def _start_roslaunch(self):
         try:
             force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
-            roslaunch_file_path = rocon_utilities.find_resource_from_string(self.profile.launcher, extension='launch')
+            roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self.profile.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self._namespace)
             temp.write(launch_text)
