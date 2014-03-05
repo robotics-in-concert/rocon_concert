@@ -46,6 +46,7 @@ def load_service_profiles(service_configuration):
         with open(filename) as f:
             service_profile = concert_msgs.ConcertService()
             service_yaml = yaml.load(f)
+            service_yaml['resource'] = service
 
             if services_conf[service]:
                 # override
@@ -75,7 +76,7 @@ def load_service_profiles(service_configuration):
             if service_profile.name in service_profiles.keys():
                 rospy.logwarn("Service Manager : service description with this name already present, not adding [%s]" % service_profile.name)
             else:
-                service_profiles[service_profile.name] = service_profile
+                service_profiles[service] = service_profile
 
     return service_profiles
 

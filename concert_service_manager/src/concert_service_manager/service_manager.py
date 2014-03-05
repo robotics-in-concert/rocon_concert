@@ -41,13 +41,13 @@ class ServiceManager(object):
         '''
         service_profiles = load_service_profiles(self._param['services'])
         self.lock.acquire()
-        for name, service_profile in service_profiles.items():
-            self._concert_services[name] = ConcertServiceInstance(service_profile=service_profile,
+        for resource, service_profile in service_profiles.items():
+            self._concert_services[resource] = ConcertServiceInstance(service_profile=service_profile,
                                                                                       update_callback=self.update)
         self.lock.release()
         if self._param['auto_enable_services']:
-            for name in self._concert_services.keys():
-                self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+            for resource in self._concert_services.keys():
+                self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(resource, True))
         self.update()
 
     def _setup_ros_parameters(self):
@@ -94,31 +94,31 @@ class ServiceManager(object):
         #self._publishers['request_resources'].publish(request_resources)
 
     def _ros_service_enable_concert_service(self, req):
-        name = req.name
+        resource = req.resource
 
         success = False
         message = "unknown error"
 
         if req.enable:
-            self.loginfo("serving request to enable '%s'" % name)
+            self.loginfo("serving request to enable '%s'" % resource)
             self._reload_solution_configuration()
         else:
-            self.loginfo("serving request to disable '%s'" % name)
-        if name in self._concert_services:
+            self.loginfo("serving request to disable '%s'" % resource)
+        if resource in self._concert_services:
             if req.enable:
                 unique_identifier = unique_id.fromRandom()
-                self._setup_service_parameters(self._concert_services[name].profile.name,
-                                               self._concert_services[name].profile.description,
+                self._setup_service_parameters(self._concert_services[resource].profile.name,
+                                               self._concert_services[resource].profile.description,
                                                unique_identifier)
-                success, message = self._concert_services[name].enable(unique_identifier, self._interactions_loader)
+                success, message = self._concert_services[resource].enable(unique_identifier, self._interactions_loader)
                 if not success:
-                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
+                    self._cleanup_service_parameters(self._concert_services[resource].profile.name)
             else:
-                self._cleanup_service_parameters(self._concert_services[name].profile.name)
-                success, message = self._concert_services[name].disable(self._interactions_loader, self._unload_resources)
+                self._cleanup_service_parameters(self._concert_services[resource].profile.name)
+                success, message = self._concert_services[resource].disable(self._interactions_loader, self._unload_resources)
         else:
             service_names = self._concert_services.keys()
-            message = "'" + str(name) + "' does not exist " + str(service_names)
+            message = "'" + str(resource) + "' does not exist " + str(service_names)
             self.logwarn(message)
             success = False
 
