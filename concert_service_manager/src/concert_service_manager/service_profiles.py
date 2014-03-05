@@ -34,7 +34,7 @@ def load_service_profiles(service_configuration):
     @rtype { service_name : concert_msgs.ConcertService }
     """
     services_conf = load_service_configuration(service_configuration)
-    services_path = rocon_python_utils.ros.extract_tags_from_packages(rocon_std_msgs.Strings.TAG_SERVICE)
+    services_path, _invalid_service_path = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
     
     # filter the not found resources
     found_services = [r for r in services_conf if r in services_path]
