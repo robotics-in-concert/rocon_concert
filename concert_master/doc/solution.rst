@@ -47,6 +47,10 @@ Preruntime Solution Configuration
 Solution Service Configuration
 ------------------------------
 
+.. code-block:: yaml
+  
+    <arg name="services" default=""/> <!-- e.g) concert_tutorial/tutorial.services
+
 *services* argument takes a resource location to specify list of services that serves solution. It includes name of services as well as parameters to override the default service parameters
 
 **Note that uuid is not overridable parameter** 
@@ -59,12 +63,12 @@ Example
 
 .. code-block:: yaml
   
-    - name: rocon_service_turtlesim/turtlesim
+    - resource: rocon_service_turtlesim/turtlesim
       override:
         name: My 'TurtleSim'
         priority: 15
         turtle_color: green
-    - name: rocon_service_admin/admin
+    - resource: rocon_service_admin/admin
       override:
         description: admin is useful
     - name: turtle_concert/turtle_pond
