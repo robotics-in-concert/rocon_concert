@@ -38,6 +38,7 @@ Supported Launcher Type
 
 * *ROSLAUNCH* - <PACKAGE_NAME>/<LAUNCH_NAME>
 * *BPEL* - Coming Soon 
+* *SHADOW* - TODO Add description later
 
 Example
 --------
