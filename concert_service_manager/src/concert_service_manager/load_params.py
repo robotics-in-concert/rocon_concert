@@ -15,8 +15,6 @@ import rocon_python_utils
 ##############################################################################
 
 INVALID_PARAM = ['name', 'description', 'uuid']
-
-
 def load_parameters_from_file(parameter_file, namespace, name, load):
 
     filepath = rocon_python_utils.ros.find_resource_from_string(parameter_file)

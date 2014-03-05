@@ -41,8 +41,8 @@ class ServiceManager(object):
         '''
         service_profiles = load_service_profiles(self._param['services'])
         self.lock.acquire()
-        for service_profile in service_profiles:
-            self._concert_services[service_profile.name] = ConcertServiceInstance(service_profile=service_profile,
+        for name, service_profile in service_profiles.items():
+            self._concert_services[name] = ConcertServiceInstance(service_profile=service_profile,
                                                                                       update_callback=self.update)
         self.lock.release()
         if self._param['auto_enable_services']:
@@ -101,6 +101,7 @@ class ServiceManager(object):
 
         if req.enable:
             self.loginfo("serving request to enable '%s'" % name)
+            self._reload_solution_configuration()
         else:
             self.loginfo("serving request to disable '%s'" % name)
         if name in self._concert_services:
@@ -122,6 +123,14 @@ class ServiceManager(object):
             success = False
 
         return concert_srvs.EnableServiceResponse(success, message)
+
+    def _reload_solution_configuration(self):
+        '''
+            Load service profiles from solution file and update disabled services configuration
+        '''
+        service_profiles = load_service_profiles(self._param['services'])
+        self.logwarn(str(service_profiles.keys()))
+        unloaded_services = [s for s in service_profiles if not s in self._concert_services]
 
     def update(self):
         rs = [v.to_msg() for v in self._concert_services.values()]
