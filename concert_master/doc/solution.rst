@@ -49,7 +49,7 @@ Solution Service Configuration
 
 .. code-block:: yaml
   
-    <arg name="services" default=""/> <!-- e.g) concert_tutorial/tutorial.services
+    <arg name="services" default=""/> <!-- e.g) concert_tutorial/tutorial.services -->
 
 *services* argument takes a resource location to specify list of services that serves solution. It includes name of services as well as parameters to override the default service parameters
 
