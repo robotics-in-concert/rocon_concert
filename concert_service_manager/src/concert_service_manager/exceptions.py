@@ -15,3 +15,6 @@
 
 class InvalidServiceDescription(Exception):
     pass
+
+class NoConfigurationUpdatException(Exception):
+    pass

@@ -14,8 +14,8 @@ import rocon_python_utils
 # Methods
 ##############################################################################
 
-INVALID_PARAM = ['uuid']
-def load_parameters_from_file(parameter_file, namespace, name, load):
+INVALID_PARAM = ['name','description','uuid']
+def load_parameters_from_file(parameter_file, namespace, resource, load):
 
     filepath = rocon_python_utils.ros.find_resource_from_string(parameter_file)
 
@@ -23,7 +23,9 @@ def load_parameters_from_file(parameter_file, namespace, name, load):
         params = yaml.load(f)
         for k, v in params.items():
             if k in INVALID_PARAM:
-                rospy.logwarn("Service Manager: %s%s [%s]" % (str(k), ' is prohibitted parameter. Ignoring...', name))
+                if load:
+                    rospy.logwarn("Service Manager: %s%s [%s]" % (str(k), ' is prohibitted parameter. Ignoring...', resource))
+                continue
             param_name = namespace + '/' + k
             if load:
                 rospy.set_param(param_name, v)

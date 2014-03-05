@@ -13,6 +13,7 @@ import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
 
+from .exceptions import NoConfigurationUpdatException
 from .concert_service_instance import ConcertServiceInstance
 from .service_profiles import load_service_profiles
 
@@ -40,13 +41,10 @@ class ServiceManager(object):
           Currently only called at the end of service manager construction.
         '''
         service_profiles = load_service_profiles(self._param['services'])
-        self.lock.acquire()
-        for resource, service_profile in service_profiles.items():
-            self._concert_services[resource] = ConcertServiceInstance(service_profile=service_profile,
-                                                                                      update_callback=self.update)
-        self.lock.release()
+        self._load_services(service_profiles)
+
         if self._param['auto_enable_services']:
-            for resource in self._concert_services.keys():
+            for resource in service_profiles.keys():
                 self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(resource, True))
         self.update()
 
@@ -101,11 +99,11 @@ class ServiceManager(object):
 
         if req.enable:
             self.loginfo("serving request to enable '%s'" % resource)
-            self._reload_solution_configuration()
         else:
             self.loginfo("serving request to disable '%s'" % resource)
         if resource in self._concert_services:
             if req.enable:
+                self._reload_solution_configuration()
                 unique_identifier = unique_id.fromRandom()
                 self._setup_service_parameters(self._concert_services[resource].profile.name,
                                                self._concert_services[resource].profile.description,
@@ -116,21 +114,38 @@ class ServiceManager(object):
             else:
                 self._cleanup_service_parameters(self._concert_services[resource].profile.name)
                 success, message = self._concert_services[resource].disable(self._interactions_loader, self._unload_resources)
+                self._reload_solution_configuration()
         else:
             service_names = self._concert_services.keys()
             message = "'" + str(resource) + "' does not exist " + str(service_names)
             self.logwarn(message)
             success = False
-
+        self.update()
         return concert_srvs.EnableServiceResponse(success, message)
 
     def _reload_solution_configuration(self):
         '''
             Load service profiles from solution file and update disabled services configuration
         '''
-        service_profiles = load_service_profiles(self._param['services'])
-        self.logwarn(str(service_profiles.keys()))
-        unloaded_services = [s for s in service_profiles if not s in self._concert_services]
+        try:
+            service_profiles = load_service_profiles(self._param['services'])
+            # Load newly added services
+            unloaded_services = {s: v for s, v in service_profiles.items() if not s in self._concert_services}
+            self._load_services(unloaded_services)
+            # Update configuration of disabled services
+            disabled_services = {s: service_profiles[s] for s, v in self._concert_services.items() if not v.is_enabled()}
+            self._load_services(disabled_services)
+            # TODO :What if service has been removed from solution configuration??
+        except NoConfigurationUpdatException as e:
+            # It is just escaping mechanism if there is nothing to update in service configuration
+            pass
+
+    def _load_services(self, service_profiles):
+        self.lock.acquire()
+        for resource, service_profile in service_profiles.items():
+            self._concert_services[resource] = ConcertServiceInstance(service_profile=service_profile,
+                                                                                      update_callback=self.update)
+        self.lock.release()
 
     def update(self):
         rs = [v.to_msg() for v in self._concert_services.values()]

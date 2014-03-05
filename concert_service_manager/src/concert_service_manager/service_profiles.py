@@ -16,6 +16,8 @@ import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 import unique_id
 
+from .exceptions import NoConfigurationUpdatException
+
 ##############################################################################
 # ServiceList
 ##############################################################################
@@ -78,9 +80,11 @@ def load_service_profiles(service_configuration):
             else:
                 service_profiles[service] = service_profile
 
+    rospy.loginfo("Service Manager : Solution Configuration has been updated")
     return service_profiles
 
 
+LAST_CONFIG_LOADED = None
 def load_service_configuration(service_configuration):
     '''
         Loads service configuration file
@@ -89,7 +93,14 @@ def load_service_configuration(service_configuration):
         @type str
     '''
     filepath = rocon_python_utils.ros.find_resource_from_string(service_configuration)
-    print "last modified: %s" % time.ctime(os.path.getmtime(filepath))
+    modified_time = time.ctime(os.path.getmtime(filepath))
+    global LAST_CONFIG_LOADED
+
+    if LAST_CONFIG_LOADED:
+        if modified_time == LAST_CONFIG_LOADED: 
+            raise NoConfigurationUpdatException("It is up-to-date")
+
+    LAST_CONFIG_LOADED = modified_time
     services = {}
     with open(filepath) as f:
         services_yaml = yaml.load(f)
