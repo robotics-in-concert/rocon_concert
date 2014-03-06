@@ -43,12 +43,12 @@ def load_service_profiles(service_configuration):
 
     # load the service profiles
     service_profiles = {}
-    for resource, override in services_conf:
-        filename = services_path[resource]
+    for resource_name, override in services_conf:
+        filename = services_path[resource_name]
         with open(filename) as f:
             service_profile = concert_msgs.ConcertService()
             service_yaml = yaml.load(f)
-            service_yaml['resource'] = resource 
+            service_yaml['resource_name'] = resource_name
 
             if override:
                 # override
@@ -106,7 +106,7 @@ def load_service_configuration(service_configuration):
         services_yaml = yaml.load(f)
 
         for s in services_yaml: 
-            r = s['resource']
+            r = s['resource_name']
             o = s['override'] if 'override' in s else None
             services.append((r,o))
 

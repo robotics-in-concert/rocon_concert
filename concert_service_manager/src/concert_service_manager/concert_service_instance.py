@@ -91,7 +91,7 @@ class ConcertServiceInstance(object):
 
             if self.profile.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
-                load_parameters_from_file(self.profile.parameters, namespace, self.profile.resource, load=True)
+                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
 
             self.profile.enabled = True
             self._update_callback()

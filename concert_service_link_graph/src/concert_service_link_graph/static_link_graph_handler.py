@@ -118,6 +118,38 @@ class StaticLinkGraphHandler(object):
 ##############################################################################
 
 
+def load_linkgraph_from_yaml(yaml):
+    """
+        Loading a linkgraph from yaml and returns its name, and linkgraph
+
+        @param yaml - yaml 
+        @type str
+
+        @return name - name of linkgraph
+        @rtype str
+        @return linkgraph
+        @rtype concert_msgs.msg.LinkGraph
+    """
+    lg = concert_msgs.LinkGraph()
+    name = yaml['name']
+    for node in yaml['nodes']:
+        node['min'] = node['min'] if 'min' in node else 1
+        node['max'] = node['max'] if 'max' in node else 1
+        node['force_name_matching'] = node['force_name_matching'] if 'force_name_matching' in node else False
+        lg.nodes.append(concert_msgs.LinkNode(node['id'], node['uri'], node['min'], node['max'], node['force_name_matching']))
+    for topic in yaml['topics']:
+        lg.topics.append(concert_msgs.LinkConnection(topic['id'], topic['type']))
+    if 'service' in yaml:
+        for service in yaml['services']:
+            lg.services.append(concert_msgs.LinkConnection(service['id'], service['type']))
+    for action in yaml['actions']:
+        lg.actions.append(concert_msgs.LinkConnection(action['id'], action['type']))
+    for edge in yaml['edges']:
+        lg.edges.append(concert_msgs.LinkEdge(edge['start'], edge['finish'], edge['remap_from'], edge['remap_to']))
+
+    return name, lg
+
+
 def load_linkgraph_from_file(filename):
     """
         Loading a linkgraph from file and returns its name, and linkgraph
@@ -130,29 +162,10 @@ def load_linkgraph_from_file(filename):
         @return linkgraph
         @rtype concert_msgs.msg.LinkGraph
     """
-
-    lg = concert_msgs.LinkGraph()
-
     with open(filename) as f:
         impl = yaml.load(f)
-        name = impl['name']
+        name, lg = load_linkgraph_from_yaml(impl)
 
-        for node in impl['nodes']:
-            node['min'] = node['min'] if 'min' in node else 1
-            node['max'] = node['max'] if 'max' in node else 1
-            node['force_name_matching'] = node['force_name_matching'] if 'force_name_matching' in node else False
-
-            lg.nodes.append(concert_msgs.LinkNode(node['id'], node['uri'], node['min'], node['max'], node['force_name_matching']))
-        for topic in impl['topics']:
-            lg.topics.append(concert_msgs.LinkConnection(topic['id'], topic['type']))
-
-        if 'service' in impl:
-            for service in impl['services']:
-                lg.services.append(concert_msgs.LinkConnection(service['id'], service['type']))
-        for action in impl['actions']:
-            lg.actions.append(concert_msgs.LinkConnection(action['id'], action['type']))
-        for edge in impl['edges']:
-            lg.edges.append(concert_msgs.LinkEdge(edge['start'], edge['finish'], edge['remap_from'], edge['remap_to']))
     return name, lg
 
 
