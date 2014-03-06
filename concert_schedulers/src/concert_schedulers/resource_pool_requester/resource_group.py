@@ -34,8 +34,8 @@ class ResourcePoolGroup(object):
           @param minimum
           @type int
 
-          @param resources : list of resources eligible for use in constructing scheduler requests
-          @type { uuid hextstring : scheduler_msgs.Resource }
+          @param resources : dict of resources eligible for use in constructing scheduler requests
+          @type { uuid hexstring : scheduler_msgs.Resource }
         '''
         self._resources = {}
         for resource in resources:

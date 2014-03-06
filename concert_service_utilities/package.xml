@@ -15,4 +15,5 @@
   <build_depend>rostest</build_depend>
   <run_depend>rospy</run_depend>
   <run_depend>rosunit</run_depend>
+  <run_depend>rocon_icons</run_depend>
 </package>
