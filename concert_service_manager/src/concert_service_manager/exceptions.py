@@ -18,3 +18,9 @@ class InvalidServiceDescription(Exception):
 
 class NoConfigurationUpdatException(Exception):
     pass
+
+class NoServiceExistException(Exception):
+
+    def __init__(self, name):
+        self.name = name
+    pass

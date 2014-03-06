@@ -37,22 +37,22 @@ def load_service_profiles(service_configuration):
     services_path, _invalid_service_path = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
     
     # filter the not found resources
-    found_services = [r for r in services_conf if r in services_path]
+    found_services = [(r,s) for r, s in services_conf if r in services_path]
     if len(found_services) < len(services_conf):
         rospy.logwarn("Service Manager : some services were not found on the package path %s" % not_found_resource_names)
 
     # load the service profiles
     service_profiles = {}
-    for service in services_conf:
-        filename = services_path[service]
+    for resource, override in services_conf:
+        filename = services_path[resource]
         with open(filename) as f:
             service_profile = concert_msgs.ConcertService()
             service_yaml = yaml.load(f)
-            service_yaml['resource'] = service
+            service_yaml['resource'] = resource 
 
-            if services_conf[service]:
+            if override:
                 # override
-                override_parameters(service_yaml, services_conf[service])
+                override_parameters(service_yaml, override)
 
             # replace icon resource name to real icon
             if 'icon' in service_yaml:
@@ -78,7 +78,7 @@ def load_service_profiles(service_configuration):
             if service_profile.name in service_profiles.keys():
                 rospy.logwarn("Service Manager : service description with this name already present, not adding [%s]" % service_profile.name)
             else:
-                service_profiles[service] = service_profile
+                service_profiles[service_profile.name] = service_profile
 
     rospy.loginfo("Service Manager : Solution Configuration has been updated")
     return service_profiles
@@ -101,12 +101,14 @@ def load_service_configuration(service_configuration):
             raise NoConfigurationUpdatException("It is up-to-date")
 
     LAST_CONFIG_LOADED = modified_time
-    services = {}
+    services = [] 
     with open(filepath) as f:
         services_yaml = yaml.load(f)
 
         for s in services_yaml: 
-            services[s['resource']] = s['override'] if 'override' in s else None
+            r = s['resource']
+            o = s['override'] if 'override' in s else None
+            services.append((r,o))
 
     return services
 

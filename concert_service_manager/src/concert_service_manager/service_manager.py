@@ -13,7 +13,7 @@ import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
 
-from .exceptions import NoConfigurationUpdatException
+from .exceptions import NoConfigurationUpdatException, NoServiceExistException
 from .concert_service_instance import ConcertServiceInstance
 from .service_profiles import load_service_profiles
 
@@ -44,8 +44,8 @@ class ServiceManager(object):
         self._load_services(service_profiles)
 
         if self._param['auto_enable_services']:
-            for resource in service_profiles.keys():
-                self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(resource, True))
+            for name in service_profiles.keys():
+                self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
         self.update()
 
     def _setup_ros_parameters(self):
@@ -92,32 +92,39 @@ class ServiceManager(object):
         #self._publishers['request_resources'].publish(request_resources)
 
     def _ros_service_enable_concert_service(self, req):
-        resource = req.resource
+        name = req.name
 
         success = False
         message = "unknown error"
 
         if req.enable:
-            self.loginfo("serving request to enable '%s'" % resource)
+            self.loginfo("serving request to enable '%s'" % name)
         else:
-            self.loginfo("serving request to disable '%s'" % resource)
-        if resource in self._concert_services:
+            self.loginfo("serving request to disable '%s'" % name)
+        try:
             if req.enable:
                 self._reload_solution_configuration()
+                if not name in self._concert_services:
+                    raise NoServiceExistException(name)
                 unique_identifier = unique_id.fromRandom()
-                self._setup_service_parameters(self._concert_services[resource].profile.name,
-                                               self._concert_services[resource].profile.description,
+                self._setup_service_parameters(self._concert_services[name].profile.name,
+                                               self._concert_services[name].profile.description,
                                                unique_identifier)
-                success, message = self._concert_services[resource].enable(unique_identifier, self._interactions_loader)
+                success, message = self._concert_services[name].enable(unique_identifier, self._interactions_loader)
                 if not success:
-                    self._cleanup_service_parameters(self._concert_services[resource].profile.name)
+                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
             else:
-                self._cleanup_service_parameters(self._concert_services[resource].profile.name)
-                success, message = self._concert_services[resource].disable(self._interactions_loader, self._unload_resources)
+                if not name in self._concert_services:
+                    raise NoServiceExistException(name)
+
+                # Cause an error if it tries to disable a service that is already disabled.
+                if self._concert_services[name].is_enabled():
+                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
+                success, message = self._concert_services[name].disable(self._interactions_loader, self._unload_resources)
                 self._reload_solution_configuration()
-        else:
+        except NoServiceExistException as e:
             service_names = self._concert_services.keys()
-            message = "'" + str(resource) + "' does not exist " + str(service_names)
+            message = "'" + str(e.name) + "' does not exist " + str(service_names)
             self.logwarn(message)
             success = False
         self.update()
@@ -129,21 +136,29 @@ class ServiceManager(object):
         '''
         try:
             service_profiles = load_service_profiles(self._param['services'])
-            # Load newly added services
-            unloaded_services = {s: v for s, v in service_profiles.items() if not s in self._concert_services}
-            self._load_services(unloaded_services)
+
+            # replace configurations of disabled services
+
             # Update configuration of disabled services
-            disabled_services = {s: service_profiles[s] for s, v in self._concert_services.items() if not v.is_enabled()}
+            deleted_services = {s: v for s, v in self._concert_services.items() if not v.is_enabled() and not s in service_profiles}
+            for s in deleted_services:
+                del self._concert_services[s]
+
+            disabled_services = {s: service_profiles[s] for s, v in self._concert_services.items() if not v.is_enabled() and s in service_profiles}
             self._load_services(disabled_services)
-            # TODO :What if service has been removed from solution configuration??
+
+            # Load newly added services
+            new_services = {s: v for s, v in service_profiles.items() if not s in self._concert_services}
+            self._load_services(new_services)
+
         except NoConfigurationUpdatException as e:
             # It is just escaping mechanism if there is nothing to update in service configuration
             pass
 
     def _load_services(self, service_profiles):
         self.lock.acquire()
-        for resource, service_profile in service_profiles.items():
-            self._concert_services[resource] = ConcertServiceInstance(service_profile=service_profile,
+        for name, service_profile in service_profiles.items():
+            self._concert_services[name] = ConcertServiceInstance(service_profile=service_profile,
                                                                                       update_callback=self.update)
         self.lock.release()
 
