@@ -108,6 +108,7 @@ if __name__ == '__main__':
 
     console.pretty_println('Concert Service Information', console.bold)
     for s in service_info.services:
+        print_info('  Resource      : ', s.resource)
         print_info('  Name          : ', s.name)
         print_info('  Description   : ', s.description)
         print_info('  Author        : ', s.author)
