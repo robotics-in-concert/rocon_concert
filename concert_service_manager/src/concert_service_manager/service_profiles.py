@@ -22,10 +22,14 @@ from .exceptions import NoConfigurationUpdatException
 # ServiceList
 ##############################################################################
 
+
 def load_service_profiles(service_configuration):
     """
     Scan the package path looking for service exports and grab the ones
     we are interested in and load their service profiles.
+
+    We skip over any services that were configured but not found and just
+    provide a ros warning.
 
     @param service_resource_names : list of services in resource name ('pkg/name') format (name has no extension)
     @type list of str
@@ -33,17 +37,18 @@ def load_service_profiles(service_configuration):
     @return the loaded service descriptions.
     @rtype { service_name : concert_msgs.ConcertService }
     """
-    services_conf = load_service_configuration(service_configuration)
+    services_conf = load_service_configuration(service_configuration)  # list of (service, override) resource name tuples
     services_path, _invalid_service_path = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
-    
+
     # filter the not found resources
-    found_services = [(r,s) for r, s in services_conf if r in services_path]
-    if len(found_services) < len(services_conf):
-        rospy.logwarn("Service Manager : some services were not found on the package path %s" % not_found_resource_names)
+    found_service_resources = [(r, s) for r, s in services_conf if r in services_path.keys()]
+    not_found_services = [r for r, unused_s in services_conf if r not in services_path.keys()]
+    if not_found_services:
+        rospy.logwarn("Service Manager : some services were not found on the package path %s" % not_found_services)
 
     # load the service profiles
     service_profiles = {}
-    for resource_name, override in services_conf:
+    for resource_name, override in found_service_resources:
         filename = services_path[resource_name]
         with open(filename) as f:
             service_profile = concert_msgs.ConcertService()
@@ -83,7 +88,6 @@ def load_service_profiles(service_configuration):
     rospy.loginfo("Service Manager : Solution Configuration has been updated")
     return service_profiles
 
-
 LAST_CONFIG_LOADED = None
 def load_service_configuration(service_configuration):
     '''
@@ -97,19 +101,18 @@ def load_service_configuration(service_configuration):
     global LAST_CONFIG_LOADED
 
     if LAST_CONFIG_LOADED:
-        if modified_time == LAST_CONFIG_LOADED: 
+        if modified_time == LAST_CONFIG_LOADED:
             raise NoConfigurationUpdatException("It is up-to-date")
 
     LAST_CONFIG_LOADED = modified_time
-    services = [] 
+    services = []
     with open(filepath) as f:
         services_yaml = yaml.load(f)
 
-        for s in services_yaml: 
+        for s in services_yaml:
             r = s['resource_name']
             o = s['override'] if 'override' in s else None
-            services.append((r,o))
-
+            services.append((r, o))
     return services
 
 
