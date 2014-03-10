@@ -16,7 +16,7 @@ import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 import unique_id
 
-from .exceptions import NoConfigurationUpdatException
+from .exceptions import NoConfigurationUpdateException
 
 ##############################################################################
 # ServiceList
@@ -89,20 +89,22 @@ def load_service_profiles(service_configuration):
     return service_profiles
 
 LAST_CONFIG_LOADED = None
-def load_service_configuration(service_configuration):
+
+
+def load_service_configuration(resource_name):
     '''
         Loads service configuration file
 
-        @param service configuration file (e.g concert_tutorial/tutorial.services)
-        @type str
+        :param resource_name: yaml file listing services to load (e.g concert_tutorial/tutorial.services)
+        :type resource_name: str
     '''
-    filepath = rocon_python_utils.ros.find_resource_from_string(service_configuration)
+    filepath = rocon_python_utils.ros.find_resource_from_string(resource_name)
     modified_time = time.ctime(os.path.getmtime(filepath))
     global LAST_CONFIG_LOADED
 
     if LAST_CONFIG_LOADED:
         if modified_time == LAST_CONFIG_LOADED:
-            raise NoConfigurationUpdatException("It is up-to-date")
+            raise NoConfigurationUpdateException("It is up-to-date")
 
     LAST_CONFIG_LOADED = modified_time
     services = []

@@ -13,7 +13,7 @@ import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
 
-from .exceptions import NoConfigurationUpdatException, NoServiceExistException
+from .exceptions import NoConfigurationUpdateException, NoServiceExistsException
 from .concert_service_instance import ConcertServiceInstance
 from .service_profiles import load_service_profiles
 
@@ -105,7 +105,7 @@ class ServiceManager(object):
             if req.enable:
                 self._reload_solution_configuration()
                 if not name in self._concert_services:
-                    raise NoServiceExistException(name)
+                    raise NoServiceExistsException(name)
                 unique_identifier = unique_id.fromRandom()
                 self._setup_service_parameters(self._concert_services[name].profile.name,
                                                self._concert_services[name].profile.description,
@@ -115,14 +115,14 @@ class ServiceManager(object):
                     self._cleanup_service_parameters(self._concert_services[name].profile.name)
             else:
                 if not name in self._concert_services:
-                    raise NoServiceExistException(name)
+                    raise NoServiceExistsException(name)
 
                 # Cause an error if it tries to disable a service that is already disabled.
                 if self._concert_services[name].is_enabled():
                     self._cleanup_service_parameters(self._concert_services[name].profile.name)
                 success, message = self._concert_services[name].disable(self._interactions_loader, self._unload_resources)
                 self._reload_solution_configuration()
-        except NoServiceExistException as e:
+        except NoServiceExistsException as e:
             service_names = self._concert_services.keys()
             message = "'" + str(e.name) + "' does not exist " + str(service_names)
             self.logwarn(message)
@@ -151,7 +151,7 @@ class ServiceManager(object):
             new_services = {s: v for s, v in service_profiles.items() if not s in self._concert_services}
             self._load_services(new_services)
 
-        except NoConfigurationUpdatException as e:
+        except NoConfigurationUpdateException as unused_e:
             # It is just escaping mechanism if there is nothing to update in service configuration
             pass
 

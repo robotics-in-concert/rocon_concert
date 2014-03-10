@@ -16,10 +16,12 @@
 class InvalidServiceDescription(Exception):
     pass
 
-class NoConfigurationUpdatException(Exception):
+
+class NoConfigurationUpdateException(Exception):
     pass
 
-class NoServiceExistException(Exception):
+
+class NoServiceExistsException(Exception):
 
     def __init__(self, name):
         self.name = name
