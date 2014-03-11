@@ -66,7 +66,7 @@ class CompatibilityTreeScheduler(object):
 
     def _setup_ros_api(self, concert_clients_topic_name):
         self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_subscriber_concert_client_changes)
-        self._publishers['known_resources'] = rospy.Publisher('~known_resources', scheduler_msgs.KnownResources, latch=True)
+        self._publishers['resource_pool'] = rospy.Publisher('~resource_pool', scheduler_msgs.KnownResources, latch=True)
 
     ##########################################################################
     # Ros api handlers
@@ -130,7 +130,7 @@ class CompatibilityTreeScheduler(object):
         msg.resources = [client.toMsg() for client in self._clients.values()]
         rospy.logwarn("Publishing known resources")
         rospy.logwarn("%s" % msg)
-        self._publishers['known_resources'].publish(msg)
+        self._publishers['resource_pool'].publish(msg)
 
     def _requester_update(self, request_set):
         '''
