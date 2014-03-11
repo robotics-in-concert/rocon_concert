@@ -5,6 +5,7 @@
 	<projects>
 		<project>rocon_console</project>
 		<project>rocon_uri</project>
+		<project>unique_id</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

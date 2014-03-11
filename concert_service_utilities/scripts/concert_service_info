@@ -22,7 +22,7 @@ from PyQt4 import QtGui  # QtCore
 ##############################################################################
 
 topic_name = '/concert/services/list'
-ROCON_ICON = 'concert_service_utilities/rocon_logo.png'
+ROCON_ICON = 'rocon_icons/rocon_logo.png'
 
 ##############################################################################
 # Functions
@@ -108,6 +108,7 @@ if __name__ == '__main__':
 
     console.pretty_println('Concert Service Information', console.bold)
     for s in service_info.services:
+        print_info('  Resource      : ', s.resource)
         print_info('  Name          : ', s.name)
         print_info('  Description   : ', s.description)
         print_info('  Author        : ', s.author)

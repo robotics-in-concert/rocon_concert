@@ -9,6 +9,10 @@
 
 import rospy
 import rocon_app_manager_msgs.srv as rapp_manager_srvs
+import scheduler_msgs.msg as scheduler_msgs
+import unique_id
+import uuid
+import uuid_msgs.msg as uuid_msgs
 
 from . import utils
 from .exceptions import FailedToStartAppsException, FailedToAllocateException
@@ -28,6 +32,10 @@ class ConcertClient(object):
             '_resource',     # scheduler_msgs.Resource it fulfills
         ]
 
+    ##########################################################################
+    # Init
+    ##########################################################################
+
     def __init__(self, msg):
         self.msg = msg
         self.allocated = False
@@ -37,6 +45,10 @@ class ConcertClient(object):
         # aliases
         self.name = self.msg.name
         self.gateway_name = self.msg.gateway_name
+
+    ##########################################################################
+    # Convert
+    ##########################################################################
 
     def __str__(self):
         rval = "Concert Client\n"
@@ -49,6 +61,27 @@ class ConcertClient(object):
         else:
             rval += "  Allocated: no\n"
         return rval
+
+    def toMsg(self):
+        '''
+          Convert this instances to a scheduler_msgs.CurrentStatus msg type.
+          The scheduler typically uses this to publish the resource on it's
+          scheduler_resources_pool topic.
+        '''
+        msg = scheduler_msgs.CurrentStatus()
+        msg.uri = self.msg.platform_info.uri
+        # TODO : scheduler_msgs.CurrentStatus.MISSING
+        if self.allocated:
+            msg.status = scheduler_msgs.CurrentStatus.ALLOCATED
+        else:
+            msg.status = scheduler_msgs.CurrentStatus.AVAILABLE
+        msg.owner = unique_id.toMsg(uuid.UUID(self._request_id)) if self._request_id else uuid_msgs.UniqueID()  # self._request_id is a hex string
+        msg.rapps = [app.name for app in self.msg.apps]
+        return msg
+
+    ##########################################################################
+    # Allocate
+    ##########################################################################
 
     def allocate(self, request_id, resource):
         self.allocated = True

@@ -52,7 +52,8 @@ class CompatibilityTreeScheduler(object):
           @type string
         '''
         self._subscribers = {}       # ros subscribers
-        self._request_sets = {}     # rocon_scheduler_request.transitions.RequestSet (contains ResourceReply objects)
+        self._publishers = {}        # ros publishers
+        self._request_sets = {}      # rocon_scheduler_request.transitions.RequestSet (contains ResourceReply objects)
         self._clients = {}           # common.ConcertClient.gateway_name : common.ConcertClient of all concert clients
         self._lock = threading.Lock()
 
@@ -65,9 +66,10 @@ class CompatibilityTreeScheduler(object):
 
     def _setup_ros_api(self, concert_clients_topic_name):
         self._subscribers['concert_client_changes'] = rospy.Subscriber(concert_clients_topic_name, concert_msgs.ConcertClients, self._ros_subscriber_concert_client_changes)
+        self._publishers['known_resources'] = rospy.Publisher('~known_resources', scheduler_msgs.KnownResources, latch=True)
 
     ##########################################################################
-    # Ros callbacks
+    # Ros api handlers
     ##########################################################################
 
     def _ros_subscriber_concert_client_changes(self, msg):
@@ -112,9 +114,23 @@ class CompatibilityTreeScheduler(object):
                         break
                     # @todo might want to validate that we unallocated since we did detect an allocated flag
             del self._clients[client.gateway_name]
+        if new_clients or lost_clients:
+            self._publish_resource_pool()
         # should check for some things here, e.g. can we verify a client is allocated or not?
         self._update()
         self._lock.release()
+
+    def _publish_resource_pool(self):
+        '''
+          Publishes the current resource pool. This is called whenever the state of the scheduler's
+          known resources changes.
+        '''
+        msg = scheduler_msgs.KnownResources()
+        msg.header.stamp = rospy.Time.now()
+        msg.resources = [client.toMsg() for client in self._clients.values()]
+        rospy.logwarn("Publishing known resources")
+        rospy.logwarn("%s" % msg)
+        self._publishers['known_resources'].publish(msg)
 
     def _requester_update(self, request_set):
         '''
@@ -174,6 +190,7 @@ class CompatibilityTreeScheduler(object):
         ########################################
         # Allocations
         ########################################
+        resource_pool_state_changed = False
         if unallocated_clients:
             last_failed_priority = None  # used to check if we should block further allocations to lower priorities
             for reply in pending_replies:
@@ -223,6 +240,7 @@ class CompatibilityTreeScheduler(object):
                             reply.wait()
                     else:
                         reply.grant(resources)
+                        resource_pool_state_changed = True
                 else:
                     if reply.msg.status == scheduler_msgs.Request.NEW:
                         reply.wait()
@@ -244,3 +262,6 @@ class CompatibilityTreeScheduler(object):
                     pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
             reply.close()
             #reply.msg.status = scheduler_msgs.Request.RELEASED
+        # Publish an update?
+        if resource_pool_state_changed or releasing_replies:
+            self._publish_resource_pool()
