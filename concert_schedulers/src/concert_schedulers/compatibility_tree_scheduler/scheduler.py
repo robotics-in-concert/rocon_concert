@@ -128,8 +128,6 @@ class CompatibilityTreeScheduler(object):
         msg = scheduler_msgs.KnownResources()
         msg.header.stamp = rospy.Time.now()
         msg.resources = [client.toMsg() for client in self._clients.values()]
-        rospy.logwarn("Publishing known resources")
-        rospy.logwarn("%s" % msg)
         self._publishers['resource_pool'].publish(msg)
 
     def _requester_update(self, request_set):
