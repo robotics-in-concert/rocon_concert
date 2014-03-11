@@ -81,6 +81,10 @@ class ConcertServiceInstance(object):
             self._lock.release()
             return False, "already enabled"
         try:
+            # load up parameters first so that when start runs, it can find the params immediately
+            if self.profile.parameters != '':
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
+                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
             # Refresh the unique id
             self.profile.uuid = unique_id.toMsg(unique_identifier)
             self._start()
@@ -88,11 +92,6 @@ class ConcertServiceInstance(object):
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 interactions_loader.load(self.profile.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
-
-            if self.profile.parameters != '':
-                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
-                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
-
             self.profile.enabled = True
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.profile.name)
