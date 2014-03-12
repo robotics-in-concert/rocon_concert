@@ -9,3 +9,4 @@
 from .service_manager import *
 from .concert_service_instance import *
 from .solution_configuration import SolutionConfiguration
+from .exceptions import InvalidSolutionConfigurationException

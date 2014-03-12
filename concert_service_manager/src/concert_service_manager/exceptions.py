@@ -26,3 +26,7 @@ class NoServiceExistsException(Exception):
     def __init__(self, name):
         self.name = name
     pass
+
+
+class InvalidSolutionConfigurationException(Exception):
+    pass

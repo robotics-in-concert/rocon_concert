@@ -14,6 +14,8 @@ import rospy
 import rocon_python_utils
 import rocon_console.console as console
 
+from .exceptions import InvalidSolutionConfigurationException
+
 ##############################################################################
 # Classes
 ##############################################################################
@@ -34,13 +36,27 @@ def load_solution_configuration(yaml_file):
 
       :returns: the solution configuration data for services in this concert
       :rtype: [ServiceData]
+
+      :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
     """
     services = []
+    # read
     with open(yaml_file) as f:
         service_list = yaml.load(f)
         for s in service_list:
             overrides = s['overrides'] if 'overrides' in s else None
             services.append(ServiceData(s['resource_name'], overrides))
+    # validate
+    identifiers = []
+    for service in services:
+        if service.name:
+            identifier = service.name
+        else:
+            identifier = service.resource_name
+        if identifier in identifiers:
+            raise InvalidSolutionConfigurationException("service configuration found with duplicate names [%s]" % identifier)
+        else:
+            identifiers.append(identifier)
     return services
 
 ##############################################################################
@@ -126,6 +142,9 @@ class SolutionConfiguration(object):
         for service in self.services:
             s += " - %s" % service
         return s
+
+    def __len__(self):
+        return len(self.services)
 
     def reload(self):
         modified_time = time.ctime(os.path.getmtime(self._yaml_file))
