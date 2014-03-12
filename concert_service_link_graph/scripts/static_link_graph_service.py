@@ -8,12 +8,8 @@
 ##############################################################################
 
 import rospy
-import yaml
 import concert_service_link_graph
 import concert_service_utilities
-
-from concert_msgs.srv import *
-from concert_msgs.msg import *
 
 ##############################################################################
 # Main
@@ -31,5 +27,5 @@ if __name__ == '__main__':
     if not name:
         name = impl_name
 
-    static_link_graph_service =  concert_service_link_graph.StaticLinkGraphHandler(name, description, uuid, impl)
+    static_link_graph_service = concert_service_link_graph.StaticLinkGraphHandler(name, description, uuid, impl)
     static_link_graph_service.spin()

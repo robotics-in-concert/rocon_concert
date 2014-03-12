@@ -14,10 +14,12 @@ import rocon_python_utils
 # Methods
 ##############################################################################
 
-INVALID_PARAM = ['name','description','uuid']
+
 def load_parameters_from_file(parameter_file, namespace, name, load):
 
-    filepath = rocon_python_utils.ros.find_resource_from_string(parameter_file)
+    INVALID_PARAM = ['name', 'description', 'uuid']
+
+    filepath = rocon_python_utils.ros.find_resource_from_string(parameter_file, extension='parameters')
 
     with open(filepath) as f:
         params = yaml.load(f)
