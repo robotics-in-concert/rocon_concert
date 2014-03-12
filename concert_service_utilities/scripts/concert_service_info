@@ -18,13 +18,6 @@ import sys
 from PyQt4 import QtGui  # QtCore
 
 ##############################################################################
-# Globals
-##############################################################################
-
-topic_name = '/concert/services/list'
-ROCON_ICON = 'rocon_icons/rocon_logo.png'
-
-##############################################################################
 # Functions
 ##############################################################################
 
@@ -85,6 +78,13 @@ class Window(QtGui.QWidget):
 if __name__ == '__main__':
     rospy.init_node('concert_service_info')
     args = parse_arguments()
+
+    try:
+        topic_name = rocon_python_comms.find_topic('concert_msgs/ConcertServices', timeout=rospy.rostime.Duration(5.0), unique=True)
+    except rocon_python_comms.NotFoundException as e:
+        print(console.red + "failed to find unique topic of type 'concert_msgs/ConcertServices' [%s]" % str(e) + console.reset)
+        sys.exit(1)
+
     service_info_proxy = rocon_python_comms.SubscriberProxy(topic_name, concert_msgs.ConcertServices)
     try:
         service_info_proxy.wait_for_publishers()
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     console.pretty_println('Concert Service Information', console.bold)
     for s in service_info.services:
-        print_info('  Resource      : ', s.resource)
+        print_info('  Resource      : ', s.resource_name)
         print_info('  Name          : ', s.name)
         print_info('  Description   : ', s.description)
         print_info('  Author        : ', s.author)
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     """
     TODO enable Qt later.
 
-    icon = rocon_python_utils.ros.find_resource_from_string(ROCON_ICON)
+    icon = rocon_python_utils.ros.find_resource_from_string('rocon_icons/rocon_logo.png')
 
     signal.signal(signal.SIGINT, signal.SIG_DFL) # make sure this comes after the rospy call, otherwise it will handle signals.
     app = QtGui.QApplication(sys.argv)
