@@ -24,12 +24,20 @@ from .service_profiles import load_service_profiles
 
 class ServiceManager(object):
 
+    __slots__ = [
+            '_publishers',
+            '_parameters',
+            '_services',
+            '_concert_services',
+            '_interactions_loader',
+            'lock'
+        ]
+
     def __init__(self):
-        self._param = {}
         self._services = {}
         self._publishers = {}
         self._concert_services = {}
-        self._setup_ros_parameters()
+        self._parameters = self._setup_ros_parameters()
         self.lock = threading.Lock()
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
@@ -40,19 +48,20 @@ class ServiceManager(object):
         '''
           Currently only called at the end of service manager construction.
         '''
-        service_profiles = load_service_profiles(self._param['services'])
+        service_profiles = load_service_profiles(self._parameters['services'])
         self._load_services(service_profiles)
 
-        if self._param['auto_enable_services']:
+        if self._parameters['auto_enable_services']:
             for name in service_profiles.keys():
                 self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
         self.update()
 
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
-        self._param = {}
-        self._param['services']        = rospy.get_param('~services', [])  #@IgnorePep8
-        self._param['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
+        parameters = {}
+        parameters['services']        = rospy.get_param('~services', [])  #@IgnorePep8
+        parameters['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
+        return parameters
 
     def _setup_service_parameters(self, name, description, unique_identifier):
         '''
@@ -135,7 +144,7 @@ class ServiceManager(object):
             Load service profiles from solution file and update disabled services configuration
         '''
         try:
-            service_profiles = load_service_profiles(self._param['services'])
+            service_profiles = load_service_profiles(self._parameters['services'])
 
             # replace configurations of disabled services
 
