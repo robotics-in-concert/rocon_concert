@@ -33,13 +33,15 @@ def dummy_cb():
 class ConcertServiceInstance(object):
 
     __slots__ = [
-            'profile',         # concert_msgs.ConcertService fixed configuration and variable parameters
-            '_update_callback',    # used to trigger an external callback (service manager publisher) when the state changes.
-            '_namespace',          # namespace that the service will run in
-            '_lock',               # protect service enabling/disabling
-            '_proc',               # holds the custom subprocess variable if TYPE_CUSTOM
-            '_roslaunch',          # holds the roslaunch parent variable if TYPE_ROSLAUNCH
-            '_shutdown_publisher'  # used for disabling the service
+            'msg',                  # concert_msgs.ConcertService fixed and variable parameters
+            '_update_callback',     # used to trigger an external callback (service manager publisher) when the state changes.
+            '_namespace',           # namespace that the service will run in
+            '_lock',                # protect service enabling/disabling
+            '_proc',                # holds the custom subprocess variable if TYPE_CUSTOM
+            '_roslaunch',           # holds the roslaunch parent variable if TYPE_ROSLAUNCH
+            '_shutdown_publisher',  # used for disabling the service
+            # aliases
+            'name',
         ]
 
     shutdown_timeout = 5
@@ -50,8 +52,11 @@ class ConcertServiceInstance(object):
           @param service_profile :
           @type concert_msgs.msg.ConcertService
         '''
-        self.profile = service_profile
-        self._namespace = '/services/' + str(self.profile.name)
+        self.msg = service_profile
+        # aliases
+        self.name = self.msg.name
+        # other
+        self._namespace = '/services/' + str(self.msg.name)
         self._update_callback = update_callback
         self._lock = threading.Lock()
         self._proc = None
@@ -63,7 +68,7 @@ class ConcertServiceInstance(object):
             self._proc.kill()
 
     def is_enabled(self):
-        return self.profile.enabled
+        return self.msg.enabled
 
     def enable(self, unique_identifier, interactions_loader):
         '''
@@ -77,30 +82,30 @@ class ConcertServiceInstance(object):
         @type rocon_interactions.InteractionsLoader
         '''
         self._lock.acquire()
-        if self.profile.enabled:
+        if self.msg.enabled:
             self._lock.release()
             return False, "already enabled"
         try:
             # load up parameters first so that when start runs, it can find the params immediately
-            if self.profile.parameters != '':
-                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
-                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=True)
+            if self.msg.parameters != '':
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
+                load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=True)
             # Refresh the unique id
-            self.profile.uuid = unique_id.toMsg(unique_identifier)
+            self.msg.uuid = unique_id.toMsg(unique_identifier)
             self._start()
-            if self.profile.interactions != '':
+            if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interactions_loader.load(self.profile.interactions, namespace=self._namespace, load=True)
+                interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
-            self.profile.enabled = True
+            self.msg.enabled = True
             self._update_callback()
-            self.loginfo("service enabled [%s]" % self.profile.name)
+            self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
-            message = "failed to enable service [%s][%s]" % (self.profile.name, str(e))
+            message = "failed to enable service [%s][%s]" % (self.msg.name, str(e))
             self.logwarn(message)
         self._lock.release()
-        return self.profile.enabled, message
+        return self.msg.enabled, message
 
     def disable(self, interactions_loader, unload_resources):
         '''
@@ -113,19 +118,19 @@ class ConcertServiceInstance(object):
         success = False
         message = "unknown error"
         self._lock.acquire()
-        if not self.profile.enabled:
+        if not self.msg.enabled:
             self._lock.release()
             return False, "already disabled"
         self._shutdown_publisher.publish(std_msgs.Empty())
         try:
-            if self.profile.interactions != '':
+            if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interactions_loader.load(self.profile.interactions, namespace=self._namespace, load=False)
-            if self.profile.parameters != '':
-                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.profile.name
-                load_parameters_from_file(self.profile.parameters, namespace, self.profile.name, load=False)
+                interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=False)
+            if self.msg.parameters != '':
+                namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
+                load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=False)
 
-            launcher_type = self.profile.launcher_type
+            launcher_type = self.msg.launcher_type
             force_kill = False
 
             if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
@@ -141,7 +146,7 @@ class ConcertServiceInstance(object):
                         break
                     count = count + 1
             elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
-                rospy.loginfo("Service Manager : shutting down roslaunched concert service [%s]" % self.profile.name)
+                rospy.loginfo("Service Manager : shutting down roslaunched concert service [%s]" % self.msg.name)
                 count = 0
                 # give it some time to naturally die first.
                 while self._roslaunch.pm and not self._roslaunch.pm.done:
@@ -151,22 +156,22 @@ class ConcertServiceInstance(object):
                     count = count + 1
             elif launcher_type == concert_msgs.ConcertService.TYPE_SHADOW:
                 pass  # no processes to kill
-            self.profile.enabled = False
-            unload_resources(self.profile.name)
+            self.msg.enabled = False
+            unload_resources(self.msg.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
             success = False
-            message = "error while disabling [%s][%s]" % (self.profile.name, str(e))
+            message = "error while disabling [%s][%s]" % (self.msg.name, str(e))
         self._lock.release()
         return success, message
 
     def _start(self):
 
-        launcher_type = self.profile.launcher_type
+        launcher_type = self.msg.launcher_type
 
         if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
-            launcher = self.profile.launcher
+            launcher = self.msg.launcher
             launcher = launcher.split(" ")
             self._proc = subprocess.Popen(launcher)  # perhaps needs env=os.environ as an argument
         elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
@@ -180,7 +185,7 @@ class ConcertServiceInstance(object):
     def _start_roslaunch(self):
         try:
             force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
-            roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self.profile.launcher, extension='launch')
+            roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self.msg.launcher, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text = self._prepare_launch_text(roslaunch_file_path, self._namespace)
             temp.write(launch_text)
@@ -206,13 +211,13 @@ class ConcertServiceInstance(object):
         return launch_text
 
     def to_msg(self):
-        return self.profile
+        return self.msg
 
     def loginfo(self, msg):
-        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.profile.name)))
+        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logerr(self, msg):
-        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.profile.name)))
+        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logwarn(self, msg):
-        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.profile.name)))
+        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))

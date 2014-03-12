@@ -12,10 +12,13 @@ import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
+import rocon_python_utils
+import rocon_std_msgs.msg as rocon_std_msgs
 
 from .exceptions import NoConfigurationUpdateException, NoServiceExistsException
 from .concert_service_instance import ConcertServiceInstance
 from .service_profiles import load_service_profiles
+from .solution_configuration import SolutionConfiguration
 
 ##############################################################################
 # ServiceManager
@@ -25,23 +28,25 @@ from .service_profiles import load_service_profiles
 class ServiceManager(object):
 
     __slots__ = [
-            '_publishers',
             '_parameters',
             '_services',
-            '_concert_services',
-            '_interactions_loader',
+            '_publishers',
+            '_known_concert_services'   # list of all known concert services on the ros package path : { resource_name : os.path to .service file }
+            '_concert_services',        # { resource_name : ConcertServiceInstance }
+            '_interactions_loader',     # rocon_interactions.InteractionLoader
+            '_solution_configuration',  # holds the solution's service related configuration data : .solution_configuration.SolutionConfiguration
             'lock'
         ]
 
     def __init__(self):
-        self._services = {}
-        self._publishers = {}
         self._concert_services = {}
         self._parameters = self._setup_ros_parameters()
         self.lock = threading.Lock()
         self._interactions_loader = rocon_interactions.InteractionsLoader()
+        self._known_concert_services, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
         roslaunch.pmon._init_signal_handlers()
-        self._setup_ros_api()
+        (self._services, self._publishers) = self._setup_ros_api()
+        self._solution_configuration = SolutionConfiguration(self._parameters['solution_configuration'])
         self._initialise_concert_services()
 
     def _initialise_concert_services(self):
@@ -59,8 +64,8 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
-        parameters['services']        = rospy.get_param('~services', [])  #@IgnorePep8
-        parameters['auto_enable_services'] = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
+        parameters['solution_configuration'] = rospy.get_param('~services', [])  #@IgnorePep8
+        parameters['auto_enable_services']   = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
         return parameters
 
     def _setup_service_parameters(self, name, description, unique_identifier):
@@ -89,8 +94,11 @@ class ServiceManager(object):
         rospy.delete_param(namespace + "/uuid")
 
     def _setup_ros_api(self):
-        self._services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableService, self._ros_service_enable_concert_service)
-        self._publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.ConcertServices, latch=True)
+        services = {}
+        services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableService, self._ros_service_enable_concert_service)
+        publishers = {}
+        publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.ConcertServices, latch=True)
+        return (services, publishers)
 
     def _unload_resources(self, service_name):
         # Taken out temporarily until the scheduler handles 'groups',
@@ -112,6 +120,12 @@ class ServiceManager(object):
             self.loginfo("serving request to disable '%s'" % name)
         try:
             if req.enable:
+                self._solution_configuration.reload()
+                # check if the service name is in the currently loaded service profiles
+#                 if name not in [s.name for s in self._concert_services.values()]:
+#                     for resource_name in self._solution_configuration.services.keys():
+#                         if resource_name not in self._concert_services.keys()
+
                 self._reload_solution_configuration()
                 if not name in self._concert_services:
                     raise NoServiceExistsException(name)

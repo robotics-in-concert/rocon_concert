@@ -88,34 +88,34 @@ def load_service_profiles(service_configuration):
     rospy.loginfo("Service Manager : Solution Configuration has been updated")
     return service_profiles
 
-LAST_CONFIG_LOADED = None
-
-
-def load_service_configuration(resource_name):
-    '''
-        Loads service configuration file
-
-        :param resource_name: yaml file listing services to load (e.g concert_tutorial/tutorial.services)
-        :type resource_name: str
-    '''
-    filepath = rocon_python_utils.ros.find_resource_from_string(resource_name)
-    modified_time = time.ctime(os.path.getmtime(filepath))
-    global LAST_CONFIG_LOADED
-
-    if LAST_CONFIG_LOADED:
-        if modified_time == LAST_CONFIG_LOADED:
-            raise NoConfigurationUpdateException("It is up-to-date")
-
-    LAST_CONFIG_LOADED = modified_time
-    services = []
-    with open(filepath) as f:
-        services_yaml = yaml.load(f)
-
-        for s in services_yaml:
-            r = s['resource_name']
-            o = s['override'] if 'override' in s else None
-            services.append((r, o))
-    return services
+# LAST_CONFIG_LOADED = None
+# 
+# 
+# def load_service_configuration(resource_name):
+#     '''
+#         Loads service configuration file
+# 
+#         :param resource_name: yaml file listing services to load (e.g concert_tutorial/tutorial.services)
+#         :type resource_name: str
+#     '''
+#     filepath = rocon_python_utils.ros.find_resource_from_string(resource_name)
+#     modified_time = time.ctime(os.path.getmtime(filepath))
+#     global LAST_CONFIG_LOADED
+# 
+#     if LAST_CONFIG_LOADED:
+#         if modified_time == LAST_CONFIG_LOADED:
+#             raise NoConfigurationUpdateException("It is up-to-date")
+# 
+#     LAST_CONFIG_LOADED = modified_time
+#     services = []
+#     with open(filepath) as f:
+#         services_yaml = yaml.load(f)
+# 
+#         for s in services_yaml:
+#             r = s['resource_name']
+#             o = s['override'] if 'override' in s else None
+#             services.append((r, o))
+#     return services
 
 
 def override_parameters(yaml, override):
