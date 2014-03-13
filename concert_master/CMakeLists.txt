@@ -20,7 +20,7 @@ catkin_python_setup()
 
 install(
     PROGRAMS 
-        scripts/master.py
+        scripts/concert_info
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
