@@ -30,10 +30,10 @@ def dummy_cb():
     pass
 
 
-class ConcertServiceInstance(object):
+class ServiceInstance(object):
 
     __slots__ = [
-            'msg',                  # concert_msgs.ConcertService fixed and variable parameters
+            'msg',                  # concert_msgs.ServiceProfile fixed and variable parameters
             '_update_callback',     # used to trigger an external callback (service manager publisher) when the state changes.
             '_namespace',           # namespace that the service will run in
             '_lock',                # protect service enabling/disabling
@@ -133,28 +133,28 @@ class ConcertServiceInstance(object):
             launcher_type = self.msg.launcher_type
             force_kill = False
 
-            if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
+            if launcher_type == concert_msgs.ServiceProfile.TYPE_CUSTOM:
                 count = 0
                 while not rospy.is_shutdown() and self._proc.poll() is None:
                     rospy.rostime.wallsleep(0.5)
-                    if count == 2 * ConcertServiceInstance.shutdown_timeout:
+                    if count == 2 * ServiceInstance.shutdown_timeout:
                         self._proc.terminate()
-                    if count == 2 * ConcertServiceInstance.kill_timeout:
+                    if count == 2 * ServiceInstance.kill_timeout:
                         self.loginfo("waited too long, force killing..")
                         self._proc.kill()
                         force_kill = True
                         break
                     count = count + 1
-            elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
+            elif launcher_type == concert_msgs.ServiceProfile.TYPE_ROSLAUNCH:
                 rospy.loginfo("Service Manager : shutting down roslaunched concert service [%s]" % self.msg.name)
                 count = 0
                 # give it some time to naturally die first.
                 while self._roslaunch.pm and not self._roslaunch.pm.done:
-                    if count == 2 * ConcertServiceInstance.shutdown_timeout:
+                    if count == 2 * ServiceInstance.shutdown_timeout:
                         self._roslaunch.shutdown()
                     rospy.rostime.wallsleep(0.5)
                     count = count + 1
-            elif launcher_type == concert_msgs.ConcertService.TYPE_SHADOW:
+            elif launcher_type == concert_msgs.ServiceProfile.TYPE_SHADOW:
                 pass  # no processes to kill
             self.msg.enabled = False
             unload_resources(self.msg.name)
@@ -170,13 +170,13 @@ class ConcertServiceInstance(object):
 
         launcher_type = self.msg.launcher_type
 
-        if launcher_type == concert_msgs.ConcertService.TYPE_CUSTOM:
+        if launcher_type == concert_msgs.ServiceProfile.TYPE_CUSTOM:
             launcher = self.msg.launcher
             launcher = launcher.split(" ")
             self._proc = subprocess.Popen(launcher)  # perhaps needs env=os.environ as an argument
-        elif launcher_type == concert_msgs.ConcertService.TYPE_ROSLAUNCH:
+        elif launcher_type == concert_msgs.ServiceProfile.TYPE_ROSLAUNCH:
             self._start_roslaunch()
-        elif launcher_type == concert_msgs.ConcertService.TYPE_SHADOW:
+        elif launcher_type == concert_msgs.ServiceProfile.TYPE_SHADOW:
             pass  # no processes to start
         else:
             # Don't care - load_service_descriptions_from_service_lists will have validated the service description file.

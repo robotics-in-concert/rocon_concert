@@ -16,11 +16,65 @@ import concert_msgs.msg as concert_msgs
 import rocon_std_msgs.msg as rocon_std_msgs
 import unique_id
 
-from .exceptions import NoConfigurationUpdateException
+from .exceptions import InvalidServiceProfileException
 
 ##############################################################################
 # ServiceList
 ##############################################################################
+
+
+def load_service_profile(resource_name, overrides, filename):
+    """
+      Loads the service profile given the data provided by the solution configuration
+      (i.e. resource name + overrides). We provide an arg for the filename here even
+      though we could look it up ourselves since the service manager has probably already
+      cached it.
+
+      :param resource_name: pkg/name identifying a concert service
+      :type resource_name: str
+
+      :param overrides: dictionary of the possible overridable variables for a service, key set is bounded
+      :type overrides: dic
+
+      :param filename: full path to the service profile (.service file)
+      :type filename: str
+
+      :returns: the solution configuration data for services in this concert
+      :rtype: concert_msgs.ServiceProfile
+
+      :raises: :exc:`concert_service_manager.InvalidServiceProfileException` if the service profile yaml is invalid
+    """
+    with open(filename) as f:
+        msg = concert_msgs.ServiceProfile()
+        service_profile = yaml.load(f)
+    service_profile['resource_name'] = resource_name
+    # override parameters
+    for key in service_profile:
+        if key in overrides and overrides[key] is not None:
+            service_profile[key] = overrides[key]
+
+    # Validation
+    if service_profile['launcher_type'] == '':  # not set
+        service_profile['launcher_type'] = concert_msgs.ServiceProfile.TYPE_SHADOW
+    if service_profile['launcher_type'] != concert_msgs.ServiceProfile.TYPE_ROSLAUNCH and \
+       service_profile['launcher_type'] != concert_msgs.ServiceProfile.TYPE_SHADOW and \
+       service_profile['launcher_type'] != concert_msgs.ServiceProfile.TYPE_CUSTOM:
+        raise InvalidServiceProfileException("invalid service launcher type [%s][%s]" % (service_profile['launcher_type'], service_profile['resource_name']))
+    # We need to make sure the service description name is a valid rosgraph namespace name
+    # @todo Actually call the rosgraph function to validate this (do they have converters?)
+    service_profile['name'] = service_profile['name'].lower().replace(" ", "_")
+
+    # load icon and generate message
+    replace = {}
+    if 'icon' in service_profile:
+        replace[service_profile['icon']] = rocon_python_utils.ros.icon_resource_to_msg(service_profile['icon'])
+
+    # generate message
+    genpy.message.fill_message_args(msg, service_profile, replace)
+
+    # Fill in unique identifier for the service profile
+    msg.uuid = unique_id.toMsg(unique_id.fromRandom())
+    return msg
 
 
 def load_service_profiles(service_configuration):
@@ -35,7 +89,7 @@ def load_service_profiles(service_configuration):
     @type list of str
 
     @return the loaded service descriptions.
-    @rtype { service_name : concert_msgs.ConcertService }
+    @rtype { service_name : concert_msgs.ServiceProfile }
     """
     services_conf = load_service_configuration(service_configuration)  # list of (service, override) resource name tuples
     services_path, _invalid_service_path = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
@@ -51,7 +105,7 @@ def load_service_profiles(service_configuration):
     for resource_name, override in found_service_resources:
         filename = services_path[resource_name]
         with open(filename) as f:
-            service_profile = concert_msgs.ConcertService()
+            service_profile = concert_msgs.ServiceProfile()
             service_yaml = yaml.load(f)
             service_yaml['resource_name'] = resource_name
 
@@ -69,10 +123,10 @@ def load_service_profiles(service_configuration):
 
             # Validation
             if service_profile.launcher_type == '':  # not set
-                service_profile.launcher_type = concert_msgs.ConcertService.TYPE_SHADOW
-            if service_profile.launcher_type != concert_msgs.ConcertService.TYPE_ROSLAUNCH and \
-               service_profile.launcher_type != concert_msgs.ConcertService.TYPE_SHADOW and \
-               service_profile.launcher_type != concert_msgs.ConcertService.TYPE_CUSTOM:
+                service_profile.launcher_type = concert_msgs.ServiceProfile.TYPE_SHADOW
+            if service_profile.launcher_type != concert_msgs.ServiceProfile.TYPE_ROSLAUNCH and \
+               service_profile.launcher_type != concert_msgs.ServiceProfile.TYPE_SHADOW and \
+               service_profile.launcher_type != concert_msgs.ServiceProfile.TYPE_CUSTOM:
                 rospy.logwarn("Service Manager : invalid service launcher type [%s]" % (filename))
                 continue
             # Fill in missing fields or modify correctly some values

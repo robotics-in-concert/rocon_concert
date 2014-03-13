@@ -6,7 +6,8 @@
 # Imports
 ##############################################################################
 
-from .service_manager import *
-from .concert_service_instance import *
-from .solution_configuration import SolutionConfiguration
-from .exceptions import InvalidSolutionConfigurationException
+from .service_manager import ServiceManager
+from .service_instance import *
+from .service_pool import ServicePool
+from .exceptions import InvalidSolutionConfigurationException, InvalidServiceProfileException
+from .service_profiles import load_service_profile
