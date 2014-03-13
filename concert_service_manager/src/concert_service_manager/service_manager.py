@@ -14,8 +14,6 @@ import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 import rocon_interactions
 import unique_id
-import rocon_python_utils
-import rocon_std_msgs.msg as rocon_std_msgs
 
 from .exceptions import NoServiceExistsException
 from .service_instance import ServiceInstance
@@ -122,12 +120,12 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
+                self._service_pool.reload()  # check if the solution specs have updated
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
-                    if name in self._service_pool.service_profiles.keys():
-                        # reload the service profile first
-                        service_instance = ServiceInstance(self._service_pool.service_profiles[name].msg, update_callback=self.publish_update)
-                    else:
+                    try:
+                        service_instance = ServiceInstance(self._service_pool.find(name).msg, update_callback=self.publish_update)
+                    except NoServiceExistsException:
                         # do some updating of the service pool here
                         raise NoServiceExistsException("service not found on the package path [%s]" % name)
                     unique_identifier = unique_id.fromRandom()
@@ -140,16 +138,18 @@ class ServiceManager(object):
                     else:
                         self._enabled_services[service_instance.name] = service_instance
                 else:
-                    pass  # it's already enabled
+                    success = True
+                    message = "already enabled"
             else:
                 if not name in self._enabled_services:
                     raise NoServiceExistsException("no enabled service with that name [%s]" % name)
                 self._cleanup_service_parameters(self._enabled_services[name].msg.name)
-                success, message = self._enabled_services[name].disable(self._interactions_loader, self._unload_resources)
+                success, message = self._enabled_services[name].disable(self._interactions_loader)
                 del self._enabled_services[name]
         except NoServiceExistsException as e:
             rospy.logwarn("Service Manager : %s" % str(e))
             success = False
+            message = str(e)
         self.publish_update()
         self.lock.release()
         return concert_srvs.EnableServiceResponse(success, message)

@@ -17,7 +17,7 @@ import rocon_console.console as console
 import rocon_std_msgs.msg as rocon_std_msgs
 
 from .exceptions import InvalidSolutionConfigurationException
-from .exceptions import InvalidServiceProfileException
+from .exceptions import InvalidServiceProfileException, NoServiceExistsException
 from .service_profile import ServiceProfile
 
 ##############################################################################
@@ -144,25 +144,11 @@ class ServicePool(object):
             raise e
         self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
         try:
-            service_configuration_data = load_solution_configuration(self._yaml_file)
+            service_configurations = load_solution_configuration(self._yaml_file)
         except InvalidSolutionConfigurationException as e:
             raise e
-        # create service profiles
         self.service_profiles = {}
-        for service_configuration in service_configuration_data:
-            try:
-                service_profile = ServiceProfile(
-                                        service_configuration.hash,
-                                        service_configuration.resource_name,
-                                        service_configuration.overrides,
-                                        self._cached_service_profile_locations
-                                        )
-            except (InvalidServiceProfileException, rospkg.ResourceNotFound) as e:
-                rospy.logwarn("Service Manager : %s" % e)
-                continue
-            if service_profile.msg.name in self.service_profiles.keys():
-                raise InvalidSolutionConfigurationException("tried to load a duplicate service name [%s][%s]" % (service_profile.resource_name, service_profile.msg.name))
-            self.service_profiles[service_profile.msg.name] = service_profile
+        self._load_service_profiles(service_configurations)
 
     def __str__(self):
         s = ''
@@ -174,42 +160,89 @@ class ServicePool(object):
     def __len__(self):
         return len(self.service_profiles)
 
+    def _load_service_profiles(self, service_configurations):
+        """
+          Generate profiles from the specified configurations and load into the
+          service pool, give warnings if it happens to abort. Don't raise exceptions
+          here, just gracefully ignore.
+
+          :param service_configurations: configurations to generate profiles from
+          :type service_configurations: [ServiceConfigurationData]
+        """
+        for service_configuration in service_configurations:
+            try:
+                service_profile = ServiceProfile(
+                                        service_configuration.hash,
+                                        service_configuration.resource_name,
+                                        service_configuration.overrides,
+                                        self._cached_service_profile_locations
+                                        )
+            except (InvalidServiceProfileException) as e:
+                rospy.logwarn("Service Manager : %s" % e)
+                continue
+            if service_profile.msg.name in self.service_profiles.keys():
+                rospy.logwarn("Service Manager : tried to load a duplicate service name [%s][%s]" % (service_profile.resource_name, service_profile.msg.name))
+            else:
+                self.service_profiles[service_profile.msg.name] = service_profile
+
     def reload(self):
         """
-          Check the timestamp of the file and reload it if necessary.
+          Check the timestamp of the file and reload it if necessary. If you need locking, make sure you
+          call this inside a locked scope from the outside.
 
           :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
         """
         modified_time = time.ctime(os.path.getmtime(self._yaml_file))
         try:
             if modified_time != self._last_modified:
-                self.available_services = load_solution_configuration(self._yaml_file)
+                service_configurations = load_solution_configuration(self._yaml_file)  # generates InvalidSolutionConfigurationException
+                hashes = [s.hash.digest() for s in service_configurations]
+                new_configurations = [s for s in service_configurations if self._find_by_hash(s.hash) is None]
+                lost_profiles = [s for s in self.service_profiles.values() if s.hash.digest() not in hashes]
+                #unchanged_profiles = [s for s in self.service_profiles.values() if s not in lost_profiles]
+                self._load_service_profiles(new_configurations)
+                for profile in lost_profiles:
+                    del profile
+                self._last_modified = modified_time
         except InvalidSolutionConfigurationException as e:
             raise e
 
-    def find(self, name):
+    def _find_by_hash(self, hash_id):
         """
-          Scan the service data to see if a service has been configured with the specified name.
+          Scan the service pool looking for profiles with the specified hash. This is
+          an internal convenience function.
 
-          :param name: name of the service to scan for
-          :type name: str
-
-          :returns: the service data for a match or None if not found
-          :rtype: ServiceData or None
+          :returns: the service configuration for a match or None if not found
+          :rtype: ServiceConfigurationData or None
         """
-        for service_data in self.available_services:
-            if service_data.name is not None and service_data.name == name:
-                return service_data
+        for service_profile in self.service_profiles.values():
+            if service_profile.hash.digest() == hash_id.digest():
+                return service_profile
         return None
 
-    def unnamed(self):
+    def find(self, name):
         """
-          Gather all service data which hasn't been provided overrides for the service name.
-          These will be using their service default names. This is used by the service manager
-          to get the list of services it needs to look up to find a corresponding match when
-          enabling a service by name.
+          Scan the service data to see if a service has been configured with the specified name. Check if it
+          has changed internally and reload it if necessary before returning it.
 
-          :returns: service data items when do not have a name
-          :rtype: [ServiceData]
+          :param name: name of the service profile to find
+          :type name: str
+
+          :returns: the service profile that matches
+          :rtype: ServiceProfile
+
+          :raises: :exc:`concert_service_manager.NoServiceExistsException` if the service profile is not available
         """
-        return [s for s in self.available_services if s.name is None]
+        try:
+            service_profile = self.service_profiles[name]
+            # make sure it's up to date
+            # this will be negligible cost if the service profile file did not change
+            service_profile.reload()
+            # check if the name changed
+            if service_profile.name != name:
+                rospy.logwarn("Service Manager : we are in the shits, the service profile name changed %s->%s" % (name, service_profile.name))
+                rospy.logwarn("Service Manager : TODO upgrade the find function with a full reloader")
+                raise NoServiceExistsException("we are in the shits, the service profile name changed %s->%s" % (name, service_profile.name))
+            return service_profile
+        except KeyError:
+            raise NoServiceExistsException("service profile not found in the configured service pool [%s]" % name)

@@ -102,13 +102,10 @@ class ServiceInstance(object):
         self._lock.release()
         return success, message
 
-    def disable(self, interactions_loader, unload_resources):
+    def disable(self, interactions_loader):
         '''
         @param interactions_loader : used to unload interactions.
         @type rocon_interactions.RoleAppLoader
-
-        @param unload_resources callback to the scheduler's request resource which will unload all resources for that service.
-        @type _foo_(service_name)
         '''
         success = False
         message = "unknown error"
@@ -148,7 +145,6 @@ class ServiceInstance(object):
                     count = count + 1
             elif launcher_type == concert_msgs.ServiceProfile.TYPE_SHADOW:
                 pass  # no processes to kill
-            unload_resources(self.msg.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:

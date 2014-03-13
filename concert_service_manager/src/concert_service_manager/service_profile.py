@@ -13,6 +13,7 @@ import concert_msgs.msg as concert_msgs
 import genpy
 import rocon_python_utils
 import rospkg
+import rospy
 import unique_id
 import rocon_console.console as console
 
@@ -66,9 +67,10 @@ class ServiceProfile(object):
         self._last_modified = None  # gets updated when we load the profile
         try:
             self.msg = self._load_profile()
+            self._last_modified = time.ctime(os.path.getmtime(self._filename()))
         except (rospkg.ResourceNotFound, IOError):
-            raise rospkg.ResourceNotFound("could not find service profile [%s]" % self.resource_name)
-        self._validate()  # can raise InvalidServiceProfileException
+            raise InvalidServiceProfileException("could not find service profile [%s]" % self.resource_name)
+        self._validate()  # can also raise InvalidServiceProfileException
         # aliases
         self.name = self.msg.name
 
@@ -114,7 +116,6 @@ class ServiceProfile(object):
                 loaded_profile = yaml.load(f)
         except rospkg.ResourceNotFound as e:
             raise e
-        self._last_modified = time.ctime(os.path.getmtime(filename))
 
         loaded_profile['resource_name'] = self.resource_name
         # override parameters
@@ -140,6 +141,20 @@ class ServiceProfile(object):
         msg.uuid = unique_id.toMsg(unique_id.fromRandom())
 
         return msg
+
+    def reload(self):
+        """
+          Attempt to reload the profile from file if it has changed.
+
+          :raises: :exc:`concert_service_manager.InvalidServiceProfileException` if the service profile yaml is invalid
+        """
+        modified_time = time.ctime(os.path.getmtime(self._filename()))
+        try:
+            if modified_time != self._last_modified:
+                self.msg = self._load_profile()
+                self._last_modified = time.ctime(os.path.getmtime(self._filename()))
+        except (rospkg.ResourceNotFound, IOError):
+            raise InvalidServiceProfileException("could not find service profile [%s]" % self.resource_name)
 
     def _filename(self):
         '''
