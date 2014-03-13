@@ -53,7 +53,6 @@ class ServiceInstance(object):
           @type concert_msgs.msg.ConcertService
         '''
         self.msg = service_profile
-        self.msg.enabled = False
         # aliases
         self.name = self.msg.name
         # other
@@ -68,9 +67,6 @@ class ServiceInstance(object):
         if self._proc is not None:
             self._proc.kill()
 
-#     def is_enabled(self):
-#         return self.msg.enabled
-
     def enable(self, unique_identifier, interactions_loader):
         '''
         We don't need particularly complicated error codes and messages here as we don't do
@@ -82,11 +78,8 @@ class ServiceInstance(object):
         @param interactions_loader : used to load interactions
         @type rocon_interactions.InteractionsLoader
         '''
+        success = False
         self._lock.acquire()
-        if self.msg.enabled:
-            self._lock.release()
-            return False, "already enabled"
-        self.logwarn("DJS : its not enabled '%s'" % self.msg.name)
         try:
             # load up parameters first so that when start runs, it can find the params immediately
             if self.msg.parameters != '':
@@ -94,24 +87,20 @@ class ServiceInstance(object):
                 load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=True)
             # Refresh the unique id
             self.msg.uuid = unique_id.toMsg(unique_identifier)
-            self.logwarn("DJS : about to start '%s'" % self.msg.name)
             self._start()
-            self.logwarn("DJS : interactions '%s'" % self.msg.name)
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
-            self.msg.enabled = True
-            self.logwarn("DJS : update callback '%s'" % self.msg.name)
+            success = True
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
             message = "failed to enable service [%s][%s]" % (self.msg.name, str(e))
             self.logwarn(message)
-        self.logwarn("DJS : releasing service instance lock '%s'" % self.msg.name)
         self._lock.release()
-        return self.msg.enabled, message
+        return success, message
 
     def disable(self, interactions_loader, unload_resources):
         '''
@@ -124,9 +113,6 @@ class ServiceInstance(object):
         success = False
         message = "unknown error"
         self._lock.acquire()
-        if not self.msg.enabled:
-            self._lock.release()
-            return False, "already disabled"
         self._shutdown_publisher.publish(std_msgs.Empty())
         try:
             if self.msg.interactions != '':
@@ -162,7 +148,6 @@ class ServiceInstance(object):
                     count = count + 1
             elif launcher_type == concert_msgs.ServiceProfile.TYPE_SHADOW:
                 pass  # no processes to kill
-            self.msg.enabled = False
             unload_resources(self.msg.name)
             success = True
             message = "wouldn't die so the concert got violent (force killed)" if force_kill else "died a pleasant death (terminated naturally)"
