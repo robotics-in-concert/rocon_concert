@@ -10,4 +10,4 @@ from .service_manager import ServiceManager
 from .service_instance import *
 from .service_pool import ServicePool
 from .exceptions import InvalidSolutionConfigurationException, InvalidServiceProfileException
-from .service_profiles import load_service_profile
+from .service_profile import ServiceProfile

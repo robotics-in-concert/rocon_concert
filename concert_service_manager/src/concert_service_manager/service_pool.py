@@ -17,6 +17,8 @@ import rocon_console.console as console
 import rocon_std_msgs.msg as rocon_std_msgs
 
 from .exceptions import InvalidSolutionConfigurationException
+from .exceptions import InvalidServiceProfileException
+from .service_profile import ServiceProfile
 
 ##############################################################################
 # Classes
@@ -39,27 +41,27 @@ def load_solution_configuration(yaml_file):
       :returns: the solution configuration data for services in this concert
       :rtype: [ServiceData]
 
+      :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
     """
-#      :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
-    service_configurations = {}
+    service_configurations = []
     # read
     with open(yaml_file) as f:
         service_list = yaml.load(f)
         for s in service_list:
             overrides = s['overrides'] if 'overrides' in s else None
             service_data = ServiceConfigurationData(s['resource_name'], overrides)
-            service_configurations[service_data.id] = service_data
+            service_configurations.append(service_data)
     # validate
-#     identifiers = []
-#     for service_data in services:
-#         if service_data.overrides['name']:
-#             identifier = service_data.overrides['name']
-#         else:
-#             identifier = service_data.resource_name
-#         if identifier in identifiers:
-#             raise InvalidSolutionConfigurationException("service configuration found with duplicate names [%s]" % identifier)
-#         else:
-#             identifiers.append(identifier)
+    identifiers = []
+    for service_data in service_configurations:
+        if service_data.overrides['name']:
+            identifier = service_data.overrides['name']
+        else:
+            identifier = service_data.resource_name
+        if identifier in identifiers:
+            raise InvalidSolutionConfigurationException("service configuration found with duplicate names [%s]" % identifier)
+        else:
+            identifiers.append(identifier)
     return service_configurations
 
 ##############################################################################
@@ -76,7 +78,7 @@ class ServiceConfigurationData(object):
     __slots__ = [
             'resource_name',  # ros resource name for the service
             'overrides',      # dictionary of override keys for the service (use a dic so we can pack it into a ros msg later)
-            'id',             # hash of this configuration data
+            'hash',             # hash of this configuration data
          ]
 
     override_keys = ['name', 'description', 'icon', 'priority', 'interactions', 'parameters']
@@ -104,16 +106,7 @@ class ServiceConfigurationData(object):
         s = resource_name
         for value in self.overrides.values():
             s += str(value)
-        self.id = hashlib.sha224(s)
-
-    def __str__(self):
-        s = ''
-        s += console.green + self.id.hexdigest() + console.reset + '\n'
-        s += console.cyan + "     resource_name" + console.reset + ": " + console.yellow + "%s\n" % self.resource_name + console.reset
-        for key in ServiceConfigurationData.override_keys:
-            if self.overrides[key] is not None:
-                s += console.cyan + "     " + key + console.reset + ": " + console.yellow + "%s" % self.overrides[key] + console.reset + '\n'
-        return s
+        self.hash = hashlib.sha224(s)
 
 
 class ServicePool(object):
@@ -126,8 +119,8 @@ class ServicePool(object):
     __slots__ = [
             '_yaml_file',      # os.path to solution configuration file
             '_last_modified',  # timestamp of last file modifications
-            'available_services',  # [ServiceProfile]
-            '_known_services'  # all known services on the ros package path : { resource_name : os.path to .service file }
+            'service_profiles',  # { name : ServiceProfile }
+            '_cached_service_profile_locations'  # all known service profiles on the ros package path : { resource_name : os.path to .service file }
         ]
 
     def __init__(self, resource_name):
@@ -142,30 +135,44 @@ class ServicePool(object):
           :raises: :exc:`rospkg.ResourceNotFound` if resource_name cannot be resolved.
           :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
         """
-        self._known_services, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
+        # cache initial service locations to save resource name lookup times.
+        self._cached_service_profile_locations, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
+        # load
         try:
             self._yaml_file = rocon_python_utils.ros.find_resource_from_string(resource_name)
         except rospkg.ResourceNotFound as e:
             raise e
         self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
         try:
-            self.available_services = load_solution_configuration(self._yaml_file)
+            service_configuration_data = load_solution_configuration(self._yaml_file)
         except InvalidSolutionConfigurationException as e:
             raise e
+        # create service profiles
+        self.service_profiles = {}
+        for service_configuration in service_configuration_data:
+            try:
+                service_profile = ServiceProfile(
+                                        service_configuration.hash,
+                                        service_configuration.resource_name,
+                                        service_configuration.overrides,
+                                        self._cached_service_profile_locations
+                                        )
+            except (InvalidServiceProfileException, rospkg.ResourceNotFound) as e:
+                rospy.logwarn("Service Manager : %s" % e)
+                continue
+            if service_profile.msg.name in self.service_profiles.keys():
+                raise InvalidSolutionConfigurationException("tried to load a duplicate service name [%s][%s]" % (service_profile.resource_name, service_profile.msg.name))
+            self.service_profiles[service_profile.msg.name] = service_profile
 
     def __str__(self):
         s = ''
-        s += console.bold + 'Known Services: \n\n' + console.reset
-        for known_service in self._known_services.keys():
-            s += console.green + " - " + str(known_service) + "\n" + console.reset
-        s += "\n"
-        s += console.bold + 'Configured Services: \n\n' + console.reset
-        for service in self.available_services.values():
-            s += " - %s" % service
+        s += console.bold + 'Service Profiles: \n' + console.reset
+        for service_profile in self.service_profiles.values():
+            s += " - %s" % service_profile
         return s
 
     def __len__(self):
-        return len(self.available_services)
+        return len(self.service_profiles)
 
     def reload(self):
         """

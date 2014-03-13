@@ -53,6 +53,7 @@ class ServiceInstance(object):
           @type concert_msgs.msg.ConcertService
         '''
         self.msg = service_profile
+        self.msg.enabled = False
         # aliases
         self.name = self.msg.name
         # other
@@ -67,8 +68,8 @@ class ServiceInstance(object):
         if self._proc is not None:
             self._proc.kill()
 
-    def is_enabled(self):
-        return self.msg.enabled
+#     def is_enabled(self):
+#         return self.msg.enabled
 
     def enable(self, unique_identifier, interactions_loader):
         '''
@@ -85,6 +86,7 @@ class ServiceInstance(object):
         if self.msg.enabled:
             self._lock.release()
             return False, "already enabled"
+        self.logwarn("DJS : its not enabled '%s'" % self.msg.name)
         try:
             # load up parameters first so that when start runs, it can find the params immediately
             if self.msg.parameters != '':
@@ -92,18 +94,22 @@ class ServiceInstance(object):
                 load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=True)
             # Refresh the unique id
             self.msg.uuid = unique_id.toMsg(unique_identifier)
+            self.logwarn("DJS : about to start '%s'" % self.msg.name)
             self._start()
+            self.logwarn("DJS : interactions '%s'" % self.msg.name)
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
             self.msg.enabled = True
+            self.logwarn("DJS : update callback '%s'" % self.msg.name)
             self._update_callback()
             self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
             message = "failed to enable service [%s][%s]" % (self.msg.name, str(e))
             self.logwarn(message)
+        self.logwarn("DJS : releasing service instance lock '%s'" % self.msg.name)
         self._lock.release()
         return self.msg.enabled, message
 

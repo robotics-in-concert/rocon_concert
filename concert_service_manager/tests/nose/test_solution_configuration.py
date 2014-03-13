@@ -33,12 +33,12 @@ def test_valid_configuration():
     print("%s" % service_pool)
     assert len(service_pool) == 3
 
-# 
-#     print(console.bold + "\n****************************************************************************************" + console.reset)
-#     print(console.bold + "* Invalid Solution Configurations" + console.reset)
-#     print(console.bold + "****************************************************************************************" + console.reset)
-#     print("")
-#     for resource in ['concert_service_manager/duplicate_name.services', 'concert_service_manager/duplicate_resource_name.services']:
-#         with assert_raises(InvalidSolutionConfigurationException):
-#             print(" - " + console.green + resource + console.reset)
-#             solution_configuration = SolutionConfiguration(resource)
+ 
+    print(console.bold + "\n****************************************************************************************" + console.reset)
+    print(console.bold + "* Invalid Solution Configurations" + console.reset)
+    print(console.bold + "****************************************************************************************" + console.reset)
+    print("")
+    for resource in ['concert_service_manager/duplicate_name.services', 'concert_service_manager/duplicate_resource_name.services']:
+        with assert_raises(InvalidSolutionConfigurationException):
+            print(" - " + console.green + resource + console.reset)
+            service_pool = ServicePool(resource)

@@ -18,9 +18,8 @@ import rocon_python_utils
 import rocon_std_msgs.msg as rocon_std_msgs
 
 from .exceptions import NoServiceExistsException
-from concert_service_manager.service_instance import ServiceInstance
-from .service_profiles import load_service_profile
-#from concert_service_manager.service_pool import SolutionConfiguration
+from .service_instance import ServiceInstance
+from .service_pool import ServicePool
 from .exceptions import InvalidSolutionConfigurationException, InvalidServiceProfileException
 
 ##############################################################################
@@ -34,9 +33,9 @@ class ServiceManager(object):
             '_parameters',
             '_services',
             '_publishers',
-            '_concert_services',        # { resource_name : ConcertServiceInstance }
-            '_interactions_loader',     # rocon_interactions.InteractionLoader
-            '_solution_configuration',  # holds the solution's service related configuration data : .solution_configuration.SolutionConfiguration
+            '_service_pool',         # all service profiles that are permitted to be enabled, ServicePool
+            '_enabled_services',     # enabled services { resource_name : ConcertServiceInstance }
+            '_interactions_loader',  # rocon_interactions.InteractionLoader
             'lock'
         ]
 
@@ -47,48 +46,23 @@ class ServiceManager(object):
           :raises: :exc:`rospkg.ResourceNotFound` if some resource yaml (soln configuration or service) cannot be found.
           :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the service solution yaml configuraiton is invalid
         """
-        self._concert_services = {}
+        self._enabled_services = {}
         self._parameters = self._setup_ros_parameters()
         self.lock = threading.Lock()
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._solution_configuration = SolutionConfiguration(self._parameters['solution_configuration'])
+            self._service_pool = ServicePool(self._parameters['solution_configuration'])
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
-        self._initialise_concert_services()
-        (self._services, self._publishers) = self._setup_ros_api()
-        # do we need a small sleep here to let the ros api construct?
-        self.publish_update()
-
-    def _initialise_concert_services(self):
-        """
-          Don't need to lock here as we don't introduce the ros api callbacks to compete with this yet.
-
-          :raises: :exc:`rospkg.ResourceNotFound` if service profile cannot be found.
-          :raises: :exc:`concert_service_manager.InvalidServiceProfileException` if service profile is invalid
-        """
-        service_profiles = []  # [ name : concert_msgs.ServiceProfile ]
-        for service_data in self._solution_configuration.services:
-            try:
-                filename = self._known_concert_services[service_data.resource_name]
-            except KeyError:
-                raise rospkg.ResourceNotFound("could not find the service profile [%s]" % service_data.resource_name)
-            try:
-                service_profile = load_service_profile(service_data.resource_name, service_data.overrides, filename)  # concert_msgs.ServiceProfile
-                service_profiles.append(service_profile)
-            except InvalidServiceProfileException as e:
-                raise e
-        for service_profile in service_profiles:
-            if service_profile.name in self._concert_services.keys():
-                # could be a bit more meaningful, i.e. show the resource names for both original and found duplicate
-                rospy.logerr("Service Manager : duplicate service profile name discovered, not loading [%s]" % service_profile.name)
-                continue
-            self._concert_services[service_profile.name] = ServiceInstance(service_profile=service_profile, update_callback=self.publish_update)
-
+        self._publishers = self._setup_ros_publishers()
         if self._parameters['auto_enable_services']:
-            for name in self._concert_services.keys():
+            for name in self._service_pool.service_profiles.keys():
                 self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+        else:
+            self.publish_update()  # publish the available list
+        # now we let the service threads compete
+        self._services = self._setup_ros_services()
 
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
@@ -122,12 +96,15 @@ class ServiceManager(object):
         rospy.delete_param(namespace + "/description")
         rospy.delete_param(namespace + "/uuid")
 
-    def _setup_ros_api(self):
+    def _setup_ros_services(self):
         services = {}
         services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableService, self._ros_service_enable_concert_service)
+        return services
+
+    def _setup_ros_publishers(self):
         publishers = {}
         publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.Services, latch=True)
-        return (services, publishers)
+        return publishers
 
     def _ros_service_enable_concert_service(self, req):
 
@@ -142,94 +119,49 @@ class ServiceManager(object):
 
         self.lock.acquire()  # could be an expensive lock?
 
-        # Reload solution configuration and provide simple checks/warnings if a problem is found..
-        self._solution_configuration.reload()
-        undiscoverable_services = [s.resource_name for s in self._solution_configuration.services if s.resource_name not in self._known_concert_services.keys()]
-        if undiscoverable_services:
-            self._known_concert_services, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
-            undiscoverable_services = [s.resource_name for s in self._solution_configuration.services if s.resource_name not in self._known_concert_services.keys()]
-            rospy.logwarn("Service Manager : services were configured, but could not be found on the package path %s" % undiscoverable_services)
-
+        # DJS : reload the service pool
         try:
             if req.enable:
                 # Check if the service name is in the currently loaded service profiles
-                if name not in self._concert_services.keys():
-                    service_data = self._solution_configuration.find(name)
-                    if service_data is None:
-                        service_profile = None
-                        possible_service_data_list = self._solution_configuration.unnamed()
-                        for s in possible_service_data_list:
-                            try:
-                                filename = self._known_concert_services[s.resource_name]
-                            except KeyError:
-                                # we already know from earlier check that it is undiscoverable and issued warnings
-                                # just skip past it here
-                                continue
-                            profile = load_service_profile(s.resource_name, s.overrides, filename)
-                            if profile.name == name:
-                                service_profile = profile
-                                break
+                if name not in self._enabled_services.keys():
+                    if name in self._service_pool.service_profiles.keys():
+                        # reload the service profile first
+                        service_instance = ServiceInstance(self._service_pool.service_profiles[name].msg, update_callback=self.publish_update)
                     else:
-                        service_profile = load_service_profile(service_data.resource_name, service_data.overrides, filename)
-                    if service_profile is None:
+                        # do some updating of the service pool here
                         raise NoServiceExistsException("service not found on the package path [%s]" % name)
-                    self._concert_services[service_profile.name] = ServiceInstance(service_profile=service_profile, update_callback=self.publish_update)
+                    unique_identifier = unique_id.fromRandom()
+                    self._setup_service_parameters(service_instance.msg.name,
+                                                   service_instance.msg.description,
+                                                   unique_identifier)
+                    success, message = service_instance.enable(unique_identifier, self._interactions_loader)
+                    if not success:
+                        self._cleanup_service_parameters(service_instance.msg.name)
+                    else:
+                        self._enabled_services[service_instance.name] = service_instance
                 else:
-                    # TODO : check that we are still actually permitted to launch it (i.e. look in solution_configuration service data
-                    pass
-
-                unique_identifier = unique_id.fromRandom()
-                self._setup_service_parameters(self._concert_services[name].profile.name,
-                                               self._concert_services[name].profile.description,
-                                               unique_identifier)
-                success, message = self._concert_services[name].enable(unique_identifier, self._interactions_loader)
-                if not success:
-                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
+                    pass  # it's already enabled
             else:
-                if not name in self._concert_services:
-                    raise NoServiceExistsException("no such service in the concert [%s]" % name)
-
-                # Cause an error if it tries to disable a service that is already disabled.
-                if self._concert_services[name].is_enabled():
-                    self._cleanup_service_parameters(self._concert_services[name].profile.name)
-                success, message = self._concert_services[name].disable(self._interactions_loader, self._unload_resources)
-                # todo delete the service instance if we check solution configuration and cant find a match
+                if not name in self._enabled_services:
+                    raise NoServiceExistsException("no enabled service with that name [%s]" % name)
+                self._cleanup_service_parameters(self._enabled_services[name].msg.name)
+                success, message = self._enabled_services[name].disable(self._interactions_loader, self._unload_resources)
+                del self._enabled_services[name]
         except NoServiceExistsException as e:
             rospy.logwarn("Service Manager : %s" % str(e))
             success = False
-
-        self.lock.release()
         self.publish_update()
+        self.lock.release()
         return concert_srvs.EnableServiceResponse(success, message)
 
-#     def _reload_solution_configuration(self):
-#         '''
-#             Load service profiles from solution file and update disabled services configuration
-#         '''
-#         try:
-#             service_profiles = load_service_profiles(self._parameters['services'])
-# 
-#             # replace configurations of disabled services
-# 
-#             # Update configuration of disabled services
-#             deleted_services = {s: v for s, v in self._concert_services.items() if not v.is_enabled() and not s in service_profiles}
-#             for s in deleted_services:
-#                 del self._concert_services[s]
-# 
-#             disabled_services = {s: service_profiles[s] for s, v in self._concert_services.items() if not v.is_enabled() and s in service_profiles}
-#             self._load_services(disabled_services)
-# 
-#             # Load newly added services
-#             new_services = {s: v for s, v in service_profiles.items() if not s in self._concert_services}
-#             self._load_services(new_services)
-# 
-#         except NoConfigurationUpdateException as unused_e:
-#             # It is just escaping mechanism if there is nothing to update in service configuration
-#             pass
-
     def publish_update(self):
-        rs = [v.to_msg() for v in self._concert_services.values()]
-        self._publishers['list_concert_services'].publish(rs)
+        '''
+          This is not locked here - it should always be called inside a locked scope.
+        '''
+        services = [service_profile.msg for service_profile in self._service_pool.service_profiles.values()]
+        for service in services:
+            service.enabled = True if service.name in self._enabled_services.keys() else False
+        self._publishers['list_concert_services'].publish(services)
 
     def loginfo(self, msg):
         rospy.loginfo("Service Manager : " + str(msg))
