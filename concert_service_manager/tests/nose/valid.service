@@ -1,0 +1,9 @@
+name: Chatter
+description: Dudes and dudettes chatting.
+icon: rocon_bubble_icons/rocon.png 
+author: Daniel Stonier
+priority: 2
+launcher_type: roslaunch
+launcher: chatter_concert/chatter
+interactions: chatter_concert/chatter
+parameters: chatter_concert/chatter

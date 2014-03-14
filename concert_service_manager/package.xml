@@ -16,6 +16,7 @@
 
   <run_depend>concert_msgs</run_depend>
   <run_depend>genpy</run_depend>
+  <run_depend>rocon_console</run_depend>
   <run_depend>rocon_interactions</run_depend>
   <run_depend>rocon_python_utils</run_depend>
   <run_depend>roslaunch</run_depend>

@@ -80,18 +80,18 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     try:
-        topic_name = rocon_python_comms.find_topic('concert_msgs/ConcertServices', timeout=rospy.rostime.Duration(5.0), unique=True)
+        topic_name = rocon_python_comms.find_topic('concert_msgs/Services', timeout=rospy.rostime.Duration(5.0), unique=True)
     except rocon_python_comms.NotFoundException as e:
-        print(console.red + "failed to find unique topic of type 'concert_msgs/ConcertServices' [%s]" % str(e) + console.reset)
+        print(console.red + "failed to find unique topic of type 'concert_msgs/Services' [%s]" % str(e) + console.reset)
         sys.exit(1)
 
-    service_info_proxy = rocon_python_comms.SubscriberProxy(topic_name, concert_msgs.ConcertServices)
+    service_info_proxy = rocon_python_comms.SubscriberProxy(topic_name, concert_msgs.Services)
     try:
         service_info_proxy.wait_for_publishers()
     except rospy.exceptions.ROSInterruptException:
         rospy.logwarn('Concert Service Info : ros shut down before concert info could be found.')
 
-    concert_service_info = concert_msgs.ConcertServices()
+    concert_service_info = concert_msgs.Services()
     trial = 0
     MAX_TRIAL = 5
     while not rospy.is_shutdown():

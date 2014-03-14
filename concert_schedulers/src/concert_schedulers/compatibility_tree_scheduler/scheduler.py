@@ -251,8 +251,8 @@ class CompatibilityTreeScheduler(object):
             #print("Releasing Resources: %s" % [r.rapp for r in reply.msg.resources])
             #print("  Releasing Resources: %s" % [r.uri for r in reply.msg.resources])
             #print("  Clients: %s" % self._clients.keys())
-            for client in self._clients.values():
-                print(str(client))
+            #for client in self._clients.values():
+            #    print(str(client))
             for resource in reply.msg.resources:
                 try:
                     self._clients[rocon_uri.parse(resource.uri).name.string].abandon()

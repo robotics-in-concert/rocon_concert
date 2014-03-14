@@ -64,12 +64,12 @@ Example
 .. code-block:: yaml
   
     - resource: rocon_service_turtlesim/turtlesim
-      override:
+      overrides:
         name: My 'TurtleSim'
         priority: 15
         turtle_color: green
     - resource: rocon_service_admin/admin
-      override:
+      overrides:
         description: admin is useful
     - name: turtle_concert/turtle_pond
     - name: chatter_concert/chatter
