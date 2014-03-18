@@ -17,11 +17,10 @@
   <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
   <!--                  Schedulers
-      - concert_schedulers/compatibility_tree_scheduler.py
-      - concert_schedulers/simple_scheduler
+      - compatibility_tree : concert_schedulers/compatibility_tree_scheduler.py
+      - simple_scheduler   : concert_simple_scheduler/simple_scheduler
    -->
-  <arg name="scheduler_pkg" default="concert_schedulers"/>
-  <arg name="scheduler_type" default="compatibility_tree_scheduler.py"/>
+  <arg name="scheduler_type" default="compatibility_tree"/>
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
@@ -45,7 +44,7 @@
     </include>
 
     <!-- ****************************** Scheduler ****************************** -->
-    <node pkg="$(arg scheduler_pkg)" name="scheduler" type="$(arg scheduler_type)"/>
+    <include file="$(find concert_schedulers)/launch/$(arg scheduler_type)_scheduler.launch"/>
 
     <!-- **************************** Interactions ***************************** -->
     <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>

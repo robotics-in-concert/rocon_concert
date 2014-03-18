@@ -1,0 +1,11 @@
+<launch>
+  <!-- TODO fix this so ours and the compatibility tree are compatible without
+       this namespace in the way (best way might be to de-privatise the c.tree
+       topics)
+  -->
+  <group ns="scheduler">
+    <node pkg="concert_simple_scheduler" name="scheduler" type="simple_scheduler">
+      <remap from="rocon_scheduler" to="requests"/>
+    </node>
+  </group>
+</launch>
