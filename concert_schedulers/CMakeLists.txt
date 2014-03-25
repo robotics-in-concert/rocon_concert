@@ -29,6 +29,6 @@ endif()
 install(
     PROGRAMS 
         scripts/compatibility_tree_scheduler.py
-        scripts/rocon_scheduler_requests
+        scripts/concert_scheduler_requests
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )

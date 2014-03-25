@@ -6,7 +6,7 @@ from catkin_pkg.python_setup import generate_distutils_setup
 d = generate_distutils_setup(
     packages=['concert_schedulers'],
     package_dir={'': 'src'},
-    scripts=['scripts/rocon_scheduler_requests'
+    scripts=['scripts/concert_scheduler_requests'
              ],
     requires=['std_msgs',
               'rospy',
