@@ -17,6 +17,7 @@ import rospy
 
 import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
+import concert_service_utilities
 import scheduler_msgs.msg as scheduler_msgs
 import std_msgs.msg as std_msgs
 import concert_schedulers
@@ -99,20 +100,16 @@ class StaticLinkGraphHandler(object):
                 resources.append(copy.deepcopy(resource))
             resource_groups.append(concert_schedulers.ResourcePoolGroup(node.min, resources))
         try:
-            # assuming all topics here come in as /x/y/z/topicname or /x/y/z/topicname_355af31d
-            rospy.logwarn("Hunting")
-            topic_names = rocon_python_comms.find_topic('scheduler_msgs/SchedulerRequests', timeout=rospy.rostime.Duration(5.0), unique=False)
-            print("topic names: %s" % topic_names)
-            topic_name = min(topic_names, key=len)
+            scheduler_requests_topic_name = concert_service_utilities.find_scheduler_requests_topic()
             #rospy.loginfo("Service : found scheduler [%s][%s]" % (topic_name))
         except rocon_python_comms.NotFoundException as e:
-            rospy.logerr("Service : couldn't find the concert scheduler topics, aborting [%s]" % e)
+            rospy.logerr("Service : %s [%s]" % (str(e), self._name))
             return  # raise an exception here?
         self._requester = concert_schedulers.ResourcePoolRequester(
                                             resource_groups,
                                             feedback=self._requester_feedback,
                                             uuid=self._uuid,
-                                            topic=topic_name
+                                            topic=scheduler_requests_topic_name
                                             )
 
     def _requester_feedback(self, request_set):

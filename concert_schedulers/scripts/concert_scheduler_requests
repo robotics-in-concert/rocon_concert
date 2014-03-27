@@ -31,6 +31,7 @@ def parse_arguments():
 
 
 def resolve_scheduler_request_topics():
+    # using rostopic.find_topic() is probably easier than this
     master = rosgraph.Master(rospy.get_name())
     unused_publishers, unused_subscribers, unused_services = master.getSystemState()
     topics = set()

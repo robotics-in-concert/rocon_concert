@@ -7,4 +7,5 @@
 ##############################################################################
 
 from .exceptions import ServiceInfoException
+from .scheduler import find_scheduler_requests_topic
 from .service_information import get_service_info
