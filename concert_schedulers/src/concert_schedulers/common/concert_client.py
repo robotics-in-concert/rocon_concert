@@ -125,6 +125,6 @@ class ConcertClient(object):
         try:
             stop_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down
-            rospy.logwarn("Scheduler : could not stop app '%s' on '%s' [%s]" % (resource.name, self.name, str(e)))
+            rospy.logwarn("Scheduler : could not stop app on '%s' [%s]" % (self.name, str(e)))
             return False
         return True
