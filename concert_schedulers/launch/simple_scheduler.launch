@@ -6,6 +6,7 @@
   <group ns="scheduler">
     <node pkg="concert_simple_scheduler" name="scheduler" type="simple_scheduler">
       <remap from="rocon_scheduler" to="requests"/>
+      <remap from="concert_client_changes" to="~schedulers"/>
     </node>
   </group>
 </launch>
