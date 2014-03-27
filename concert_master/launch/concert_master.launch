@@ -17,8 +17,8 @@
   <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
   <!--                  Schedulers
-      - compatibility_tree : concert_schedulers/compatibility_tree_scheduler.py
-      - simple_scheduler   : concert_simple_scheduler/simple_scheduler
+      - compatibility_tree : concert_schedulers/compatibility_tree_scheduler.launch
+      - simple             : concert_schedulers/simple_scheduler.launch
    -->
   <arg name="scheduler_type" default="compatibility_tree"/>
 
