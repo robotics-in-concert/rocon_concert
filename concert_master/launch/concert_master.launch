@@ -16,6 +16,10 @@
   <!-- Service Manager -->
   <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
   <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
+
+  <!-- Interactions -->
+  <arg name="rosbridge_address" default="localhost"/>
+  <arg name="rosbridge_port" default="9090"/>
   <!--                  Schedulers
       - compatibility_tree : concert_schedulers/compatibility_tree_scheduler.launch
       - simple             : concert_schedulers/simple_scheduler.launch
@@ -47,7 +51,10 @@
     <include file="$(find concert_schedulers)/launch/$(arg scheduler_type)_scheduler.launch"/>
 
     <!-- **************************** Interactions ***************************** -->
-    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions"/>
+    <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions">
+      <param name="rosbridge_address" value="$(arg rosbridge_address)"/>
+      <param name="rosbridge_port" value="$(arg rosbridge_port)"/>
+    </node>
 
     <!-- ******************************** Hub ********************************** -->
     <include file="$(find rocon_hub)/launch/hub.launch">
