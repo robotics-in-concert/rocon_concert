@@ -52,8 +52,8 @@
 
     <!-- **************************** Interactions ***************************** -->
     <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions">
-      <arg name="rosbridge_address" value="$(arg rosbridge_address)"/>
-      <arg name="rosbridge_port" value="$(arg rosbridge_port)"/>
+      <param name="rosbridge_address" value="$(arg rosbridge_address)"/>
+      <param name="rosbridge_port" value="$(arg rosbridge_port)"/>
     </node>
 
     <!-- ******************************** Hub ********************************** -->
