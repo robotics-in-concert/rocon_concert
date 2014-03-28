@@ -239,6 +239,11 @@ class CompatibilityTreeScheduler(object):
                     else:
                         reply.grant(resources)
                         resource_pool_state_changed = True
+                        # remove allocated clients from the unallocated list so they don't get doubly allocated on the next request in line
+                        newly_allocated_client_names = []
+                        for branch in pruned_compatibility_tree.branches:
+                            newly_allocated_client_names.extend([leaf.name for leaf in branch.leaves if leaf.allocated])
+                        unallocated_clients[:] = [client for client in unallocated_clients if client.name not in newly_allocated_client_names]
                 else:
                     if reply.msg.status == scheduler_msgs.Request.NEW:
                         reply.wait()
