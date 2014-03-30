@@ -1,4 +1,4 @@
 <h1> Robotics in Concert </h1>
 
 
-http://www.robotconcert.org/wiki/Main_Page
+http://wiki.ros.org/rocon/indigo/Guide
