@@ -10,19 +10,20 @@
   <url type="website">http://ros.org/wiki/concert_conductor</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
-  <author email="d.stonier@gmail.com">Daniel Stonier</author>
-  <author email="jihoonlee.in@gmail.com">Jihoon Lee</author>
+  <author>Daniel Stonier</author>
+  <author>Jihoon Lee</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>concert_msgs</run_depend>
   <run_depend>gateway_msgs</run_depend>
-  <run_depend>rosgraph</run_depend>
-  <run_depend>rospy</run_depend>
   <run_depend>rocon_app_manager_msgs</run_depend>
   <run_depend>rocon_gateway_utils</run_depend>
   <run_depend>rocon_python_comms</run_depend>
   <run_depend>rocon_uri</run_depend>
+  <run_depend>rosgraph</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>rosservice</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
 

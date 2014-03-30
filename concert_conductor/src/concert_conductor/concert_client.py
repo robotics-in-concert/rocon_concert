@@ -16,6 +16,7 @@ import concert_msgs.msg as concert_msgs
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
 import rocon_uri
+import rosservice
 
 ##############################################################################
 # Exceptions
@@ -56,6 +57,7 @@ class ConcertClient(object):
         self.name = client_name  # usually name (+ index), a more human consumable name
         self.is_local_client = is_local_client
         self.is_invited = False
+        self._is_ready_for_action = False  # becomes true if invited and the concert can see the flipped start/stop app etc.
         self.is_blocking = False  # happens if we are remote and it accepts local only, ain't in its whitelist, or in its blacklist
         self.is_invited_elsewhere = False  # someone else already invited it.
 
@@ -69,6 +71,24 @@ class ConcertClient(object):
             self._update()
         except ConcertClientException:
             raise
+
+    def is_ready_for_action(self):
+        '''
+        Check to see if invited, that the start/stop app topics have finally flipped across. Once it can see
+        them, we consider this client ready for action.
+        '''
+        if not self.is_invited:
+            return False
+        if self._is_ready_for_action:
+            return True
+        try:
+            service_list = rosservice.get_service_list(namespace='/' + self.gateway_name)  # if this is expensive, move it out to the conductor so we call it once for all clients
+            start_app_service = '/' + self.gateway_name + '/start_app'
+            if start_app_service in service_list:
+                self._is_ready_for_action = True
+        except rosservice.ROSServiceIOException:
+            return False  # shouldn't occur, only if master is having some issues
+        return self._is_ready_for_action
 
     def _pull_concert_client(self):
         '''

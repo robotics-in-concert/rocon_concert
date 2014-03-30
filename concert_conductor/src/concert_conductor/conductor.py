@@ -33,7 +33,7 @@ class Conductor(object):
         self.publishers = {}
         # high frequency list_concert_clients publisher - good for connectivity statistics and app status'
         self.publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients)
-        # efficient latched publisher which only publishes on client leaving/joining
+        # efficient latched publisher which only publishes on client leaving/joining (and ready for action)
         self.publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True)
         self.services = {}
         # service clients
@@ -50,6 +50,8 @@ class Conductor(object):
         # Keys are client human friendly names, values the client class themselves
         self._concert_clients = {}  # Dict of name : conductor.ConcertClient, both visible and out of range
         self._invited_clients = {}  # Clients that have previously been invited, but disappeared
+        # Clients that have been invited and successfully flipped start/stop app etc into the concert
+        self._ready_for_action_clients = []
         # List of gateway names identifying bad clients
         self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
         self._concert_name = None
@@ -81,7 +83,6 @@ class Conductor(object):
                 # on with the invitation - rapp_manager_srvs.InviteResponse
                 if self._concert_clients[name].invite(concert_name, name, cancel=False):
                     self._invited_clients[name] = True
-                    self._publish_discovered_concert_clients()  # publish changes
             except KeyError:  # raised when name is not in the self._concert_clients keys
                 rospy.logerr("Conductor : tried to invite unknown concert client [%s]" % name)
 
@@ -104,7 +105,6 @@ class Conductor(object):
             # If there is a change in the list, update the topic
             gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
             number_of_pruned_clients = self._prune_client_list(gateway_clients)
-            number_of_new_clients = 0
             new_clients = [c for c in gateway_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
                                                      and (c not in self._bad_clients)]
             # Create new clients info instance
@@ -133,8 +133,6 @@ class Conductor(object):
                         concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
                     self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=self._is_local_client(gateway_hash_name))
                     rospy.loginfo("Conductor : new client found [%s]" % concert_name)
-                    number_of_new_clients += 1
-
                     # re-invitation of clients that disappeared and came back
                     if concert_name in self._invited_clients:
                         self.batch_invite(self._concert_name, [concert_name])
@@ -156,10 +154,16 @@ class Conductor(object):
                 if self._param['local_clients_only']:
                     client_list = [client for client in client_list if self._concert_clients[client].is_local_client == True]
                 self.batch_invite(self._concert_name, client_list)
-            # Continually publish so it goes to web apps for now (inefficient).
+            # Check invited clients to see if they are available for action (i.e. they have flipped across start/stop app etc)
+            ready_for_action_clients = [name for (name, client) in self._concert_clients.iteritems() if client.is_ready_for_action()]
+            newly_ready_clients = [name for name in ready_for_action_clients if name not in self._ready_for_action_clients]
+            if newly_ready_clients:
+                rospy.loginfo("Conductor : new clients are ready for action %s" % newly_ready_clients)
+                self._ready_for_action_clients = ready_for_action_clients
+            # Periodic publisher
             self._publish_discovered_concert_clients(self.publishers["concert_clients"])
-            # Long term solution
-            if number_of_pruned_clients != 0 or number_of_new_clients != 0:
+            # Long term solution - publish the changes
+            if number_of_pruned_clients != 0 or newly_ready_clients:
                 self._publish_discovered_concert_clients()
             rospy.rostime.wallsleep(self._watcher_period)  # human time
 
@@ -266,7 +270,7 @@ class Conductor(object):
         discovered_concert = concert_msgs.ConcertClients()
         for unused_client_name, client in self._concert_clients.iteritems():
             try:
-                if client.is_invited:
+                if client.is_ready_for_action():
                     discovered_concert.clients.append(client.to_msg_format())
                 else:
                     discovered_concert.uninvited_clients.append(client.to_msg_format())
