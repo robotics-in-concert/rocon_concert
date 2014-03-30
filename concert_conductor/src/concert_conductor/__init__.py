@@ -7,5 +7,13 @@
 # Imports
 ##############################################################################
 
+# For use by the conductor node script
 from .conductor import Conductor
 from .concert_client import ConcertClientException
+
+# For use by external modules
+from .rapp_handler import (
+    FailedToStartRappError,
+    FailedToStopRappError,
+    RappHandler
+)
