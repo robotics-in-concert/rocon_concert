@@ -6,4 +6,4 @@
     description: Dudes and dudettes babbling.
     interactions: chatter_concert/babbler
     parameters: chatter_concert/babbler
-- resource_name: rocon_service_admin/admin
+- resource_name: concert_service_admin/admin

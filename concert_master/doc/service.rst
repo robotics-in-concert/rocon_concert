@@ -41,7 +41,7 @@ Supported Launcher Type
 * *SHADOW* - TODO Add description later
 
 Example
---------
+-------
 
 **Admin**
 
@@ -51,7 +51,7 @@ Example
     description: Administrative services and tools
     author: DanielStonier
     priority: 1
-    interactions: rocon_service_admin/admin
+    interactions: concert_service_admin/admin
 
 **Turtlesim**
 
@@ -62,5 +62,5 @@ Example
     author: Yujin Robot
     priority: 3
     launcher_type: roslaunch
-    launcher: rocon_service_turtlesim/turtlesim
-    parameters: rocon_service_turtlesim/turtlesim.parameters 
+    launcher: concert_service_turtlesim/turtlesim
+    parameters: concert_service_turtlesim/turtlesim.parameters 
