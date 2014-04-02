@@ -18,7 +18,7 @@ import unique_id
 from .exceptions import NoServiceExistsException
 from .service_instance import ServiceInstance
 from .service_pool import ServicePool
-from .exceptions import InvalidSolutionConfigurationException, InvalidServiceProfileException
+from .exceptions import InvalidSolutionConfigurationException
 
 ##############################################################################
 # ServiceManager
@@ -65,7 +65,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
-        parameters['solution_configuration'] = rospy.get_param('~services', [])  #@IgnorePep8
+        parameters['solution_configuration'] = rospy.get_param('~services', "")  #@IgnorePep8
         parameters['auto_enable_services']   = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
         return parameters
 

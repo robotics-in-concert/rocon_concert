@@ -135,20 +135,18 @@ class ServicePool(object):
           :raises: :exc:`rospkg.ResourceNotFound` if resource_name cannot be resolved.
           :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the yaml provides invalid configuration
         """
+        self.service_profiles = {}
         # cache initial service locations to save resource name lookup times.
         self._cached_service_profile_locations, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
         # load
-        try:
-            self._yaml_file = rocon_python_utils.ros.find_resource_from_string(resource_name)
-        except rospkg.ResourceNotFound as e:
-            raise e
-        self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
-        try:
-            service_configurations = load_solution_configuration(self._yaml_file)
-        except InvalidSolutionConfigurationException as e:
-            raise e
-        self.service_profiles = {}
-        self._load_service_profiles(service_configurations)
+        if resource_name != "":
+            try:
+                self._yaml_file = rocon_python_utils.ros.find_resource_from_string(resource_name)  # rospkg.ResourceNotFound
+                self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
+                service_configurations = load_solution_configuration(self._yaml_file)  # InvalidSolutionConfigurationException
+                self._load_service_profiles(service_configurations)
+            except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
+                raise e
 
     def __str__(self):
         s = ''
