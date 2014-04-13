@@ -48,8 +48,9 @@ def get_service_info():
         if name_parameter != name:
             raise ServiceInfoException("service namespace and service name parameter do not match [%s][%s]" % (name, name_parameter))
         description = rospy.get_param(service_root_namespace + "description")
+        priority = int(rospy.get_param(service_root_namespace + "priority"))
         key = uuid.UUID(rospy.get_param(service_root_namespace + "uuid"))
     except KeyError as e:
         raise ServiceInfoException("Could not find the service parameters [%s]" % e)
     # I don't like returning like this, but keeping it simple for now.
-    return (name, description, key)
+    return (name, description, priority, key)

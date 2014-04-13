@@ -30,7 +30,7 @@ class TestConcertInfo(unittest.TestCase):
 
     def test_concert_info(self):
         try:
-            (name, unused_description, unused_uuid) = concert_service_utilities.get_service_info()
+            (name, unused_description, unused_priority, unused_uuid) = concert_service_utilities.get_service_info()
             if name == 'chatter':
                 self._success = True
         except concert_service_utilities.ServiceInfoException:

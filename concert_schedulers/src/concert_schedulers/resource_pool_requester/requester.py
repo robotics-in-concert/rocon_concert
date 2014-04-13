@@ -67,8 +67,8 @@ class ResourcePoolRequester(object):
     def __init__(self,
                  resource_groups,
                  feedback,
-                 high_priority=10,
-                 low_priority=0,
+                 high_priority=scheduler_msgs.Request.HIGH_PRIORITY,
+                 low_priority=scheduler_msgs.Request.LOW_PRIORITY,
                  uuid=None,
                  topic=concert_scheduler_requests.common.SCHEDULER_TOPIC,
                  frequency=concert_scheduler_requests.common.HEARTBEAT_HZ):

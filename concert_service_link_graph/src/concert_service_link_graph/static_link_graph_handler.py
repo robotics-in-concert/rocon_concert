@@ -34,6 +34,7 @@ class StaticLinkGraphHandler(object):
     __slots__ = [
         '_name',
         '_description',
+        '_priority',
         '_uuid',
         '_linkgraph',
         '_requester',
@@ -42,7 +43,7 @@ class StaticLinkGraphHandler(object):
         '_disabled'
     ]
 
-    def __init__(self, name, description, key, linkgraph):
+    def __init__(self, name, description, priority, key, linkgraph):
         '''
           @param name
           @type str
@@ -58,6 +59,7 @@ class StaticLinkGraphHandler(object):
         '''
         self._name = name
         self._description = description
+        self._priority = priority
         self._uuid = key
         self._linkgraph = linkgraph
         self._disabled = False
@@ -108,6 +110,7 @@ class StaticLinkGraphHandler(object):
         self._requester = concert_schedulers.ResourcePoolRequester(
                                             resource_groups,
                                             feedback=self._requester_feedback,
+                                            high_priority=self._priority,
                                             uuid=self._uuid,
                                             topic=scheduler_requests_topic_name
                                             )
@@ -130,8 +133,7 @@ def load_linkgraph_from_yaml(yaml):
     """
         Loading a linkgraph from yaml and returns its name, and linkgraph
 
-        @param yaml - yaml 
-        @type str
+        :param str yaml: the link graph as a string loaded from yaml
 
         @return name - name of linkgraph
         @rtype str

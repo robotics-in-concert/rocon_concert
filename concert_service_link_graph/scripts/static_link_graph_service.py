@@ -19,7 +19,7 @@ if __name__ == '__main__':
     rospy.init_node('static_link_graph_service', anonymous=True)
 
     # this is a uuid.UUID key
-    (name, description, uuid) = concert_service_utilities.get_service_info()
+    (name, description, priority, uuid) = concert_service_utilities.get_service_info()
     filename = rospy.get_param('~filename')
 
     impl_name, impl = concert_service_link_graph.load_linkgraph_from_file(filename)
@@ -27,5 +27,5 @@ if __name__ == '__main__':
     if not name:
         name = impl_name
 
-    static_link_graph_service = concert_service_link_graph.StaticLinkGraphHandler(name, description, uuid, impl)
+    static_link_graph_service = concert_service_link_graph.StaticLinkGraphHandler(name, description, priority, uuid, impl)
     static_link_graph_service.spin()

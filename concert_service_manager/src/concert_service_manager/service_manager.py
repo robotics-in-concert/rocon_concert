@@ -69,29 +69,27 @@ class ServiceManager(object):
         parameters['auto_enable_services']   = rospy.get_param('~auto_enable_services', False)  #@IgnorePep8
         return parameters
 
-    def _setup_service_parameters(self, name, description, unique_identifier):
+    def _setup_service_parameters(self, name, description, priority, unique_identifier):
         '''
           Dump some important information for the services to self-introspect on in the namespace in which
           they will be started.
 
-          @param name : text name for the service (unique)
-          @type str
-
-          @param description : text description of the service
-          @type str
-
-          @param unique_identifier : unique id for the service
-          @type uuid.UUID
+          :param str name: text name for the service (unique)
+          :param str description: text description of the service
+          :param int priority: a numeric priority level that can be configured at service level for establishing resource requests
+          :param uuid.UUID unique_identifier: unique id for the service
         '''
         namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + name
         rospy.set_param(namespace + "/name", name)
         rospy.set_param(namespace + "/description", description)
+        rospy.set_param(namespace + "/priority", priority)
         rospy.set_param(namespace + "/uuid", unique_id.toHexString(unique_id.toMsg(unique_identifier)))
 
     def _cleanup_service_parameters(self, name):
         namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + name
         rospy.delete_param(namespace + "/name")
         rospy.delete_param(namespace + "/description")
+        rospy.delete_param(namespace + "/priority")
         rospy.delete_param(namespace + "/uuid")
 
     def _setup_ros_services(self):
@@ -131,6 +129,7 @@ class ServiceManager(object):
                     unique_identifier = unique_id.fromRandom()
                     self._setup_service_parameters(service_instance.msg.name,
                                                    service_instance.msg.description,
+                                                   service_instance.msg.priority,
                                                    unique_identifier)
                     success, message = service_instance.enable(unique_identifier, self._interactions_loader)
                     if not success:

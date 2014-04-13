@@ -16,6 +16,7 @@ import rospkg
 import rospy
 import unique_id
 import rocon_console.console as console
+import scheduler_msgs.msg as scheduler_msgs
 
 from .exceptions import InvalidServiceProfileException
 
@@ -118,6 +119,11 @@ class ServiceProfile(object):
             raise e
 
         loaded_profile['resource_name'] = self.resource_name
+
+        # set priority to default if it was not configured
+        if 'priority' not in loaded_profile.keys():
+            loaded_profile['priority'] = scheduler_msgs.Request.DEFAULT_PRIORITY
+
         # override parameters
         for key in loaded_profile:
             if key in self._overrides and self._overrides[key] is not None:
