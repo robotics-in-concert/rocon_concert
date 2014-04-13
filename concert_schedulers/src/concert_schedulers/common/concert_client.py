@@ -29,6 +29,7 @@ class ConcertClient(object):
             'gateway_name',  # alias to msg.gateway_name
             'allocated',     # boolean value representing whether it has been allocated or not.
             '_request_id',   # id (uuid hex string) of the request it is allocated to
+            'allocated_priority',  # priority (int) of the request it is allocated to
             '_resource',     # scheduler_msgs.Resource it fulfills
         ]
 
@@ -41,6 +42,7 @@ class ConcertClient(object):
         self.allocated = False
         self._request_id = None
         self._resource = None
+        self.allocated_priority = 0  # irrelevant while self.allocated is false
 
         # aliases
         self.name = self.msg.name
@@ -83,7 +85,15 @@ class ConcertClient(object):
     # Allocate
     ##########################################################################
 
-    def allocate(self, request_id, resource):
+    def reallocate(self, request_id, request_priority, resource):
+        # assert checks that it has already been allocated?
+        old_request_id = self._request_id
+        self.abandon()
+        self.allocate(request_id, request_priority, resource)  # can raise FailedToAllocateException
+        return old_request_id
+
+    def allocate(self, request_id, request_priority, resource):
+        self.allocated_priority = request_priority
         self.allocated = True
         self._request_id = request_id
         self._resource = resource
@@ -98,6 +108,7 @@ class ConcertClient(object):
     def abandon(self):
         self._stop(self.msg.gateway_name)
         self.allocated = False
+        self.allocated_priority = 0  # must set this after we set allocated to false
         self._request_id = None
         self._resource = None
 
