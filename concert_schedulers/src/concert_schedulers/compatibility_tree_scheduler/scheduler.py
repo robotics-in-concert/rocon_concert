@@ -14,7 +14,7 @@ import rospy
 import unique_id
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
-import rocon_scheduler_requests
+import concert_scheduler_requests
 import rocon_uri
 
 import concert_schedulers.common as common
@@ -57,7 +57,7 @@ class CompatibilityTreeScheduler(object):
         self._clients = {}           # common.ConcertClient.gateway_name : common.ConcertClient of all concert clients
         self._lock = threading.Lock()
 
-        self._scheduler = rocon_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
+        self._scheduler = concert_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
         self._setup_ros_api(concert_clients_topic_name)
         self._debug_show_compatibility_tree = True
 
@@ -132,12 +132,12 @@ class CompatibilityTreeScheduler(object):
 
     def _requester_update(self, request_set):
         '''
-          Callback used in rocon_scheduler_requests scheduler for processing incoming resource requests.
+          Callback used in concert_scheduler_requests scheduler for processing incoming resource requests.
           This gets fired every time an incoming message arrives from a Requester, which is periodically
           not upon state changes.
 
           @param request_set : a snapshot of all requests from a single requester in their current state.
-          @type rocon_scheduler_requests.transition.RequestSet
+          @type concert_scheduler_requests.transition.RequestSet
         '''
         #rospy.logwarn("Scheduler : requester update callback")
         self._lock.acquire()

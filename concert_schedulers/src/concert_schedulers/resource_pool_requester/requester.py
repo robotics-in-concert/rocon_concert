@@ -11,7 +11,7 @@ import threading
 
 import rospy
 import unique_id
-import rocon_scheduler_requests
+import concert_scheduler_requests
 import scheduler_msgs.msg as scheduler_msgs
 import concert_msgs.msg as concert_msgs
 import rocon_uri
@@ -48,7 +48,7 @@ class ResourcePoolRequester(object):
       formulation and management of requests.
     '''
     __slots__ = [
-            '_requester',        # the base requester class from rocon_scheduler_requests
+            '_requester',        # the base requester class from concert_scheduler_requests
             '_resource_groups',
             '_state',            # state of the requester (see State class)
             '_feedback',
@@ -70,8 +70,8 @@ class ResourcePoolRequester(object):
                  high_priority=10,
                  low_priority=0,
                  uuid=None,
-                 topic=rocon_scheduler_requests.common.SCHEDULER_TOPIC,
-                 frequency=rocon_scheduler_requests.common.HEARTBEAT_HZ):
+                 topic=concert_scheduler_requests.common.SCHEDULER_TOPIC,
+                 frequency=concert_scheduler_requests.common.HEARTBEAT_HZ):
         '''
           Loads the requester up with a collecation of resource groups that have min/max requirements
           for each resource type.
@@ -88,7 +88,7 @@ class ResourcePoolRequester(object):
           @param low_priority : priority to set for optional resource requirements
           @type int
         '''
-        self._requester = rocon_scheduler_requests.Requester(self._requester_feedback, uuid, 0, topic, frequency)
+        self._requester = concert_scheduler_requests.Requester(self._requester_feedback, uuid, 0, topic, frequency)
         self._resource_groups = resource_groups
         self._feedback = feedback
         self._state = self.State.PENDING

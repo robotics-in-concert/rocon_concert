@@ -117,7 +117,7 @@ class StaticLinkGraphHandler(object):
           Callback used to act on feedback coming from the scheduler request handler.
 
           @param request_set : a snapshot of the state of all requests from this requester
-          @type rocon_scheduler_requests.transition.RequestSet
+          @type concert_scheduler_requests.transition.RequestSet
         '''
         pass
 

@@ -124,7 +124,7 @@ class Gatherer(object):
 
 if __name__ == '__main__':
     status_strings = ["new", "reserved", "waiting", "granted", "preempting", "canceling", "closed"]
-    rospy.init_node('rocon_scheduler_requests')
+    rospy.init_node('concert_scheduler_requests')
     args = parse_arguments()
     gatherer = Gatherer()
     rospy.spin()
