@@ -141,15 +141,15 @@ class ConcertClient(object):
         self._invite_service = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'invite'), rapp_manager_srvs.Invite)
         self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
         try:
-            platform_info_service.wait_for_service(0.5)
-            list_app_service.wait_for_service(0.5)
-            self._status_service.wait_for_service(0.5)
-            self._invite_service.wait_for_service(0.5)
-            self._remote_gateway_info_service.wait_for_service(0.5)
-        except rospy.ROSException, e:
+            platform_info_service.wait_for_service(1.5)
+            list_app_service.wait_for_service(1.5)
+            self._status_service.wait_for_service(1.5)
+            self._invite_service.wait_for_service(1.5)
+            self._remote_gateway_info_service.wait_for_service(1.5)
+        except rospy.ROSException as e:
             self.cancel_pulls()
-            raise ConcertClientException("timed out on remote concert client services")
-        except rospy.ServiceException, e:
+            raise ConcertClientException("timed out waiting for pulled concert client services")
+        except rospy.ServiceException as e:
             raise ConcertClientException(str(e))
             self.cancel_pulls()
         # this call needs a timeout and also try/except block
