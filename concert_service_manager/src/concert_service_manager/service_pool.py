@@ -137,7 +137,10 @@ class ServicePool(object):
         """
         self.service_profiles = {}
         # cache initial service locations to save resource name lookup times.
-        self._cached_service_profile_locations, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
+        cached_service_profile_information, unused_invalid_services = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SERVICE)
+        self._cached_service_profile_locations = {}
+        for cached_resource_name, (cached_filename, unused_catkin_package) in cached_service_profile_information.iteritems():
+            self._cached_service_profile_locations[cached_resource_name] = cached_filename
         # load
         if resource_name != "":
             try:
