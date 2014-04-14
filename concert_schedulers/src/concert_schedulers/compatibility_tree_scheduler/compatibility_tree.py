@@ -194,7 +194,9 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
             if leaf.name not in leaves:
                 leaves[leaf.name] = leaf
                 thinnest_branch_leaf_count[leaf.name] = len(branch.leaves)
-            leaf_count[leaf.name] = leaf_count[leaf.name] + 1 if leaf.name in leaf_count else 1
+                leaf_count[leaf.name] = 1 if not leaf.allocated else 100  # weight in favour of unallocated clients
+            else:
+                leaf_count[leaf.name] = leaf_count[leaf.name] + 1
             if len(branch.leaves) < thinnest_branch_leaf_count[leaf.name]:
                 thinnest_branch_leaf_count[leaf.name] = len(branch.leaves)
     # Now find the least visible leaf, that's the one we have to lock down first.
