@@ -42,7 +42,7 @@ class ServiceManager(object):
           Initialise everything, and enable services if auto-enable is flagged.
 
           :raises: :exc:`rospkg.ResourceNotFound` if some resource yaml (soln configuration or service) cannot be found.
-          :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the service solution yaml configuraiton is invalid
+          :raises: :exc:`concert_service_manager.InvalidSolutionConfigurationException` if the service solution yaml configuration is invalid
         """
         self._enabled_services = {}
         self._parameters = self._setup_ros_parameters()
