@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+#
+# License: BSD
+#
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
+#
+
+##############################################################################
+# Imports
+##############################################################################
+
+import argparse
+import os
+import sys
+import time
+
+import concert_conductor
+import concert_msgs.msg as concert_msgs
+import rocon_console.console as console
+import rocon_python_comms
+import rospy
+
+##############################################################################
+# Functions
+##############################################################################
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='View the concert clients managed by the conductor.\n\nThis command will defer \
+             to the rqt plugin if available, otherwise it will simply print details to the console.')
+    parser.add_argument('-c', '--console', action='store_true', help='force output to the console only')
+    myargs = rospy.myargv(argv=sys.argv)
+    return parser.parse_args(args=myargs[1:])
+
+
+class ConductorGraph(object):
+
+    __slots__ = [
+        'topic_name',
+        'subscriber'
+    ]
+
+    def __init__(self):
+        print(console.green + "Searching for the conductor's ros topics..." + console.reset)
+        while not rospy.is_shutdown():
+            try:
+                self.topic_name = rocon_python_comms.find_topic('concert_msgs/ConductorGraph', timeout=rospy.rostime.Duration(0.1), unique=True)
+                break
+            except rocon_python_comms.NotFoundException:
+                time.sleep(0.1)  # just loop around
+        if not rospy.is_shutdown():
+            rospy.logwarn("Setting up subscriber on %s" % self.topic_name)
+            rospy.Subscriber(self.topic_name, concert_msgs.ConductorGraph, self.ros_conductor_graph_callback)
+
+    def ros_conductor_graph_callback(self, msg):
+        self.print_conductor_graph(msg)
+
+    def print_conductor_graph(self, msg):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        #print(console.bold + '{:=^80}'.format(" Conductor Graph "))
+        concert_client_formatting_indent = "  "
+        for slot in msg.__slots__:
+            concert_client_list = getattr(msg, slot)
+            if concert_client_list:
+                print(console.bold + "\n" + slot.capitalize() + " Clients" + console.reset)
+                #print('{:^15}'.format("Concert Alias") + '|' + '{:^25}'.format("Gateway Name") + '|' + '{:^10}'.format("Is Local") + '|' + ' Rocon URI')
+                for concert_client in concert_client_list:
+                    print("%s" % concert_conductor.ConcertClient.msg2string(concert_client, concert_client_formatting_indent, show_state=False))
+
+##############################################################################
+# Main
+##############################################################################
+
+if __name__ == '__main__':
+    args = parse_arguments()
+    if not args.console:
+        print(console.red + "\nThe rqt plugin is not yet supported, falling back to console mode.\n" + console.reset)
+    rospy.init_node('concert_conductor_graph')
+    conductor_graph = ConductorGraph()
+    rospy.spin()

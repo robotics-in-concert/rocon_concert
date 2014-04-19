@@ -17,7 +17,10 @@ import rocon_python_comms
 import rocon_gateway_utils
 
 from .concert_client import ConcertClient, ConcertClientException
+from . import concert_clients
+from . import exceptions
 from .ros_parameters import setup_ros_parameters
+from .local_gateway import LocalGateway
 
 ##############################################################################
 # Conductor
@@ -27,42 +30,60 @@ from .ros_parameters import setup_ros_parameters
 class Conductor(object):
 
     def __init__(self):
+        """
+        Initialises the conductor, but doesn't try to do anything yet.
+
+        :raises: :exc:`.ConductorFailureException` if construction went awry.
+        """
+
         ##################################
-        # Pubs, Subs and Services
+        # Local Information
         ##################################
-        self.publishers = {}
-        # high frequency list_concert_clients publisher - good for connectivity statistics and app status'
-        self.publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients)
-        # efficient latched publisher which only publishes on client leaving/joining (and ready for action)
-        self.publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True)
-        self.services = {}
-        # service clients
-        self._remote_gateway_info_service = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo)
-        try:
-            self._remote_gateway_info_service.wait_for_service()
-        except rospy.ServiceException, e:
-            raise e
+        self._local_gateway = LocalGateway()  # can throw rocon_python_comms.NotFoundException.
+        self._concert_name = self._local_gateway.name
+        self._concert_ip = self._local_gateway.ip
+
+        ##################################
+        # Ros
+        ##################################
+        self.publishers = self._setup_publishers()  # can raise ConductorFailureException
         rospy.on_shutdown(self._shutdown)
+        self._param = setup_ros_parameters()
 
         ##################################
         # Variables
         ##################################
-        # Keys are client human friendly names, values the client class themselves
-        self._concert_clients = {}  # Dict of name : conductor.ConcertClient, both visible and out of range
-        self._invited_clients = {}  # Clients that have previously been invited, but disappeared
-        # Clients that have been invited and successfully flipped start/stop app etc into the concert
-        self._ready_for_action_clients = []
-        # List of gateway names identifying bad clients
-        self._bad_clients = []  # Used to remember clients that are bad.so we don't try and pull them again
-        self._concert_name = None
         self._watcher_period = 1.0  # Period for the watcher thread (i.e. update rate)
+        self._concert_clients = \
+            concert_clients.ConcertClients(
+                self._local_gateway,
+                self._param,
+                self.publish_conductor_graph
+            )
 
-        ##################################
-        # Initialisation
-        ##################################
-        self._get_concert_name()
-        self._param = setup_ros_parameters()
-        self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
+#         self._publish_discovered_concert_clients()  # Publish an empty list, to latch it and start
+
+    def _setup_publishers(self):
+        publishers = {}
+        # high frequency list_concert_clients publisher - good for connectivity statistics and app status'
+        publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients)
+        # efficient latched publisher which only publishes on client leaving/joining (and ready for action)
+        publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True)
+        publishers["graph"] = rospy.Publisher("~graph", concert_msgs.ConductorGraph, latch=True)
+
+        return publishers
+
+    def publish_conductor_graph(self, clients):
+        """
+        :param clients dict: massive dict of dicts of all clients by state (see ConcertClient._clients variable)
+        """
+        # I'd like to do this: if self.publishers['graph'].get_num_connections() > 0:
+        # but that means anyone introspecting it won't get to see the current state if they connected after the last change
+        # and since state might not change very often, that is important.
+        msg = concert_msgs.ConductorGraph()
+        for state, concert_clients in clients.items():
+            setattr(msg, state, [c.msg for c in concert_clients.values()])
+        self.publishers['graph'].publish(msg)
 
     def batch_invite(self, concert_name, client_names):
         '''
@@ -92,79 +113,13 @@ class Conductor(object):
           class interface for both with just a flag to differentiate, but it could probably use a split somewhere in the future.
         '''
         while not rospy.is_shutdown():
-            # Grep list of remote clients from gateway
-            # Grep list of local clients.
-            # Prune unavailable clients.
-
-            # For each new clients
-            #   Resolve human friendly index
-            #   add into the concert client list. Mark whether it is local client or not
-            #   Invite the client if it was invited previously
-            # If auto_invite is true
-            #   Invite all available clients
-            # If there is a change in the list, update the topic
-            gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
-            number_of_pruned_clients = self._prune_client_list(gateway_clients)
-            new_clients = [c for c in gateway_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
-                                                     and (c not in self._bad_clients)]
-            # Create new clients info instance
-            for gateway_hash_name in new_clients:
-                gateway_name = rocon_gateway_utils.gateway_basename(gateway_hash_name)
-                try:
-                    # remove the 16 byte hex hash from the name
-                    same_name_count = 0
-                    human_friendly_indices = set([])
-                    for client in self._concert_clients.values():
-                        if gateway_name == rocon_gateway_utils.gateway_basename(client.gateway_name):
-                            index = client.name.replace(gateway_name, "")
-                            if index == "":
-                                human_friendly_indices.add("0")
-                            else:
-                                human_friendly_indices.add(index)
-                            same_name_count += 1
-                    if same_name_count == 0:
-                        concert_name = gateway_name
-                    else:
-                        human_friendly_index = -1
-                        while True:
-                            human_friendly_index += 1
-                            if not str(human_friendly_index) in human_friendly_indices:
-                                break
-                        concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
-                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=self._is_local_client(gateway_hash_name))
-                    rospy.loginfo("Conductor : new client found [%s]" % concert_name)
-                    # re-invitation of clients that disappeared and came back
-                    if concert_name in self._invited_clients:
-                        self.batch_invite(self._concert_name, [concert_name])
-                except ConcertClientException as e:  # problem constructing a concert client
-                    self._bad_clients.append(gateway_hash_name)
-                    rospy.loginfo("Conductor : failed to establish client [%s][%s]" % (str(gateway_hash_name), str(e)))
-                except rospy.exceptions.ROSInterruptException:  # ros is shutting down, ignore
-                    break
-                except rospy.service.ServiceException as e:  # service not available
-                    self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : service exception while establishing client [%s][%s]" % (str(gateway_hash_name), str(e)))
-                except Exception as e:
-                    self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : unknown exception while establishing client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
-            if self._param['auto_invite']:
-                client_list = [client for client in self._concert_clients
-                                     if (client not in self._invited_clients)
-                                     or (client in self._invited_clients and self._invited_clients[client] == False)]
-                if self._param['local_clients_only']:
-                    client_list = [client for client in client_list if self._concert_clients[client].is_local_client == True]
-                self.batch_invite(self._concert_name, client_list)
-            # Check invited clients to see if they are available for action (i.e. they have flipped across start/stop app etc)
-            ready_for_action_clients = [name for (name, client) in self._concert_clients.iteritems() if client.is_ready_for_action()]
-            newly_ready_clients = [name for name in ready_for_action_clients if name not in self._ready_for_action_clients]
-            if newly_ready_clients:
-                rospy.loginfo("Conductor : new clients are ready for action %s" % newly_ready_clients)
-                self._ready_for_action_clients = ready_for_action_clients
-            # Periodic publisher
-            self._publish_discovered_concert_clients(self.publishers["concert_clients"])
-            # Long term solution - publish the changes
-            if number_of_pruned_clients != 0 or newly_ready_clients:
-                self._publish_discovered_concert_clients()
+            remote_gateways = self._local_gateway.get_remote_gateway_info()
+            self._concert_clients.update(remote_gateways)
+#             # Periodic publisher
+#             self._publish_discovered_concert_clients(self.publishers["concert_clients"])
+#             # Long term solution - publish the changes
+#             if number_of_pruned_clients != 0 or newly_ready_clients:
+#                 self._publish_discovered_concert_clients()
             rospy.rostime.wallsleep(self._watcher_period)  # human time
 
     def _shutdown(self):
@@ -176,11 +131,10 @@ class Conductor(object):
         """
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
-        for client_name, client in self._concert_clients.iteritems():
-            client.invite(self._concert_name, client_name, cancel=True)
+        self._concert_clients.shutdown()
         try:
             rospy.loginfo("Conductor : sending shutdown request [gateway]")
-            unused_response = rospy.ServiceProxy(concert_msgs.Strings.GATEWAY_SHUTDOWN, std_srvs.Empty)()
+            self._local_gateway.shutdown()
             rospy.loginfo("Conductor : sending shutdown request [hub]")
             unused_response = rospy.ServiceProxy(concert_msgs.Strings.HUB_SHUTDOWN, std_srvs.Empty)()
         except rospy.ServiceException as e:
@@ -189,71 +143,6 @@ class Conductor(object):
     ###########################################################################
     # Helpers
     ###########################################################################
-
-    def _is_local_client(self, gateway_name):
-        '''
-          Determine whether it is a local client (same machine) or remote
-
-          @return true if it is a local client, false otherwise.
-          @rtype Bool
-        '''
-        remote_gateway_info_request = gateway_srvs.RemoteGatewayInfoRequest()
-        remote_gateway_info_request.gateways = []
-        remote_gateway_info_response = self._remote_gateway_info_service(remote_gateway_info_request)
-        remote_target_name = gateway_name
-        remote_target_ip = None
-        for gateway in remote_gateway_info_response.gateways:
-            if gateway.name == remote_target_name:
-                remote_target_ip = gateway.ip
-                break
-        if remote_target_ip is not None and remote_target_ip == 'localhost':
-            return True
-        if remote_target_ip is not None and self._concert_ip == remote_target_ip:
-            return True
-        if rosgraph.network.is_local_address(remote_target_ip):
-            return True
-        return False
-
-    def _get_gateway_clients(self):
-        '''
-          Return the list of clients currently visible on network. This
-          currently just checks the remote gateways for 'platform_info'
-          services ...which should be representative of a
-          concert client (aye, not real safe like).
-
-          @return visible_clients : list of visible clients identified by their gateway hash names
-          @rtype list of str
-        '''
-        suffix = 'platform_info'
-        visible_clients = []
-        try:
-            remote_gateway_info = self._remote_gateway_info_service()
-            for remote_gateway in remote_gateway_info.gateways:
-                for rule in remote_gateway.public_interface:
-                    if rule.name.endswith(suffix):
-                        visible_clients.append(rule.name[1:-(len(suffix) + 1)])  # escape the initial '/' and the trailing '/platform_info'
-        except rospy.exceptions.ROSInterruptException:  # ros shutdown
-            pass
-        return visible_clients
-
-    def _prune_client_list(self, new_clients):
-        '''
-          Remove from the current client list any whose topics and services have disappeared.
-
-          @param new_clients : a list of new clients identified by their gateway hash names
-          @type list of str
-          @return number of pruned clients
-          @rtype int
-        '''
-        number_of_pruned_clients = 0
-        # Gateway names are unique hashed names, client names are also unique, but more human friendly
-        for (client_name, gateway_name) in [(name, client.gateway_name) for name, client in self._concert_clients.items()]:
-            if not gateway_name in new_clients:
-                number_of_pruned_clients += 1
-                rospy.loginfo("Conductor : client left : " + client_name)
-                self._concert_clients[client_name].cancel_pulls()
-                del self._concert_clients[client_name]
-        return number_of_pruned_clients
 
     def _publish_discovered_concert_clients(self, list_concert_clients_publisher=None):
         '''
@@ -281,26 +170,3 @@ class Conductor(object):
         if not list_concert_clients_publisher:
             list_concert_clients_publisher = self.publishers["concert_client_changes"]  # default
         list_concert_clients_publisher.publish(discovered_concert)
-
-    ###########################################################################
-    # Private Initialisation
-    ###########################################################################
-
-    def _get_concert_name(self):
-        # Get concert name (i.e. gateway name)
-        gateway_info_proxy = rocon_python_comms.SubscriberProxy("~gateway_info", gateway_msgs.GatewayInfo)
-        try:
-            gateway_info_proxy.wait_for_publishers()
-        except rospy.exceptions.ROSInterruptException:
-            rospy.logwarn("Conductor : ros shut down before gateway info could be found.")
-
-        while not rospy.is_shutdown():
-            gateway_info = gateway_info_proxy(rospy.Duration(0.2))
-            if gateway_info:
-                if gateway_info.connected:
-                    self._concert_name = gateway_info.name
-                    self._concert_ip = gateway_info.ip
-                    break
-                else:
-                    rospy.loginfo("Conductor : no hub yet available, spinning...")
-            rospy.rostime.wallsleep(1.0)  # human time

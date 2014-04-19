@@ -9,4 +9,5 @@
 
 # For use by the conductor node script
 from .conductor import Conductor
-from .concert_client import ConcertClientException
+from .concert_client import ConcertClient
+from .exceptions import ConductorFailureException
