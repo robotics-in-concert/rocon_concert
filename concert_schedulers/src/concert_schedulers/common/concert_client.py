@@ -15,7 +15,7 @@ import uuid
 import uuid_msgs.msg as uuid_msgs
 
 from . import utils
-from .exceptions import FailedToStartAppsException, FailedToAllocateException
+from .exceptions import FailedToStartRappsException, FailedToAllocateException
 
 ##############################################################################
 # Classes
@@ -78,7 +78,7 @@ class ConcertClient(object):
         else:
             msg.status = scheduler_msgs.CurrentStatus.AVAILABLE
         msg.owner = unique_id.toMsg(uuid.UUID(self._request_id)) if self._request_id else uuid_msgs.UniqueID()  # self._request_id is a hex string
-        msg.rapps = [app.name for app in self.msg.apps]
+        msg.rapps = [rapp.name for rapp in self.msg.rapps]
         return msg
 
     ##########################################################################
@@ -99,7 +99,7 @@ class ConcertClient(object):
         self._resource = resource
         try:
             self._start(self.msg.gateway_name, resource)
-        except FailedToStartAppsException as e:
+        except FailedToStartRappsException as e:
             self.allocated = False
             self._request_id = None
             self._resource = None
@@ -117,22 +117,22 @@ class ConcertClient(object):
 
     def _start(self, gateway_name, resource):
         if self._resource == None:
-            raise FailedToStartAppsException("this client hasn't been allocated yet [%s]" % self.name)
-        start_app = rospy.ServiceProxy('/' + gateway_name + '/start_app', rapp_manager_srvs.StartApp)
-        request = rapp_manager_srvs.StartAppRequest()
+            raise FailedToStartRappsException("this client hasn't been allocated yet [%s]" % self.name)
+        start_app = rospy.ServiceProxy('/' + gateway_name + '/start_app', rapp_manager_srvs.StartRapp)
+        request = rapp_manager_srvs.StartRappRequest()
         request.name = resource.rapp
         request.remappings = resource.remappings
         try:
             start_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down
-            raise FailedToStartAppsException("%s" % str(e))
+            raise FailedToStartRappsException("%s" % str(e))
 
     def _stop(self, gateway_name):
         if self._resource == None:
             rospy.logwarn("Scheduler : this client hasn't been allocated yet, aborting stop app request  [%s]" % self.name)
             return False
-        stop_app = rospy.ServiceProxy('/' + gateway_name + '/stop_app', rapp_manager_srvs.StopApp)
-        request = rapp_manager_srvs.StopAppRequest()
+        stop_app = rospy.ServiceProxy('/' + gateway_name + '/stop_app', rapp_manager_srvs.StopRapp)
+        request = rapp_manager_srvs.StopRappRequest()
         try:
             stop_app(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down

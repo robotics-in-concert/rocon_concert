@@ -21,16 +21,16 @@ import rocon_app_manager_msgs.msg as rocon_app_manager_msgs
 import rocon_console.console as console
 
 ##############################################################################
-# Apps
+# Rapps
 ##############################################################################
 
-app_listener = rocon_app_manager_msgs.App(
+app_listener = rocon_app_manager_msgs.Rapp(
                    name='rocon_apps/listener',
                    display_name='Listener',
                    description='Default ros style listener tutorial',
                    platform='linux.*.ros.*'
                    )
-app_talker = rocon_app_manager_msgs.App(
+app_talker = rocon_app_manager_msgs.Rapp(
                    name='rocon_apps/talker',
                    display_name='Talker',
                    description='Default ros style talker tutorial',

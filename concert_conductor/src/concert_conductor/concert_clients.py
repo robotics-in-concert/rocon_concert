@@ -151,10 +151,12 @@ class ConcertClients(object):
         # existing client updates
         for (gateway_name, concert_client) in self._flat_client_dict.items():
             if gateway_name in remote_gateway_index.keys():
-                # update the timestamp
-                concert_client.touch()
-                # relay to one of the update_STATE_client handlers
-                result = self._state_handlers[concert_client.state](remote_gateway_index[gateway_name], concert_client)
+                gateway_info = remote_gateway_index[gateway_name]  # gateway_msgs.RemoteGateway
+                # common client update tasks - update the timestamp and check if it got a status update
+                common_update_result = concert_client.update(gateway_info)  # this 'touches' the object and also checks if a rapp manager status message came in
+                # now relay to one of the update_STATE_client handlers
+                state_dependant_result = self._state_handlers[concert_client.state](gateway_info, concert_client)
+                result = common_update_result or state_dependant_result
                 del remote_gateway_index[gateway_name]  # remove it from the index.
             else:
                 result = self._state_handlers[concert_client.state](None, concert_client)
@@ -238,15 +240,15 @@ class ConcertClients(object):
             return False
         # Introspect the client
         platform_info_service = rospy.ServiceProxy(platform_info_service_name, rocon_std_srvs.GetPlatformInfo)
-        list_apps_service = rospy.ServiceProxy(list_apps_service_name, rocon_app_manager_srvs.GetAppList)
+        list_apps_service = rospy.ServiceProxy(list_apps_service_name, rocon_app_manager_srvs.GetRappList)
         try:
             platform_info = platform_info_service().platform_info
             if platform_info.version != rocon_std_msgs.Strings.ROCON_VERSION:
                 rospy.logwarn("Conductor : concert client and conductor rocon versions do not match [%s][%s]" % (platform_info.version, rocon_std_msgs.Strings.ROCON_VERSION))
                 self._transition(concert_client, State.BAD)()
                 return True
-            available_apps = list_apps_service().available_apps
-            self._transition(concert_client, State.UNINVITED)(platform_info, available_apps)
+            available_rapps = list_apps_service().available_rapps
+            self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
         except rospy.ServiceException:
             return False  # let's keep trying till the last_state_change timeout kicks in
         except rospy.ROSInterruptException:

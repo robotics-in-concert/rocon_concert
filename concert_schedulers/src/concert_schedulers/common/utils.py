@@ -28,7 +28,7 @@ def is_compatible(concert_client, resource):
     '''
     if not rocon_uri.is_compatible(resource.uri, concert_client.platform_info.uri):
         return False
-    for client_app in concert_client.apps:
-        if resource.rapp == client_app.name:
+    for client_rapp in concert_client.rapps:
+        if resource.rapp == client_rapp.name:
             return True
     return False

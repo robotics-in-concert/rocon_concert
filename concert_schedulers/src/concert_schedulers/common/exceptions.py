@@ -18,7 +18,7 @@ class FailedToLockClientsException(Exception):
     pass
 
 
-class FailedToStartAppsException(Exception):
+class FailedToStartRappsException(Exception):
     pass
 
 

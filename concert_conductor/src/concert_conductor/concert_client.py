@@ -7,6 +7,7 @@
 # Imports
 ##############################################################################
 
+import copy
 import rospy
 
 import concert_msgs.msg as concert_msgs
@@ -16,6 +17,7 @@ import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_std_msgs.srv as rocon_std_srvs
 import rocon_console.console as console
 import rosservice
+import threading
 
 from .exceptions import ConcertClientException
 from .exceptions import InvalidTransitionException
@@ -28,13 +30,13 @@ from . import transitions
 
 class ConcertClient(object):
     __slots__ = [
-        'msg',  # concert_msgs.ConcertClient
-        'gateway_info',  # gateway_msgs.RemoteGateway
-        '_timestamps',    # last observed and last state change timestamps
+        'msg',                # concert_msgs.ConcertClient
+        '_cached_status_msg', # rocon_app_manager_msgs.Status, details of the last status update from the client
+        'gateway_info',       # gateway_msgs.RemoteGateway
+        '_timestamps',        # last observed and last state change timestamps
         '_transition_handlers',
+        '_lock',              # for protecting access to the msg variable
     ]
-    # convenience aliases to self.msg.xxx (see bottom of this module)
-    #   concert_alias/name, gateway_name, state, is_local_client and platform_info
 
     State = concert_msgs.ConcertClientState
 
@@ -57,16 +59,19 @@ class ConcertClient(object):
         self.msg.state = ConcertClient.State.PENDING
         self.msg.is_local_client = is_local_client
         self.gateway_info = gateway_info
+        # This will get assigned when a msg comes in and set back to none once it is processed.
+        # We only ever do processing on self.msg in one place to avoid threading problems
+        # (the transition handlers) so that is why we store a cached copy here.
+        self._cached_status_msg = None
+        self._lock = threading.Lock()
 
         # timestamps
         self._timestamps = {}
         self._timestamps['last_seen'] = rospy.get_rostime()
         self._timestamps['last_state_change'] = rospy.get_rostime()
 
-    def _setup_services(self):
-        services = {}
-        services['status'] = rospy.ServiceProxy('/' + str(self.gateway_name + '/' + 'status'), rapp_manager_srvs.Status, persistent=True)
-        return services
+        # status
+        rospy.Subscriber(self.gateway_name + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
 
     ##############################################################################
     # Timestamping
@@ -124,33 +129,8 @@ class ConcertClient(object):
             raise InvalidTransitionException("invalid concert client transition [%s->%s][%s]" % (old_state, new_state, self.concert_alias))
 
     ##############################################################################
-    # Abstract States
-    ##############################################################################
-
-    def is_invited(self):
-        return self.state == ConcertClient.State.AVAILABLE or self.state == ConcertClient.State.MISSING
-
-    def is_unavailable(self):
-        return self.state == ConcertClient.State.BAD or self.state == ConcertClient.State.BLOCKING or self.state == ConcertClient.State.BUSY
-
-    ##############################################################################
     # Utility
     ##############################################################################
-
-    def to_msg_format(self):
-        '''
-          Returns the updated client information status in ros-consumable msg format.
-
-          @return the client information as a ros message.
-          @rtype concert_msgs.ConcertClient
-
-          @raise rospy.service.ServiceException : when assumed service link is unavailable
-        '''
-        try:
-            self._update()
-        except ConcertClientException:
-            raise
-        return self.msg
 
     @staticmethod
     def complete_list_of_states():
@@ -244,46 +224,35 @@ class ConcertClient(object):
     # Graveyard
     ##############################################################################
 
-    def _update(self):
-        '''
-          Adds the current client status to the platform_info, list_apps information already
-          retrieved from the client and puts them in a convenient msg format,
-          ready for exposing outside the conductor (where? I can't remember).
+    def _ros_status_cb(self, msg):
+        """
+        Update the concert client msg data with fields from this updated status.
+        Just store it, ready to be processed in the update() method by the
+        conductor spin loop (via the transition handlers)
 
-          @raise rospy.service.ServiceException : when assumed service link is unavailable
-        '''
-#         try:
-#             status = self._status_service(rapp_manager_srvs.StatusRequest())
-#         except rospy.service.ServiceException:
-#             raise ConcertClientException("client platform information services unavailable (disconnected?)")
-#         #self.msg.name = status.namespace
-# 
-#         # Updating app status
-#         self.msg.app_status = status.application_status
-# 
-#         self.msg.is_local_client = self.is_local_client
-# 
-#         self.msg.last_connection_timestamp = rospy.Time.now()
-#         if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
-#             self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_AVAILABLE
-#         # Todo - fix this
-#         #elif status.remote_controller == _this_concert_name:
-#         #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
-#         else:
-#             self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
-#         #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
-# 
-#         try:
-#             remote_gateway_info = self._remote_gateway_info_service()
-#         except rospy.service.ServiceException:
-#             raise ConcertClientException("remote client statistics unavailable")
-#         except rospy.ROSInterruptException:
-#             raise ConcertClientException("remote client statistics unavailable, ros shutdown")
-#         gateway_found = False
-#         for gateway in remote_gateway_info.gateways:
-#             if gateway.name == self.gateway_name:
-#                 self.msg.conn_stats = gateway.conn_stats
-#                 gateway_found = True
-#                 break
-#         if not gateway_found:
-#             raise ConcertClientException("couldn't find remote gateway info while update client information")
+        :param msg rocon_app_manager_msgs.Status:
+        """
+        with self._lock:
+            self._cached_status_msg = msg
+
+    def update(self, remote_gateway_info):
+        """
+        Processing on the ConcertClient (self.msg) variable is done here, using
+        inputs from the cached status message as well as the latest remote
+        gateway info about this client.
+        :param remote_gateway_info gateway_msgs.RemoteGateway
+        """
+        self.touch()
+        # remember, don't flag connection stats as worthy of a change.
+        self.msg.conn_stats = remote_gateway_info.conn_stats
+        #self.msg.last_connection_timestamp = rospy.Time.now()  # do we really need this?
+
+        # don't update every client, just the ones that we need information from
+        important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.UNINVITED) or (self.state == ConcertClient.State.MISSING)
+        if self._cached_status_msg is not None and important_state:
+            with self._lock:
+                status_msg = copy.deepcopy(self._cached_status_msg)
+                self._cached_status_msg = None
+            self.msg.rapp_status = status_msg.rapp_status
+            return True  # something changed
+        return False

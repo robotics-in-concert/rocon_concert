@@ -49,7 +49,7 @@ class PendingToIdle(object):
         # this is legacy, and I think it's broken - I use concert alias now
         # self.msg.name = rocon_uri.parse(platform_info.uri).name.string
         self.concert_client.msg.platform_info = platform_info
-        self.concert_client.msg.apps = rapps
+        self.concert_client.msg.rapps = rapps
 
 ##############################################################################
 # Transition Table
