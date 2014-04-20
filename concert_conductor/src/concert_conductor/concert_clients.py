@@ -23,6 +23,7 @@ import rosgraph
 import rospy
 
 from .concert_client import ConcertClient
+from .notifications import Notifications
 from .transitions import State
 
 ##############################################################################
@@ -63,6 +64,7 @@ def _is_local_client(concert_ip, gateway_ip):
         return True
     return False
 
+
 ##############################################################################
 # Class
 ##############################################################################
@@ -73,10 +75,11 @@ class ConcertClients(object):
     __slots__ = [
         '_concert_name',      # concert name, used for inviting clients
         '_local_gateway',     # for interacting with the local gateway
-        '_param',            # parameter configuration from the ros parameter server
+        '_param',             # parameter configuration from the ros parameter server
         '_flat_client_dict',  # { gateway_name : conductor.ConcertClient }
-        '_clients',           # super dictionary of all known concert clients keyed by state (see __init__)
+        '_clients_by_state',  # super dictionary of all known concert clients keyed by state (see __init__)
         '_state_handlers',    # { State : handler function } for state machine handling of concert clients
+        '_publish_concert_clients',
         '_publish_graph',
     ]
 
@@ -84,15 +87,17 @@ class ConcertClients(object):
     # Construction and Destruction
     ##############################################################################
 
-    def __init__(self, local_gateway, parameters, publish_graph_callback):
+    def __init__(self, local_gateway, parameters, publish_concert_clients, publish_graph_callback):
         """
         :param local_gateway: object used to interact with the local gateway (for pull requests etc)
         :param params dict: ros parameters used for the conductor.
+        :param publish_concert_clients: function that takes a _clients_by_state variable for concert clients publishing
         :param publish_graph_callback: function callback that accepts an _all_client_dicts variable for ros or stdout publishing
         """
         self._concert_name = local_gateway.name
         self._local_gateway = local_gateway
         self._param = parameters
+        self._publish_concert_clients = publish_concert_clients
         self._publish_graph = publish_graph_callback
 
         self._flat_client_dict = {}  # { remote gateway name : concert_client.ConcertClient }
@@ -100,7 +105,7 @@ class ConcertClients(object):
         Dictionary of all known concert clients whether they are invited,
         uninvited, bad, firewalled or otherwise.
         """
-        self._clients = {}
+        self._clients_by_state = {}
         """
         Super dictionary of all known concert clients keyed into smaller dictionaries by state.
         """
@@ -110,7 +115,7 @@ class ConcertClients(object):
         client.
         """
         for state in ConcertClient.complete_list_of_states():
-            self._clients[state] = {}  # { remote gateway name : concert_client.ConcertClient }
+            self._clients_by_state[state] = {}  # { remote gateway name : concert_client.ConcertClient }
             self._state_handlers[state] = getattr(self, "_update_" + state + "_client")
 
     def __contains__(self, gateway_name):
@@ -120,7 +125,7 @@ class ConcertClients(object):
         return self._flat_client_dict[gateway_name]
 
     def shutdown(self):
-        for concert_client in self._clients[State.AVAILABLE].values():
+        for concert_client in self._clients_by_state[State.AVAILABLE].values():
             self._uninvite_client(concert_client)
 
     ##############################################################################
@@ -140,8 +145,10 @@ class ConcertClients(object):
             if is_concert_client_gateway(remote_gateway):
                 remote_gateway_index[remote_gateway.name] = remote_gateway
 
+        # set flags to look for notifications
+        notifications = Notifications()
+
         # existing client updates
-        concert_client_index_changed = False
         for (gateway_name, concert_client) in self._flat_client_dict.items():
             if gateway_name in remote_gateway_index.keys():
                 # update the timestamp
@@ -151,16 +158,22 @@ class ConcertClients(object):
                 del remote_gateway_index[gateway_name]  # remove it from the index.
             else:
                 result = self._state_handlers[concert_client.state](None, concert_client)
-            concert_client_index_changed = True if result else concert_client_index_changed
+            if result:
+                notifications[concert_client.state] = True
 
         # new clients
-        concert_client_index_changed = True if remote_gateway_index else concert_client_index_changed
+        if remote_gateway_index:
+            notifications[State.PENDING] = True
         for remote_gateway in remote_gateway_index.values():  # gateway_msgs.RemoteGateway[]
             self._create_new_client(remote_gateway)
 
         # Notifications if something changed
-        if concert_client_index_changed:
-            self._publish_graph(self._clients)
+        if notifications.is_flagged():
+            self._publish_graph(self._clients_by_state)
+        if notifications[State.MISSING] or notifications[State.UNINVITED] or notifications[State.AVAILABLE]:
+            self._publish_concert_clients(self._clients_by_state, changes_only=True)
+        # Periodic publisher
+        self._publish_concert_clients(self._clients_by_state, changes_only=False)
 
     ##############################################################################
     # God Handling (create, destroy) of concert clients
@@ -176,12 +189,12 @@ class ConcertClients(object):
         is_local_client = _is_local_client(self._local_gateway.ip, remote_gateway.ip)  # is it on the same machine as the concert
         concert_client = ConcertClient(remote_gateway, concert_alias, is_local_client)
         self._flat_client_dict[remote_gateway.name] = concert_client
-        self._clients[State.PENDING][remote_gateway.name] = concert_client
+        self._clients_by_state[State.PENDING][remote_gateway.name] = concert_client
 
     def _send_to_oblivion(self, gateway_name):
         self._local_gateway.request_pulls(gateway_name, cancel=True)  # cancel default pulls
         del self._flat_client_dict[gateway_name]
-        for concert_clients in self._clients.values():
+        for concert_clients in self._clients_by_state.values():
             try:
                 del concert_clients[gateway_name]
             except KeyError:
@@ -198,7 +211,7 @@ class ConcertClients(object):
         too long in the pending state.
 
         If the services are found, it extracts the information and dumps that into the concert client
-        instance before switching state to IDLE.
+        instance before switching state to UNINVITED.
         :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
         :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
@@ -233,7 +246,7 @@ class ConcertClients(object):
                 self._transition(concert_client, State.BAD)()
                 return True
             available_apps = list_apps_service().available_apps
-            self._transition(concert_client, State.IDLE)(platform_info, available_apps)
+            self._transition(concert_client, State.UNINVITED)(platform_info, available_apps)
         except rospy.ServiceException:
             return False  # let's keep trying till the last_state_change timeout kicks in
         except rospy.ROSInterruptException:
@@ -273,7 +286,7 @@ class ConcertClients(object):
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
 
-    def _update_idle_client(self, remote_gateway, concert_client):
+    def _update_uninvited_client(self, remote_gateway, concert_client):
         """
         Only handling automatic invitiations for now.
 
@@ -316,7 +329,7 @@ class ConcertClients(object):
                     else:
                         rospy.logwarn("Conductor : invitation to %s failed [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BAD)()
-                        self._clients[State.BAD][remote_gateway.name] = concert_client
+                        self._clients_by_state[State.BAD][remote_gateway.name] = concert_client
                     return True
             except rospy.ServiceException:
                 rospy.logwarn("Conductor : invitation to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
@@ -403,8 +416,8 @@ class ConcertClients(object):
         :param new_state State:
         """
         old_state = concert_client.state
-        self._clients[new_state][concert_client.gateway_name] = concert_client
-        del self._clients[old_state][concert_client.gateway_name]
+        self._clients_by_state[new_state][concert_client.gateway_name] = concert_client
+        del self._clients_by_state[old_state][concert_client.gateway_name]
         return concert_client.transition(new_state)
 
     def _uninvite_client(self, concert_client):
@@ -422,19 +435,19 @@ class ConcertClients(object):
                               cancel=True
                               )
             if response.result:
-                concert_client.transition(State.IDLE)()
-                self._clients[State.IDLE][concert_client.gateway_name] = concert_client
-                del self._clients[State.AVAILABLE][concert_client.gateway_name]
+                concert_client.transition(State.UNINVITED)()
+                self._clients_by_state[State.UNINVITED][concert_client.gateway_name] = concert_client
+                del self._clients_by_state[State.AVAILABLE][concert_client.gateway_name]
             else:
                 rospy.logwarn("Conductor : failed to uninvite %s [%s][%s]" % (concert_client.concert_alias, response.message, concert_client.gateway_name))
                 concert_client.transition(State.BAD)()
-                self._clients[State.BAD][concert_client.gateway.name] = concert_client
-                del self._clients[State.AVAILABLE][concert_client.gateway.name]
+                self._clients_by_state[State.BAD][concert_client.gateway.name] = concert_client
+                del self._clients_by_state[State.AVAILABLE][concert_client.gateway.name]
         except rospy.ServiceException:
             rospy.logwarn("Conductor : uninvite to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
             concert_client.transition(State.BAD)()
-            self._clients[State.BAD][concert_client.gateway_name] = concert_client
-            del self._clients[State.AVAILABLE][concert_client.gateway_name]
+            self._clients_by_state[State.BAD][concert_client.gateway_name] = concert_client
+            del self._clients_by_state[State.AVAILABLE][concert_client.gateway_name]
         except rospy.ROSInterruptException:  # interrupted by conductor's rosmaster shutdown
             pass
 
@@ -476,7 +489,7 @@ class ConcertClients(object):
 #     def _update_existing_client_list(self, remote_gateway_index):
 #         '''
 #         Update existing clients.
-# 
+#
 #         :param remote_gateway_index dict: index of already existing remote gateways { remote_gateway_name : gateway_msgs.RemoteGateway }.
 #         :return: whether a pertinent change occured in this concert client's list needs republishing (e.g. went missing...)
 #         :rtype: bool
@@ -493,4 +506,3 @@ class ConcertClients(object):
 #         for gateway_name in to_be_pruned_clients:
 #             self._send_to_oblivion(gateway_name)
 #         return update_required
-

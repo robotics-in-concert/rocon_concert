@@ -252,40 +252,38 @@ class ConcertClient(object):
 
           @raise rospy.service.ServiceException : when assumed service link is unavailable
         '''
-        try:
-            status = self._status_service(rapp_manager_srvs.StatusRequest())
-        except rospy.service.ServiceException:
-            raise ConcertClientException("client platform information services unavailable (disconnected?)")
-        self.msg.name = self.concert_alias  # use the human friendly name
-        self.msg.gateway_name = self.gateway_name
-        #self.msg.name = status.namespace
-
-        # Updating app status
-        self.msg.app_status = status.application_status
-
-        self.msg.is_local_client = self.is_local_client
-
-        self.msg.last_connection_timestamp = rospy.Time.now()
-        if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
-            self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_AVAILABLE
-        # Todo - fix this
-        #elif status.remote_controller == _this_concert_name:
-        #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
-        else:
-            self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
-        #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
-
-        try:
-            remote_gateway_info = self._remote_gateway_info_service()
-        except rospy.service.ServiceException:
-            raise ConcertClientException("remote client statistics unavailable")
-        except rospy.ROSInterruptException:
-            raise ConcertClientException("remote client statistics unavailable, ros shutdown")
-        gateway_found = False
-        for gateway in remote_gateway_info.gateways:
-            if gateway.name == self.gateway_name:
-                self.msg.conn_stats = gateway.conn_stats
-                gateway_found = True
-                break
-        if not gateway_found:
-            raise ConcertClientException("couldn't find remote gateway info while update client information")
+#         try:
+#             status = self._status_service(rapp_manager_srvs.StatusRequest())
+#         except rospy.service.ServiceException:
+#             raise ConcertClientException("client platform information services unavailable (disconnected?)")
+#         #self.msg.name = status.namespace
+# 
+#         # Updating app status
+#         self.msg.app_status = status.application_status
+# 
+#         self.msg.is_local_client = self.is_local_client
+# 
+#         self.msg.last_connection_timestamp = rospy.Time.now()
+#         if status.remote_controller == rapp_manager_msgs.Constants.NO_REMOTE_CONNECTION:
+#             self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_AVAILABLE
+#         # Todo - fix this
+#         #elif status.remote_controller == _this_concert_name:
+#         #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
+#         else:
+#             self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_CONNECTED
+#         #    self.msg.client_status = concert_msgs.Constants.CONCERT_CLIENT_STATUS_UNAVAILABLE
+# 
+#         try:
+#             remote_gateway_info = self._remote_gateway_info_service()
+#         except rospy.service.ServiceException:
+#             raise ConcertClientException("remote client statistics unavailable")
+#         except rospy.ROSInterruptException:
+#             raise ConcertClientException("remote client statistics unavailable, ros shutdown")
+#         gateway_found = False
+#         for gateway in remote_gateway_info.gateways:
+#             if gateway.name == self.gateway_name:
+#                 self.msg.conn_stats = gateway.conn_stats
+#                 gateway_found = True
+#                 break
+#         if not gateway_found:
+#             raise ConcertClientException("couldn't find remote gateway info while update client information")

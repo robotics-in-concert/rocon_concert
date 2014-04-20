@@ -108,11 +108,17 @@ class LocalGateway(object):
         req = gateway_srvs.RemoteRequest()
         req.cancel = cancel
         req.remotes = []
-        for service_name in ['platform_info', 'list_apps', 'status', 'invite']:
+        for service_name in ['platform_info', 'list_apps', 'get_status', 'invite']:
             rule = gateway_msgs.Rule()
             rule.name = str('/' + remote_gateway_name + '/' + service_name)
             rule.node = ''
             rule.type = gateway_msgs.ConnectionType.SERVICE
+            req.remotes.append(gateway_msgs.RemoteRule(remote_gateway_name.lstrip('/'), rule))
+        for publisher_name in ['status']:
+            rule = gateway_msgs.Rule()
+            rule.name = str('/' + remote_gateway_name + '/' + publisher_name)
+            rule.node = ''
+            rule.type = gateway_msgs.ConnectionType.PUBLISHER
             req.remotes.append(gateway_msgs.RemoteRule(remote_gateway_name.lstrip('/'), rule))
         # TODO : exception handling for this call
         response = self._services['pull'](req)
