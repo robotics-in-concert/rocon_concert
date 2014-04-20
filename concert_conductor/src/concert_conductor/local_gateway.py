@@ -29,7 +29,6 @@ import std_srvs.srv as std_srvs
 
 class LocalGateway(object):
     __slots__ = [
-        '_namespace',
         '_services',
         'name',
         'ip',
@@ -41,28 +40,32 @@ class LocalGateway(object):
 
         :raises: :exc:`.rocon_python_comms.NotFoundException` if services couldn't be found.
         """
-        # find the gateway
         try:
-            self._namespace = rocon_gateway_utils.resolve_local_gateway(timeout=rospy.rostime.Duration(10.0))
-        except rocon_python_comms.NotFoundException:
-            raise rocon_python_comms.NotFoundException("couldn't resolve the local gateway namespace, is it running?")
-        try:
-            (self.name, self.ip) = self._get_gateway_info()
             self._services = self._setup_ros_services()
+            (self.name, self.ip) = self._get_gateway_info()
         except rocon_python_comms.NotFoundException:
             raise
+
+    def _setup_ros_services(self):
+        """
+        :raises: :exc:`.rocon_python_comms.NotFoundException` if services couldn't be found.
+        """
+        services = {}
+        services['pull']                = rospy.ServiceProxy('~gateway_pull', gateway_srvs.Remote, persistent=True)  # @IgnorePep8 noqa
+        services['remote_gateway_info'] = rospy.ServiceProxy("~remote_gateway_info", gateway_srvs.RemoteGatewayInfo, persistent=True)
+        try:
+            for service in services.values():
+                service.wait_for_service(10.0)  # can throw rospy.ServiceException
+        except rospy.ServiceException:
+            raise rocon_python_comms.NotFoundException("couldn't find the local gateway services")
+        return services
 
     def shutdown(self):
         unused_response = rospy.ServiceProxy("~gateway_shutdown", std_srvs.Empty)()
         unused_response = rospy.ServiceProxy('~hub_shutdown', std_srvs.Empty)()
 
     def _get_gateway_info(self):
-        # Get concert name (i.e. gateway name)
-        gateway_info_proxy = rocon_python_comms.SubscriberProxy(self._namespace + "/gateway_info", gateway_msgs.GatewayInfo)
-#         try:
-#             gateway_info_proxy.wait_for_publishers()
-#         except rospy.exceptions.ROSInterruptException:
-#             rospy.logwarn("Conductor : ros shut down before gateway info could be found.")
+        gateway_info_proxy = rocon_python_comms.SubscriberProxy("~gateway_info", gateway_msgs.GatewayInfo)
         # This needs to be in a loop, since it must not only check for a response, but that the gateway
         # is connected to the hub. If it isn't connected, it needs to try again.
         start_time = rospy.get_rostime()
@@ -75,23 +78,9 @@ class LocalGateway(object):
                     break
                 else:
                     rospy.loginfo("Conductor : no hub yet available, spinning...")
-            if rospy.get_rostime() - start_time > rospy.Duration(3.0):
-                raise rocon_python_comms.NotFoundException("couldn't retrieve gateway information from %s" % (self._namespace + "/gateway_info"))
+            if rospy.get_rostime() - start_time > rospy.Duration(15.0):
+                raise rocon_python_comms.NotFoundException("couldn't retrieve gateway information")
         return (name, ip)
-
-    def _setup_ros_services(self):
-        """
-        :raises: :exc:`.rocon_python_comms.NotFoundException` if services couldn't be found.
-        """
-        services = {}
-        services['pull']                = rospy.ServiceProxy(self._namespace + '/pull', gateway_srvs.Remote, persistent=True)  # @IgnorePep8 noqa
-        services['remote_gateway_info'] = rospy.ServiceProxy(self._namespace + "/remote_gateway_info", gateway_srvs.RemoteGatewayInfo, persistent=True)
-        try:
-            for service in services.values():
-                service.wait_for_service(10.0)  # can throw rospy.ServiceException
-        except rospy.ServiceException:
-            raise rocon_python_comms.NotFoundException("couldn't find the local gateway services")
-        return services
 
     def get_remote_gateway_info(self):
         """

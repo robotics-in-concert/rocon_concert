@@ -247,7 +247,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   bad client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
@@ -259,7 +258,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   blocking client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
@@ -271,7 +269,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   busy client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
@@ -369,7 +366,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   available client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()  # this should change to a transition to MISSING
@@ -383,7 +379,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   missing client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         return False
 
     def _update_gone_client(self, remote_gateway, concert_client):
@@ -393,7 +388,6 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        rospy.logwarn("DJS :   gone client [%s][%s]" % (concert_client.gateway_name, concert_client.concert_alias))
         if concert_client.time_since_last_state_change() > self._param['oblivion_timeout']:
             return True
         return False

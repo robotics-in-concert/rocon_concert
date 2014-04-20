@@ -11,6 +11,9 @@
     <param name="local_clients_only" value="$(arg local_clients_only)"/>
     <remap from="conductor/flip" to="gateway/flip"/>
     <remap from="conductor/hub_shutdown" to="$(arg hub_namespace)/shutdown"/>
+    <remap from="conductor/gateway_info" to="$(arg gateway_namespace)/gateway_info"/>
+    <remap from="conductor/remote_gateway_info" to="$(arg gateway_namespace)/remote_gateway_info"/>
     <remap from="conductor/gateway_shutdown" to="$(arg gateway_namespace)/shutdown"/>
+    <remap from="conductor/gateway_pull" to="$(arg gateway_namespace)/pull"/>
   </node>
 </launch>
