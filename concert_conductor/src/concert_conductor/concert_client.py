@@ -8,18 +8,14 @@
 ##############################################################################
 
 import copy
-import rospy
+import threading
 
 import concert_msgs.msg as concert_msgs
 import rocon_app_manager_msgs.msg as rapp_manager_msgs
-import rocon_app_manager_msgs.srv as rapp_manager_srvs
-import rocon_std_msgs.msg as rocon_std_msgs
-import rocon_std_msgs.srv as rocon_std_srvs
 import rocon_console.console as console
-import rosservice
-import threading
+import rocon_uri
+import rospy
 
-from .exceptions import ConcertClientException
 from .exceptions import InvalidTransitionException
 from . import transitions
 
@@ -253,6 +249,9 @@ class ConcertClient(object):
             with self._lock:
                 status_msg = copy.deepcopy(self._cached_status_msg)
                 self._cached_status_msg = None
-            self.msg.rapp_status = status_msg.rapp_status
+            # uri update
+            uri = rocon_uri.parse(self.msg.platform_info.uri)
+            uri.rapp = status_msg.rapp.name if status_msg.rapp_status == rapp_manager_msgs.Status.RAPP_RUNNING else ''
+            self.msg.platform_info.uri = str(uri)
             return True  # something changed
         return False

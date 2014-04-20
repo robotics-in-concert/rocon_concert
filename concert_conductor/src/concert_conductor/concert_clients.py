@@ -461,31 +461,24 @@ class ConcertClients(object):
         :return: the concert alias
         :rtype: str
         '''
-        rospy.logwarn("DJS : gateway name [%s]" % (gateway_name))
         gateway_basename = rocon_gateway_utils.gateway_basename(gateway_name)
-        rospy.logwarn("DJS : gateway basename [%s]" % (gateway_basename))
         # remove the 16 byte hex hash from the name
         same_name_count = 0
         human_friendly_indices = set([])
         for concert_client in self._flat_client_dict.values():
             if gateway_basename == rocon_gateway_utils.gateway_basename(concert_client.gateway_name):
-                rospy.logwarn("DJS :     matching basenames [%s][%s]" % (gateway_name, concert_client.gateway_name))
                 index = concert_client.concert_alias.replace(gateway_basename, "")
                 if index == "":
                     human_friendly_indices.add("0")
                 else:
                     human_friendly_indices.add(index)
                 same_name_count += 1
-        rospy.logwarn("DJS : count %s" % same_name_count)
-        rospy.logwarn("DJS : %s" % human_friendly_indices)
 
         human_friendly_index = -1
         while True:
-            rospy.logwarn("DJS :   human_friendly_index %s" % human_friendly_index)
             human_friendly_index += 1
             if not str(human_friendly_index) in human_friendly_indices:
                 break
-        rospy.logwarn("DJS : human_friendly_index %s" % human_friendly_index)
         concert_name = gateway_basename if human_friendly_index == 0 else gateway_basename + str(human_friendly_index)
         return concert_name
 

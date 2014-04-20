@@ -8,17 +8,10 @@
 ##############################################################################
 
 import rospy
-import rosgraph
 import concert_msgs.msg as concert_msgs
-import gateway_msgs.msg as gateway_msgs
-import gateway_msgs.srv as gateway_srvs
-import std_srvs.srv as std_srvs
-import rocon_python_comms
-import rocon_gateway_utils
 
-from .concert_client import ConcertClient, ConcertClientException
+from .concert_client import ConcertClient
 from . import concert_clients
-from . import exceptions
 from .ros_parameters import setup_ros_parameters
 from .local_gateway import LocalGateway
 
