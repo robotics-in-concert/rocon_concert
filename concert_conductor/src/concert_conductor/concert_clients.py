@@ -208,7 +208,7 @@ class ConcertClients(object):
 
     def _update_pending_client(self, remote_gateway, concert_client):
         """
-        Does a quick check to see if platform_info and list_apps services have landed in the concert
+        Does a quick check to see if platform_info and list_rapps services have landed in the concert
         from the client. If not, it either quickly exits, or changes to a BAD state if it's been
         too long in the pending state.
 
@@ -225,13 +225,13 @@ class ConcertClients(object):
 
         # Check for handles
         platform_info_service_name = '/' + concert_client.gateway_name + '/' + 'platform_info'
-        list_apps_service_name = '/' + concert_client.gateway_name + '/' + 'list_apps'
+        list_rapps_service_name = '/' + concert_client.gateway_name + '/' + 'list_rapps'
         try:
             rospy.wait_for_service(platform_info_service_name, 0.1)
-            rospy.wait_for_service(list_apps_service_name, 0.1)
+            rospy.wait_for_service(list_rapps_service_name, 0.1)
         except rospy.ROSException:  # timeout
-            if concert_client.time_since_last_state_chanage() > 5.0:
-                rospy.logwarn("Conductor : timed out waiting for client's platform info and list apps to be pulled [%s]" % concert_client.concert_alias)
+            if concert_client.time_since_last_state_change() > 10.0:
+                rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
                 self._transition(concert_client, State.BAD)()
                 return True
             else:
@@ -240,14 +240,14 @@ class ConcertClients(object):
             return False
         # Introspect the client
         platform_info_service = rospy.ServiceProxy(platform_info_service_name, rocon_std_srvs.GetPlatformInfo)
-        list_apps_service = rospy.ServiceProxy(list_apps_service_name, rocon_app_manager_srvs.GetRappList)
+        list_rapps_service = rospy.ServiceProxy(list_rapps_service_name, rocon_app_manager_srvs.GetRappList)
         try:
             platform_info = platform_info_service().platform_info
             if platform_info.version != rocon_std_msgs.Strings.ROCON_VERSION:
                 rospy.logwarn("Conductor : concert client and conductor rocon versions do not match [%s][%s]" % (platform_info.version, rocon_std_msgs.Strings.ROCON_VERSION))
                 self._transition(concert_client, State.BAD)()
                 return True
-            available_rapps = list_apps_service().available_rapps
+            available_rapps = list_rapps_service().available_rapps
             self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
         except rospy.ServiceException:
             return False  # let's keep trying till the last_state_change timeout kicks in
@@ -356,14 +356,14 @@ class ConcertClients(object):
             self._transition(concert_client, State.GONE)()
 
         # Check for handles
-        start_app_service_name = '/' + concert_client.gateway_name + '/start_app'
-        stop_app_service_name = '/' + concert_client.gateway_name + '/stop_app'
+        start_app_service_name = '/' + concert_client.gateway_name + '/start_rapp'
+        stop_app_service_name = '/' + concert_client.gateway_name + '/stop_rapp'
         try:
             rospy.wait_for_service(start_app_service_name, 0.1)
             rospy.wait_for_service(stop_app_service_name, 0.1)
         except rospy.ROSException:  # timeout
             if concert_client.time_since_last_state_change() > 10.0:
-                rospy.logwarn("Conductor : timed out waiting for client's start_app and stop_app services to be flipped [%s]" % concert_client.concert_alias)
+                rospy.logwarn("Conductor : timed out waiting for client's start_rapp and stop_rapp services to be flipped [%s]" % concert_client.concert_alias)
                 self._transition(concert_client, State.BAD)()
                 return True
             else:
@@ -461,27 +461,32 @@ class ConcertClients(object):
         :return: the concert alias
         :rtype: str
         '''
+        rospy.logwarn("DJS : gateway name [%s]" % (gateway_name))
         gateway_basename = rocon_gateway_utils.gateway_basename(gateway_name)
+        rospy.logwarn("DJS : gateway basename [%s]" % (gateway_basename))
         # remove the 16 byte hex hash from the name
         same_name_count = 0
         human_friendly_indices = set([])
-        for client in self._flat_client_dict.values():
-            if gateway_basename == rocon_gateway_utils.gateway_basename(client.gateway_name):
-                index = client.concert_name.replace(gateway_basename, "")
+        for concert_client in self._flat_client_dict.values():
+            if gateway_basename == rocon_gateway_utils.gateway_basename(concert_client.gateway_name):
+                rospy.logwarn("DJS :     matching basenames [%s][%s]" % (gateway_name, concert_client.gateway_name))
+                index = concert_client.concert_alias.replace(gateway_basename, "")
                 if index == "":
                     human_friendly_indices.add("0")
                 else:
                     human_friendly_indices.add(index)
                 same_name_count += 1
-        if same_name_count == 0:
-            concert_name = gateway_basename
-        else:
-            human_friendly_index = -1
-            while True:
-                human_friendly_index += 1
-                if not str(human_friendly_index) in human_friendly_indices:
-                    break
-            concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
+        rospy.logwarn("DJS : count %s" % same_name_count)
+        rospy.logwarn("DJS : %s" % human_friendly_indices)
+
+        human_friendly_index = -1
+        while True:
+            rospy.logwarn("DJS :   human_friendly_index %s" % human_friendly_index)
+            human_friendly_index += 1
+            if not str(human_friendly_index) in human_friendly_indices:
+                break
+        rospy.logwarn("DJS : human_friendly_index %s" % human_friendly_index)
+        concert_name = gateway_basename if human_friendly_index == 0 else gateway_basename + str(human_friendly_index)
         return concert_name
 
     ##############################################################################

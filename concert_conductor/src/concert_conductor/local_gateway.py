@@ -17,7 +17,6 @@ This module exposes interactions with the local gateway.
 
 import gateway_msgs.msg as gateway_msgs
 import gateway_msgs.srv as gateway_srvs
-import rocon_gateway_utils
 import rocon_python_comms
 import rospy
 import std_srvs.srv as std_srvs
@@ -108,7 +107,7 @@ class LocalGateway(object):
         req = gateway_srvs.RemoteRequest()
         req.cancel = cancel
         req.remotes = []
-        for service_name in ['platform_info', 'list_apps', 'get_status', 'invite']:
+        for service_name in ['platform_info', 'list_rapps', 'get_status', 'invite']:
             rule = gateway_msgs.Rule()
             rule.name = str('/' + remote_gateway_name + '/' + service_name)
             rule.node = ''

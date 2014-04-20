@@ -30,12 +30,12 @@ from . import transitions
 
 class ConcertClient(object):
     __slots__ = [
-        'msg',                # concert_msgs.ConcertClient
-        '_cached_status_msg', # rocon_app_manager_msgs.Status, details of the last status update from the client
-        'gateway_info',       # gateway_msgs.RemoteGateway
-        '_timestamps',        # last observed and last state change timestamps
+        'msg',                 # concert_msgs.ConcertClient
+        '_cached_status_msg',  # rocon_app_manager_msgs.Status, details of the last status update from the client
+        'gateway_info',        # gateway_msgs.RemoteGateway
+        '_timestamps',         # last observed and last state change timestamps
         '_transition_handlers',
-        '_lock',              # for protecting access to the msg variable
+        '_lock',               # for protecting access to the msg variable
     ]
 
     State = concert_msgs.ConcertClientState
@@ -71,7 +71,7 @@ class ConcertClient(object):
         self._timestamps['last_state_change'] = rospy.get_rostime()
 
         # status
-        rospy.Subscriber(self.gateway_name + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
+        rospy.Subscriber('/' + self.gateway_name + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
 
     ##############################################################################
     # Timestamping

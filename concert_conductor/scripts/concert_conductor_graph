@@ -62,7 +62,7 @@ class ConductorGraph(object):
         for slot in msg.__slots__:
             concert_client_list = getattr(msg, slot)
             if concert_client_list:
-                print(console.bold + "\n" + slot.capitalize() + " Clients" + console.reset)
+                print(console.bold + slot.capitalize() + " Clients" + console.reset)
                 #print('{:^15}'.format("Concert Alias") + '|' + '{:^25}'.format("Gateway Name") + '|' + '{:^10}'.format("Is Local") + '|' + ' Rocon URI')
                 for concert_client in concert_client_list:
                     print("%s" % concert_conductor.ConcertClient.msg2string(concert_client, concert_client_formatting_indent, show_state=False))
