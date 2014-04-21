@@ -81,10 +81,11 @@ class CompatibilityTreeScheduler(object):
           @param msg : concert_msgs.ConcertClients
         """
         self._lock.acquire()
+        invited_clients = msg.clients + msg.missing_clients  # both connected and missing (lost wireless connection)
         # new_clients: concert_msgs.ConcertClient[]
-        new_clients = [client for client in msg.clients if client.gateway_name not in self._clients.keys()]
+        new_clients = [client for client in invited_clients if client.gateway_name not in self._clients.keys()]
         # lost_clients: common.ConcertClient[]
-        lost_clients = [client for client in self._clients.values() if client.gateway_name not in [c.gateway_name for c in msg.clients]]
+        lost_clients = [client for client in self._clients.values() if client.gateway_name not in [c.gateway_name for c in invited_clients]]
         # work over the client list
         for client in new_clients:
             rospy.loginfo("Scheduler : new concert client [%s]" % client.name)
