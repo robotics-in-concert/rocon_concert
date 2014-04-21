@@ -62,7 +62,9 @@ class AvailableToMissing(object):
         self.concert_client = concert_client
 
     def __call__(self):
-        pass  # To be implemented.
+        # Not implemented yet, thought I'd need to update something here,
+        # but may actually not be necessary..
+        pass
 
 ##############################################################################
 # Transition Table

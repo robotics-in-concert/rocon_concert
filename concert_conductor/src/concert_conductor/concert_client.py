@@ -233,9 +233,12 @@ class ConcertClient(object):
 
     def update(self, remote_gateway_info):
         """
-        Processing on the ConcertClient (self.msg) variable is done here, using
-        inputs from the cached status message as well as the latest remote
-        gateway info about this client.
+        Common updates for clients that have been observed on the gateway network.
+
+        This handles updates from both the incoming gateway information (remote_gateway_info)
+        as well as the cached rapp manager information (self._cached_status_msg). Updates primarily
+        go into the concert client message data (self.msg).
+
         :param remote_gateway_info gateway_msgs.RemoteGateway
         """
         self.touch()

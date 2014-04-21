@@ -383,7 +383,11 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()  # this should change to a transition to MISSING
+            del self._flat_client_dict[concert_client.gateway_name]
+            self._transition(concert_client, State.GONE)()
+            return True
+        if not remote_gateway.conn_stats.gateway_available:  # it's dropped off it's wireless
+            self._transition(concert_client, State.MISSING)()
             return True
         return False
 
@@ -394,6 +398,12 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
+        if remote_gateway is None:
+            self._transition(concert_client, State.GONE)()
+            return True
+        if remote_gateway.conn_stats.gateway_available:  # it's dropped off it's wireless
+            self._transition(concert_client, State.AVAILABLE)()
+            return True
         return False
 
     def _update_gone_client(self, remote_gateway, concert_client):
