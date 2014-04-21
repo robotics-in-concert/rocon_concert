@@ -17,11 +17,6 @@ This module defines exceptions raised by the concert_conductor package.
 ##############################################################################
 
 
-class ConcertClientException(Exception):
-    """Exception class for concert client related errors"""
-    pass
-
-
 class ConductorFailureException(Exception):
     """Catostrophic failure in the conductor node"""
     pass
