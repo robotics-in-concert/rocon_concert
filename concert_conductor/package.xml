@@ -28,4 +28,8 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
 
+  <export>
+    <rosdoc config="rosdoc.yaml"/>    
+  </export>
+
 </package>
