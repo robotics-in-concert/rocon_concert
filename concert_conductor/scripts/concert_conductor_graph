@@ -71,10 +71,27 @@ class ConductorGraph(object):
 # Main
 ##############################################################################
 
+
+def console_only_main():
+    rospy.init_node('concert_conductor_graph')
+    unused_conductor_graph = ConductorGraph()
+    rospy.spin()
+
+
 if __name__ == '__main__':
     args = parse_arguments()
-    if not args.console:
-        print(console.red + "\nThe rqt plugin is not yet supported, falling back to console mode.\n" + console.reset)
-    rospy.init_node('concert_conductor_graph')
-    conductor_graph = ConductorGraph()
-    rospy.spin()
+
+    display_available = True if 'DISPLAY' in os.environ.keys() else False
+    try:
+        import concert_conductor_graph
+        from rqt_gui.main import Main
+        qt_available = True
+    except ImportError:
+        qt_available = False
+        if display_available and not args.console:
+            print(console.red + "WARNING: rqt plugin not found, console output only (hint: install concert_conductor_graph)." + console.reset)
+    if args.console or not display_available or not qt_available:
+        console_only_main()
+    else:
+        main = Main()
+        sys.exit(main.main(argv=sys.argv, standalone='concert_conductor_graph'))

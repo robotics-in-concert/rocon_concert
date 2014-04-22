@@ -21,6 +21,7 @@ catkin_python_setup()
 install(
     PROGRAMS 
         scripts/conductor.py
+        scripts/concert_conductor_graph
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
