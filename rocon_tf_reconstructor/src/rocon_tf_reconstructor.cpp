@@ -27,7 +27,7 @@ namespace rocon {
 
   void RoconTFReconstructor::getParams()
   {
-    this->nh.param<std::string>("concert_client_changes",this->sub_client_list_topic, concert_msgs::Strings::CONCERT_CLIENT_CHANGES);
+    this->nh.param<std::string>("concert_client_changes",this->sub_client_list_topic, "/concert/conductor/concert_client_changes");
     this->nh.param<std::string>("robotpose_topic",this->sub_robotpose_topic,"robot_pose");
   }
 
