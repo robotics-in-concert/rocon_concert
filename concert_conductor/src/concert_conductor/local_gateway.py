@@ -79,6 +79,7 @@ class LocalGateway(object):
                     rospy.loginfo("Conductor : no hub yet available, spinning...")
             if rospy.get_rostime() - start_time > rospy.Duration(15.0):
                 raise rocon_python_comms.NotFoundException("couldn't retrieve gateway information")
+        gateway_info_proxy.unregister()
         return (name, ip)
 
     def get_remote_gateway_info(self):
