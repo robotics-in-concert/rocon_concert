@@ -233,6 +233,7 @@ class ConcertClients(object):
             if concert_client.time_since_last_state_change() > 10.0:
                 rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
                 self._transition(concert_client, State.BAD)()
+                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
                 return True
             else:
                 return False  # let's keep trying till the last_state_change timeout kicks in
@@ -246,14 +247,17 @@ class ConcertClients(object):
             if platform_info.version != rocon_std_msgs.Strings.ROCON_VERSION:
                 rospy.logwarn("Conductor : concert client and conductor rocon versions do not match [%s][%s]" % (platform_info.version, rocon_std_msgs.Strings.ROCON_VERSION))
                 self._transition(concert_client, State.BAD)()
+                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
                 return True
             available_rapps = list_rapps_service().available_rapps
+            rospy.logwarn("DJS : got the platform info and rapps.")
             self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
-        except rospy.ServiceException:
+            # no longer needed as we have the information stored
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['platform_info', 'list_rapps'])
+            return True
+        except (rospy.ServiceException, rospy.ROSInterruptException):
             return False  # let's keep trying till the last_state_change timeout kicks in
-        except rospy.ROSInterruptException:
-            return False
-        return True
+        return False
 
     def _update_bad_client(self, remote_gateway, concert_client):
         """
@@ -265,6 +269,8 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            return True
+        return False
 
     def _update_blocking_client(self, remote_gateway, concert_client):
         """
@@ -276,6 +282,8 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            return True
+        return False
 
     def _update_busy_client(self, remote_gateway, concert_client):
         """
@@ -287,6 +295,8 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            return True
+        return False
 
     def _update_uninvited_client(self, remote_gateway, concert_client):
         """
@@ -300,10 +310,13 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+            return True
 
         if self._param['local_clients_only'] and not concert_client.is_local_client:
             rospy.loginfo("Conductor : shunning this (non-local) client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
             self._transition(concert_client, State.BLOCKING)()
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
             return True
         elif self._param['auto_invite']:
             # try an invite
@@ -315,6 +328,7 @@ class ConcertClients(object):
                                   )
                 if response.result:
                     self._transition(concert_client, State.JOINING)()
+                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
                     return True
                 else:
                     rospy.logwarn("Conductor : failed to invite client [%s][%s]" % (response.message, concert_client.gateway_name))
@@ -332,10 +346,12 @@ class ConcertClients(object):
                         rospy.logwarn("Conductor : invitation to %s failed [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BAD)()
                         self._clients_by_state[State.BAD][remote_gateway.name] = concert_client
+                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
                     return True
             except rospy.ServiceException:
                 rospy.logwarn("Conductor : invitation to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
                 self._transition(concert_client, State.BAD)()
+                self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
                 return True
             except rospy.ROSInterruptException:  # interrupted by conductor's rosmaster shutdown
                 return False
@@ -354,6 +370,7 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            return True
 
         # Check for handles
         start_app_service_name = '/' + concert_client.gateway_name + '/start_rapp'

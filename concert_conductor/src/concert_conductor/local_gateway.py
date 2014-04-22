@@ -97,7 +97,7 @@ class LocalGateway(object):
             return []
         return remote_gateway_info.gateways
 
-    def request_pulls(self, remote_gateway_name, cancel=False):
+    def request_pulls(self, remote_gateway_name, cancel=False, service_names=['platform_info', 'list_rapps', 'invite']):
         """
         Handles pull requests and cancels from request gateways for the conductor. Note this
         only applies to topics/services relevant for interacting with concert clients.
@@ -108,7 +108,7 @@ class LocalGateway(object):
         req = gateway_srvs.RemoteRequest()
         req.cancel = cancel
         req.remotes = []
-        for service_name in ['platform_info', 'list_rapps', 'get_status', 'invite']:
+        for service_name in service_names:
             rule = gateway_msgs.Rule()
             rule.name = str('/' + remote_gateway_name + '/' + service_name)
             rule.node = ''
@@ -123,4 +123,4 @@ class LocalGateway(object):
         # TODO : exception handling for this call
         response = self._services['pull'](req)
         if response.result != gateway_msgs.ErrorCodes.SUCCESS and not cancel:  # don't worry about errors on cleanup
-            rospy.logwarn("Conductor: failed to register pull requests from the concert client [%s]" % (remote_gateway_name))  # TODO : exceptions, but what kind of failures?
+            rospy.logwarn("Conductor: failed to register pull requests from the concert client [%s]%s" % (remote_gateway_name, service_names))  # TODO : exceptions, but what kind of failures?
