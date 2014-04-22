@@ -253,7 +253,7 @@ class ConcertClients(object):
             rospy.logwarn("DJS : got the platform info and rapps.")
             self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
             # no longer needed as we have the information stored
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['platform_info', 'list_rapps'])
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['platform_info', 'list_rapps'], topic_names=[])
             return True
         except (rospy.ServiceException, rospy.ROSInterruptException):
             return False  # let's keep trying till the last_state_change timeout kicks in
@@ -310,13 +310,13 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
             return True
 
         if self._param['local_clients_only'] and not concert_client.is_local_client:
             rospy.loginfo("Conductor : shunning this (non-local) client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
             self._transition(concert_client, State.BLOCKING)()
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
             return True
         elif self._param['auto_invite']:
             # try an invite
@@ -328,7 +328,7 @@ class ConcertClients(object):
                                   )
                 if response.result:
                     self._transition(concert_client, State.JOINING)()
-                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                     return True
                 else:
                     rospy.logwarn("Conductor : failed to invite client [%s][%s]" % (response.message, concert_client.gateway_name))
@@ -346,12 +346,12 @@ class ConcertClients(object):
                         rospy.logwarn("Conductor : invitation to %s failed [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BAD)()
                         self._clients_by_state[State.BAD][remote_gateway.name] = concert_client
-                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                     return True
             except rospy.ServiceException:
                 rospy.logwarn("Conductor : invitation to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
                 self._transition(concert_client, State.BAD)()
-                self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'])
+                self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                 return True
             except rospy.ROSInterruptException:  # interrupted by conductor's rosmaster shutdown
                 return False

@@ -97,7 +97,7 @@ class LocalGateway(object):
             return []
         return remote_gateway_info.gateways
 
-    def request_pulls(self, remote_gateway_name, cancel=False, service_names=['platform_info', 'list_rapps', 'invite']):
+    def request_pulls(self, remote_gateway_name, cancel=False, service_names=['platform_info', 'list_rapps', 'invite'], topic_names=['status']):
         """
         Handles pull requests and cancels from request gateways for the conductor. Note this
         only applies to topics/services relevant for interacting with concert clients.
@@ -114,7 +114,7 @@ class LocalGateway(object):
             rule.node = ''
             rule.type = gateway_msgs.ConnectionType.SERVICE
             req.remotes.append(gateway_msgs.RemoteRule(remote_gateway_name.lstrip('/'), rule))
-        for publisher_name in ['status']:
+        for publisher_name in topic_names:
             rule = gateway_msgs.Rule()
             rule.name = str('/' + remote_gateway_name + '/' + publisher_name)
             rule.node = ''
