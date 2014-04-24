@@ -250,7 +250,6 @@ class ConcertClients(object):
                 self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
                 return True
             available_rapps = list_rapps_service().available_rapps
-            rospy.logwarn("DJS : got the platform info and rapps.")
             self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
             # no longer needed as we have the information stored
             self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['platform_info', 'list_rapps'], topic_names=[])
