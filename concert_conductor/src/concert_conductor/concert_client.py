@@ -53,6 +53,7 @@ class ConcertClient(object):
         self.msg.name = concert_alias
         self.msg.gateway_name = gateway_info.name
         self.msg.state = ConcertClient.State.PENDING
+        self.msg.ip = gateway_info.ip
         self.msg.is_local_client = is_local_client
         self.gateway_info = gateway_info
         # This will get assigned when a msg comes in and set back to none once it is processed.

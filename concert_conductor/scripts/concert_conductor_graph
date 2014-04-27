@@ -47,7 +47,7 @@ class ConductorGraph(object):
                 self.topic_name = rocon_python_comms.find_topic('concert_msgs/ConductorGraph', timeout=rospy.rostime.Duration(0.1), unique=True)
                 break
             except rocon_python_comms.NotFoundException:
-                time.sleep(0.1)  # just loop around
+                pass  # just loop around
         if not rospy.is_shutdown():
             rospy.logwarn("Setting up subscriber on %s" % self.topic_name)
             rospy.Subscriber(self.topic_name, concert_msgs.ConductorGraph, self.ros_conductor_graph_callback)
