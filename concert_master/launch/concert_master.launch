@@ -41,7 +41,7 @@
     <!-- ***************************** Service Manager *************************** -->
     <include file="$(find concert_service_manager)/launch/service_manager.launch">
       <arg name="services" value="$(arg services)" />
-      <arg name="auto_enable_services" value="$(arg auto_enable_services" />
+      <arg name="auto_enable_services" value="$(arg auto_enable_services)" />
     </include>
 
     <!-- ****************************** Conductor ****************************** -->
