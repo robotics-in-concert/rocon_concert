@@ -76,10 +76,11 @@ class CompatibilityTreeScheduler(object):
     def _ros_subscriber_concert_client_changes(self, msg):
         """
           Receives a list of all concert clients every time the state of the
-          list changes (i.e. not periodically)
+          list changes (i.e. not periodically).
 
           @param msg : concert_msgs.ConcertClients
         """
+        pending_notifications = []
         self._lock.acquire()
         invited_clients = msg.clients + msg.missing_clients  # both connected and missing (lost wireless connection)
         # new_clients: concert_msgs.ConcertClient[]
@@ -106,7 +107,7 @@ class CompatibilityTreeScheduler(object):
                                 found = True
                                 break
                         if found:
-                            self._scheduler.notify(request_set.requester_id)
+                            pending_notifications.append(request_set.requester_id)
                             # @todo might want to consider changing the request status if all resources have been unallocated
                             break
                     if found:
@@ -116,8 +117,10 @@ class CompatibilityTreeScheduler(object):
         if new_clients or lost_clients:
             self._publish_resource_pool()
         # should check for some things here, e.g. can we verify a client is allocated or not?
-        self._update()
+        pending_notifications.extend(self._update(external_update=True))
         self._lock.release()
+        for requester_id in pending_notifications:
+            self._scheduler.notify(requester_id)
 
     def _publish_resource_pool(self):
         '''
@@ -147,22 +150,24 @@ class CompatibilityTreeScheduler(object):
         self._update()
         self._lock.release()
 
-    def _update(self):
+    def _update(self, external_update=False):
         """
           Logic for allocating resources after there has been a state change in either the list of
           available concert clients or the incoming resource requests.
 
-          Note : this must be protected by being called inside locked code
+          :param external_update bool: whether or not this is called inside the scheduler thread or not.
+          :returns: list of requester id's that have notifications pending.
 
-          @todo test use of rlocks here
+          We have to be careful with sending notifications if calling this from outside the scheduler thread.
         """
         there_be_requests = False
         for request_set in self._request_sets.values():
             if request_set.keys():
                 there_be_requests = True
         if not there_be_requests:
-            return  # Nothing to do
+            return [] # Nothing to do
 
+        pending_notifications = []
         ########################################
         # Sort the request sets
         ########################################
@@ -266,30 +271,28 @@ class CompatibilityTreeScheduler(object):
         # subscriber callback...can we move this somewhere centralised?
         for (resource_uri_string, request_id_hexstring) in reallocated_clients.iteritems():
             request_id = uuid.UUID(request_id_hexstring)
-            #rospy.logwarn("DJS : handling reallocation [%s][%s]" % (resource_uri_string, request_id_hexstring))
             # awkward that I don't have the requester id saved anywhere so
             # we have to parse through each requester's set of requests to find
             # the request id we want
             found = False
             for request_set in self._request_sets.values():
                 for request in request_set.values():
-                    #rospy.logwarn("DJS :   [%s][%s]" % (request_id.hex, request.uuid.hex))
                     if request.uuid == request_id:
                         for resource in request.msg.resources:
-                            #rospy.logwarn("DJS :     [%s][%s]" % (resource_uri_string, resource.uri))
                             # could use a better way to check for equality than this
                             if resource.uri == resource_uri_string:
                                 updated_resource_uri = rocon_uri.parse(resource_uri_string)
                                 updated_resource_uri.name = concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE
                                 resource.uri = str(updated_resource_uri)
-                                #rospy.logwarn("DJS :       updated resource uri [%s]" % resource.uri)
                                 found = True
                                 break
                     if found:
                         break
                 if found:
-                    #rospy.logwarn("DJS :  notifying [%s]" % request_set.requester_id)
-                    self._scheduler.notify(request_set.requester_id)
+                    if external_update:
+                        pending_notifications.append(request_set.requester_id)
+                    else:
+                        self._scheduler.notify(request_set.requester_id)
                     # @todo might want to consider changing the request status if all resources have been unallocated
                     break
 
@@ -312,3 +315,4 @@ class CompatibilityTreeScheduler(object):
         # Publish an update?
         if resource_pool_state_changed or releasing_replies:
             self._publish_resource_pool()
+        return pending_notifications
