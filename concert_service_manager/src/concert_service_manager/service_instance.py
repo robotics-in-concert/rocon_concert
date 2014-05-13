@@ -61,7 +61,7 @@ class ServiceInstance(object):
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
-        self._shutdown_publisher = rospy.Publisher(self._namespace + "/shutdown", std_msgs.Empty, latch=False)
+        self._shutdown_publisher = rospy.Publisher(self._namespace + "/shutdown", std_msgs.Empty, latch=False, queue_size=5)
 
     def __del__(self):
         if self._proc is not None:

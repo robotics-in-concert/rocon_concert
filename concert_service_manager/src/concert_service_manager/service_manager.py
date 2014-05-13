@@ -99,7 +99,7 @@ class ServiceManager(object):
 
     def _setup_ros_publishers(self):
         publishers = {}
-        publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.Services, latch=True)
+        publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.Services, latch=True, queue_size=1)
         return publishers
 
     def _ros_service_enable_concert_service(self, req):

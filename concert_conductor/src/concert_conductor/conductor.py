@@ -101,10 +101,10 @@ class Conductor(object):
     def _setup_publishers(self):
         publishers = {}
         # high frequency list_concert_clients publisher - good for connectivity statistics and app status'
-        publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients)
+        publishers["concert_clients"] = rospy.Publisher("~concert_clients", concert_msgs.ConcertClients, queue_size=5)
         # efficient latched publisher which only publishes on client leaving/joining (and ready for action)
-        publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True)
-        publishers["graph"] = rospy.Publisher("~graph", concert_msgs.ConductorGraph, latch=True)
+        publishers["concert_client_changes"] = rospy.Publisher("~concert_client_changes", concert_msgs.ConcertClients, latch=True, queue_size=1)
+        publishers["graph"] = rospy.Publisher("~graph", concert_msgs.ConductorGraph, latch=True, queue_size=5)
         return publishers
 
     def publish_conductor_graph(self, clients):
