@@ -21,6 +21,7 @@ import rocon_uri
 import concert_schedulers.common as common
 from concert_schedulers.common.exceptions import FailedToAllocateException
 from .compatibility_tree import create_compatibility_tree, prune_compatibility_tree, CompatibilityTree
+from .ros_parameters import setup_ros_parameters
 
 ##############################################################################
 # Classes
@@ -38,7 +39,7 @@ class CompatibilityTreeScheduler(object):
             '_scheduler',
             '_clients',
             '_requests',
-            '_debug_show_compatibility_tree'
+            '_parameters',
         ]
 
     ##########################################################################
@@ -60,7 +61,7 @@ class CompatibilityTreeScheduler(object):
 
         self._scheduler = concert_scheduler_requests.Scheduler(callback=self._requester_update, topic=requests_topic_name)
         self._setup_ros_api(concert_clients_topic_name)
-        self._debug_show_compatibility_tree = True
+        self._parameters = setup_ros_parameters()
 
         # aliases
         self.spin = rospy.spin
@@ -165,7 +166,7 @@ class CompatibilityTreeScheduler(object):
             if request_set.keys():
                 there_be_requests = True
         if not there_be_requests:
-            return [] # Nothing to do
+            return []  # nothing to do
 
         pending_notifications = []
         ########################################
@@ -204,18 +205,21 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : ignoring lower priority requests until higher priorities are filled")
                 break
             # add preemptible clients to the candidates
-            allocatable_clients = unallocated_clients + [client for client in self._clients.values() if (client.allocated and client.allocated_priority < request.priority)]
+            if self._parameters['enable_preemptions']:
+                allocatable_clients = unallocated_clients + [client for client in self._clients.values() if (client.allocated and client.allocated_priority < request.priority)]
+            else:
+                allocatable_clients = unallocated_clients
             if not allocatable_clients:
                 # this gets spammy...
                 #rospy.loginfo("Scheduler : no resources available to satisfy request [%s]" % request_id)
                 last_failed_priority = request.priority
                 continue
             compatibility_tree = create_compatibility_tree(request.resources, allocatable_clients)
-            if self._debug_show_compatibility_tree:
+            if self._parameters['debug_show_compatibility_tree']:
                 compatibility_tree.print_branches("Compatibility Tree")
-            pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=self._debug_show_compatibility_tree)
+            pruned_branches = prune_compatibility_tree(compatibility_tree, verbosity=self._parameters['debug_show_compatibility_tree'])
             pruned_compatibility_tree = CompatibilityTree(pruned_branches)
-            if self._debug_show_compatibility_tree:
+            if self._parameters['debug_show_compatibility_tree']:
                 pruned_compatibility_tree.print_branches("Pruned Tree", '  ')
             if pruned_compatibility_tree.is_valid():
                 rospy.loginfo("Scheduler : compatibility tree is valid, attempting to allocate [%s]" % request_id)

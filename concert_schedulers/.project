@@ -3,6 +3,7 @@
 	<name>concert_schedulers</name>
 	<comment></comment>
 	<projects>
+		<project>concert_scheduler_requests</project>
 		<project>rocon_console</project>
 		<project>rocon_uri</project>
 		<project>unique_id</project>

@@ -24,8 +24,9 @@
   <arg name="rosbridge_address" default="localhost"/>
   <arg name="rosbridge_port" default="9090"/>
   <!--                  Schedulers
-      - compatibility_tree : concert_schedulers/compatibility_tree_scheduler.launch
-      - simple             : concert_schedulers/simple_scheduler.launch
+      - preemptive_compatibility_tree : concert_schedulers/preemptive_compatibility_tree_scheduler.launch
+      - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
+      - simple                        : concert_schedulers/simple_scheduler.launch
    -->
   <arg name="scheduler_type" default="compatibility_tree"/>
 
