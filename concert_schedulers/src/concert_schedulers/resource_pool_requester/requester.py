@@ -111,6 +111,7 @@ class ResourcePoolRequester(object):
           cancels everything and starts reissuing new requests).
         '''
         #self._lock.acquire()
+        rospy.loginfo("Requester : cancelling all requests")
         self._requester.cancel_all()
         self._requester.send_requests()
         #self._lock.release()
@@ -137,6 +138,7 @@ class ResourcePoolRequester(object):
             elif request.msg.status == scheduler_msgs.Request.GRANTED:
                 self._flag_resource_trackers(request.msg.resources, tracking=True, allocated=True, high_priority_flag=high_priority_flag)
                 if request_completely_unallocated(request):
+                    rospy.loginfo("Requester : cancelling request [has been completely unallocated]")
                     request.cancel()
             elif request.msg.status == scheduler_msgs.Request.CLOSED:
                 self._flag_resource_trackers(request.msg.resources, tracking=False, allocated=False)
