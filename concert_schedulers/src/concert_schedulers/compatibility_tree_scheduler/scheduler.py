@@ -304,12 +304,12 @@ class CompatibilityTreeScheduler(object):
         # Releasing
         ########################################
         for reply in releasing_replies:
-            rospy.loginfo("Scheduler : releasing resources from cancelled request [%s]" % (reply.msg.resources))
-            #print("Releasing Resources: %s" % [r.rapp for r in reply.msg.resources])
-            #print("  Releasing Resources: %s" % [r.uri for r in reply.msg.resources])
-            #print("  Clients: %s" % self._clients.keys())
-            #for client in self._clients.values():
-            #    print(str(client))
+            if reply.msg.reason == scheduler_msgs.Request.NONE:
+                rospy.loginfo("Scheduler : releasing resources from cancelled request [%s][none]" % ([resource.rapp for resource in reply.msg.resources]))
+            elif reply.msg.reason == scheduler_msgs.Request.TIMEOUT:
+                rospy.loginfo("Scheduler : releasing resources from cancelled request [%s][scheduler-requester watchdog timeout]" % ([resource.rapp for resource in reply.msg.resources]))
+            else:
+                rospy.loginfo("Scheduler : releasing resources from cancelled request [%s][%s]" % ([resource.rapp for resource in reply.msg.resources], reply.msg.reason))
             for resource in reply.msg.resources:
                 try:
                     self._clients[rocon_uri.parse(resource.uri).name.string].abandon()
