@@ -327,7 +327,6 @@ class ConcertClients(object):
                                   )
                 if response.result:
                     self._transition(concert_client, State.JOINING)()
-                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                     return True
                 else:
                     rospy.logwarn("Conductor : failed to invite client [%s][%s]" % (response.message, concert_client.gateway_name))
@@ -338,6 +337,7 @@ class ConcertClients(object):
                        ):
                         rospy.logwarn("Conductor : invitation to %s was blocked [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BLOCKING)()
+                        self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                     elif response.error_code == rocon_app_manager_msgs.ErrorCodes.ALREADY_REMOTE_CONTROLLED:
                         rospy.logwarn("Conductor : invitation to %s was refused [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BUSY)()
@@ -345,7 +345,7 @@ class ConcertClients(object):
                         rospy.logwarn("Conductor : invitation to %s failed [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
                         self._transition(concert_client, State.BAD)()
                         self._clients_by_state[State.BAD][remote_gateway.name] = concert_client
-                    self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
+                        self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
                     return True
             except rospy.ServiceException:
                 rospy.logwarn("Conductor : invitation to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
