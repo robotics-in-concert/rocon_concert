@@ -300,6 +300,7 @@ class CompatibilityTreeScheduler(object):
         # Releasing
         ########################################
         for reply in releasing_replies:
+            rospy.loginfo("Scheduler : releasing resources from cancelled request [%s]" % (reply.msg.resources))
             #print("Releasing Resources: %s" % [r.rapp for r in reply.msg.resources])
             #print("  Releasing Resources: %s" % [r.uri for r in reply.msg.resources])
             #print("  Clients: %s" % self._clients.keys())
