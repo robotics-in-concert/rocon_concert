@@ -72,11 +72,11 @@
     <node pkg="rocon_gateway" type="gateway.py" name="gateway">
       <rosparam command="load" file="$(find rocon_gateway)/param/default.yaml"/>
       <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml"/>
+      <rosparam param="hub_whitelist" subst_value="True">["$(arg hub_uri)"]</rosparam>
       <param name="hub_uri" value="$(arg hub_uri)"/>
       <param name="name" value="$(arg concert_name)"/>
       <param name="firewall" value="false"/>
       <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
-      <param name="hub_whitelist" value="$(arg hub_uri)"/>
       <param name="disable_uuids" value="$(arg gateway_disable_uuids)"/>
       <param name="network_interface" value="$(arg gateway_network_interface)"/>
       <param name="external_shutdown" value="true"/> <!-- let the conductor shut this node down -->

@@ -35,6 +35,25 @@ class Dummy(object):
         pass
 
 
+class TransitionToGone(object):
+    """
+    Transition handler when moving from any state to the gone state. This will always
+    occur if the remote gateway has disappeared from the hub's awareness (happens
+    when the remote gateway shuts down) or has been missing too long. We manually
+    update the fact that the gateway is no longer available in the concert client's
+    data here.
+    """
+
+    def __init__(self, concert_client):
+        self.concert_client = concert_client
+
+    def __call__(self):
+        """
+        Nothing to do here.
+        """
+        self.concert_client.msg.conn_stats.gateway_available = False
+
+
 class PendingToUninvited(object):
     """
     Triggered when information about this client has been gathered.
@@ -75,13 +94,13 @@ StateTransitionTable = {
     (State.PENDING, State.BLOCKING)  : Dummy,
     (State.PENDING, State.BUSY)      : Dummy,
     (State.PENDING, State.UNINVITED) : PendingToUninvited,
-    (State.PENDING, State.GONE)      : Dummy,
+    (State.PENDING, State.GONE)      : TransitionToGone,
 
     (State.UNINVITED, State.BAD)      : Dummy,
     (State.UNINVITED, State.BLOCKING) : Dummy,
     (State.UNINVITED, State.BUSY)     : Dummy,
     (State.UNINVITED, State.JOINING)  : Dummy,
-    (State.UNINVITED, State.GONE)     : Dummy,
+    (State.UNINVITED, State.GONE)     : TransitionToGone,
 
     (State.JOINING, State.BAD)        : Dummy,
     (State.JOINING, State.AVAILABLE)  : Dummy,
@@ -90,15 +109,15 @@ StateTransitionTable = {
     (State.AVAILABLE, State.BAD)      : Dummy,
     (State.AVAILABLE, State.MISSING)  : AvailableToMissing,
     (State.AVAILABLE, State.UNINVITED): Dummy,
-    (State.AVAILABLE, State.GONE)     : Dummy,
+    (State.AVAILABLE, State.GONE)     : TransitionToGone,
 
     (State.MISSING, State.AVAILABLE)  : Dummy,
-    (State.MISSING, State.GONE)       : Dummy,
+    (State.MISSING, State.GONE)       : TransitionToGone,
 
     (State.BUSY, State.UNINVITED)     : Dummy,
-    (State.BUSY, State.GONE)          : Dummy,
+    (State.BUSY, State.GONE)          : TransitionToGone,
 
-    (State.BLOCKING, State.GONE)      : Dummy,
+    (State.BLOCKING, State.GONE)      : TransitionToGone,
 
-    (State.BAD, State.GONE)           : Dummy,
+    (State.BAD, State.GONE)           : TransitionToGone,
 }
