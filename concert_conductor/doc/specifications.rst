@@ -1,13 +1,16 @@
-=================
+==============
+Specifications
+==============
+
 The State Machine
-=================
+-----------------
 
 Each concert client participates in a state machine which tracks their lifecycle in the concert framework.
 This state machine enables us to make quick decisions if needed or to remember the current state and
 delay the decision until the next cycle of decision making comes around.
 
 Important Files
-===============
+---------------
 
 * ``concert_msgs/ConcertClientState.msg`` : list of states in string format.
 * ``concert_msgs/ConductorGraph.msg`` : call the __slots__ variable of this msg to get a list of all the states.

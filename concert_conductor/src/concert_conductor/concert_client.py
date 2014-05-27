@@ -3,6 +3,13 @@
 # License: BSD
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: concert_client
+
+This module wraps the concert_msgs data structure for a concert client in a
+python class for convenient handling inside the concert conductor node.
+"""
+
 ##############################################################################
 # Imports
 ##############################################################################
@@ -50,12 +57,14 @@ class ConcertClient(object):
           :param is_local_client bool: is on the same ip as the concert (if we care)
         '''
         self.msg = concert_msgs.ConcertClient()
+        """The publishable data structure describing a concert client."""
         self.msg.name = concert_alias
         self.msg.gateway_name = gateway_info.name
         self.msg.state = ConcertClient.State.PENDING
         self.msg.ip = gateway_info.ip
         self.msg.is_local_client = is_local_client
         self.gateway_info = gateway_info
+        """Information about this client's gateway used for flipping, pulling and collecting connectivity statistics."""
         # This will get assigned when a msg comes in and set back to none once it is processed.
         # We only ever do processing on self.msg in one place to avoid threading problems
         # (the transition handlers) so that is why we store a cached copy here.

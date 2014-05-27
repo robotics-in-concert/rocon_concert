@@ -22,5 +22,4 @@ at their leisure).
     quickstart
     launcher
     solution
-    CHANGELOG
-    
+    changelog
