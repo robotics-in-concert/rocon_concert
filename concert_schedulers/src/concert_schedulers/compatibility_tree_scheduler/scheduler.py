@@ -120,8 +120,24 @@ class CompatibilityTreeScheduler(object):
         # should check for some things here, e.g. can we verify a client is allocated or not?
         pending_notifications.extend(self._update(external_update=True))
         self._lock.release()
+        # can't put this inside the lock scope since we can have the following deadlock scenario:
+        #
+        # 1) scheduler node's scheduler_requests subscriber callback thread
+        # - scheduler is handling a scheduler_requests subscriber callback
+        #   - BIG LOCK.acquire()
+        #   - rqr.update()
+        #   - user callback
+        #     - CompatibilityTreeScheduler._update()
+        #     - self._lock.acquire()
+        # 2) this conductor client subscriber callback thread
+        #   - self._lock.acquire()
+        #   - scheduler.notify()
+        #   - BIG LOCK.acquire()
+        #
+        # but does this have consequences? what if the update callback works on this request set
+        # and publishes it and then we publish again here?
         for requester_id in pending_notifications:
-            self._scheduler.notify(requester_id)
+            self._scheduler.notify(requester_id)  # publishes the request set
 
     def _publish_resource_pool(self):
         '''
