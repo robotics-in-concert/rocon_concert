@@ -1,3 +1,4 @@
+actions: []
 authors: Daniel Stonier <d.stonier@gmail.com>
 brief: ''
 bugtracker: https://github.com/robotics-in-concert/rocon_concert/issues
@@ -5,17 +6,20 @@ depends:
 - rocon_gateway
 - rocon_hub
 - catkin
-- concert_conductor
+- rocon_master_info
+- concert_service_manager
 - concert_schedulers
 - rocon_interactions
 - zeroconf_avahi
-- concert_service_manager
+- concert_conductor
+- python-catkin-pkg
 - concert_msgs
-- rospy
+- rocon_python_utils
 - rocon_std_msgs
-- rocon_python_comms
+- rospy
 - rocon_console
-- rocon_utilities
+- rocon_python_comms
+- rocon_icons
 description: General concert functionality.
 license: BSD
 maintainers: Daniel Stonier <d.stonier@gmail.com>
@@ -23,4 +27,4 @@ msgs: []
 package_type: package
 repo_url: https://github.com/robotics-in-concert/rocon_concert
 srvs: []
-url: http://ros.org/wiki/concert_conductor
+url: http://ros.org/wiki/concert_master

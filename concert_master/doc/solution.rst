@@ -1,75 +1,111 @@
-Solution
-========
+Creating a Concert Solution
+===========================
 
-Installation
+Overview
+--------
+
+There are two steps to creating a concert solution.
+
+1. Wrapping `concert_master.launch` with your own customised arg settings.
+2. A list of configured concert services that you wish to run. 
+
+The Launcher
 ------------
 
-TODO 
+Wrapping the concert master launcher is simply a matter of setting args in your own
+``concert.roslaunch`` and including the ``concert_master/concert_master.launch`` file.
+The most oft used arguments to set include:
 
-
-Solution Bring-up
------------------
-
-.. code-block:: bash
-
-    $ roslaunch concert_master concert_master.launch --screen
-
-
-Preruntime Solution Configuration
----------------------------------
-
-*concert_master.launch* includes configurable arguements
-
-.. code-block:: xml
-  
-    <!-- ******************************* Arguments ******************************* -->
-    <!-- Concert -->
-    <arg name="concert_name" default="Pirate Concert"/>
-    <arg name="concert_icon" default="concert_master/rocon_text.png"/>
-    <arg name="concert_description" default="Pirates in concert."/>
-    <!-- Gateways -->
-    <arg name="hub_port" default="6380"/>
-    <arg name="hub_uri" default="http://localhost:6380"/>
-    <arg name="gateway_watch_loop_period" default="2"/> <!-- Polling period for multimaster advertising/flipping -->
-    <arg name="gateway_disable_uuids" default="false"/> <!-- manage unique naming of multiple gateways yourself -->
-    <arg name="gateway_network_interface" default="$(optenv GATEWAY_NETWORK_INTERFACE)"/>/>  <!-- If you have multiple n
-    <!-- Conductor -->
-    <arg name="conductor_auto_invite" default="true"/>
-    <arg name="conductor_local_clients_only" default="false"/>
-    <!-- Service Manager -->
-    <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
-    <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
-    <!-- Scheduler -->
-    <arg name="scheduler_type" default="demo"/>  <!-- options are demo, compatibility_tree -->
-
-
-
-Solution Service Configuration
-------------------------------
-
-.. code-block:: yaml
-  
-    <arg name="services" default=""/> <!-- e.g) concert_tutorial/tutorial.services -->
-
-*services* argument takes a resource location to specify list of services that serves solution. It includes name of services as well as parameters to override the default service parameters
-
-**Note that uuid is not overridable parameter** 
-
+* **concert_name**, **concert_icon**, **concert_description** : for advertising your concert to clients. 
+* **scheduler_type** : usually the default is fine, but sometimes you'll write your own or have specific needs.
+* **services** : a list of services to start on the concert, more information below.
+* **local_machine_only** : useful for testing with simulated clients on a single pc to avoid the noise of other concerts on the network.
 
 Example
 ^^^^^^^
 
-**concert_tutorial/tutorial.serivces**
+An example from `turtle_concert`_:
+
+.. code-block:: xml
+
+    <launch>
+        <arg name="turtle_services" default="turtle_concert/turtle.services"/>
+        <arg name="concert_name" default="Turtle Concert"/>
+        <arg name="scheduler_type" default="compatibility_tree"/>
+        <arg name="local_machine_only" default="true"/>  <!-- only invite clients if they are on the same pc -->
+
+        <include file="$(find concert_master)/launch/concert_master.launch">
+            <arg name="concert_name" value="$(arg concert_name)"/>
+            <arg name="services" value="$(arg turtle_services)"/>
+            <arg name="conductor_auto_invite" value="true" />
+            <arg name="conductor_local_clients_only" value="$(arg local_machine_only)" />
+            <arg name="auto_enable_services" value="true" />
+            <arg name="scheduler_type" value="$(arg scheduler_type)"/>
+        </include>
+    </launch>
+
+
+.. _`turtle_concert`: http://wiki.ros.org/turtle_concert
+
+
+Services
+--------
+
+In the example launcher above we passed in a service argument of the form:
+
+.. code-block:: xml
+  
+    <arg name="turtle_services" default="turtle_concert/turtle.services"/>
+    ....
+        <arg name="services" value="$(arg turtle_services)"/>
+    
+This argument takes a resource location to a yaml file which specifies the list of
+services that serves solution. It includes the resource name of the service definition
+file [#f1]_ as well as parameters that override the default service
+parameters.
+
+All services have a common set of overrideable parameters:
+
+* *name* : name given to this service that is also used to uniquely identify it
+* *priority* : the default priority used for resource requests (see scheduler_msgs.Request.XXX_PRIORITY constants for recommended levels) 
+* *description* : a human readable paragraph that describes this service.
+* *parameters* : a ros resource name used to lookup service specific parameterisations 
+
+Depending on the service and the service type it may also have its own set of
+overrideable parameters (just like a ros node's parameters). These can be configured by
+setting them in a yaml file and referencing that via the above *parameters* field.
+
+Example
+^^^^^^^
+
+**turtle_concert/turtle.services**
 
 .. code-block:: yaml
-  
-    - resource: concert_service_turtlesim/turtlesim
-      overrides:
-        name: My 'TurtleSim'
-        priority: 15
-        turtle_color: green
-    - resource: concert_service_admin/admin
-      overrides:
-        description: admin is useful
-    - name: turtle_concert/turtle_pond
-    - name: chatter_concert/chatter
+   
+   - resource_name: concert_service_turtlesim/turtlesim
+     overrides:
+       parameters: turtle_concert/turtlesim
+   - resource_name: turtle_concert/turtle_pond
+   - resource_name: concert_service_admin/admin
+   - resource_name: concert_service_teleop/teleop
+
+Here the parameters file is used to configure how many and which simulated turtles
+should be launched:
+
+.. code-block:: yaml
+
+   # These are all req'd, even if empty
+   turtles:
+     kobuki:
+       rapp_whitelist: [rocon_apps, turtle_concert]
+       concert_whitelist: [Turtle Concert, Turtle Teleop Concert, Concert Tutorial]
+     guimul:
+       rapp_whitelist: [rocon_apps, turtle_concert]
+       concert_whitelist: [Turtle Concert, Turtle Teleop Concert, Concert Tutorial] 
+
+Footnotes
+^^^^^^^^^
+
+.. [#f1] A specification for the service definition file is provide elsewhere - here we only elaborate on how to enable and parameterise a concert service.
+
+       
