@@ -3,6 +3,12 @@
 # License: BSD
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: transitions
+
+This module does transition handling for the concert client state machine.
+"""
+
 ##############################################################################
 # Imports
 ##############################################################################
@@ -121,3 +127,6 @@ StateTransitionTable = {
 
     (State.BAD, State.GONE)           : TransitionToGone,
 }
+"""
+Table of valid transitions and their transition handlers.
+"""

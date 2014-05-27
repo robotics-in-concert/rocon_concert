@@ -27,6 +27,10 @@ import std_srvs.srv as std_srvs
 
 
 class LocalGateway(object):
+    """
+    Convenience class for discovering and interacting with the local
+    gateway node.
+    """
     __slots__ = [
         '_services',
         'name',
@@ -60,6 +64,13 @@ class LocalGateway(object):
         return services
 
     def shutdown(self):
+        """
+        Initiates a shutdown call to both gateway and hub. This is executed as a ros shutdown
+        hook by the concert conductor class. This is necessary so the hub and gateway can
+        clean up and transmit final updates to all concert client gateways.
+
+        .. seealso:: :class:`.ConcertConductor`
+        """
         unused_response = rospy.ServiceProxy("~gateway_shutdown", std_srvs.Empty)()
         unused_response = rospy.ServiceProxy('~hub_shutdown', std_srvs.Empty)()
 
@@ -102,8 +113,8 @@ class LocalGateway(object):
         Handles pull requests and cancels from request gateways for the conductor. Note this
         only applies to topics/services relevant for interacting with concert clients.
 
-        :param remote_gateway_name str: name of a remote gateway to apply to all rules
-        :param cancel bool: to register or unregister the pull requests
+        :param str remote_gateway_name: name of a remote gateway to apply to all rules
+        :param bool cancel: to register or unregister the pull requests
         """
         req = gateway_srvs.RemoteRequest()
         req.cancel = cancel

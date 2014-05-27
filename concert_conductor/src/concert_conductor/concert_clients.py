@@ -71,6 +71,12 @@ def _is_local_client(concert_ip, gateway_ip):
 
 
 class ConcertClients(object):
+    """
+    Convenience class that emulates a dictionary holding :class:`.ConcertClient`
+    objects keyed by their gateway names.
+
+    .. seealso:: :class:`.ConcertClient`
+    """
 
     __slots__ = [
         '_concert_name',      # concert name, used for inviting clients
@@ -90,9 +96,9 @@ class ConcertClients(object):
     def __init__(self, local_gateway, parameters, publish_concert_clients, publish_graph_callback):
         """
         :param local_gateway: object used to interact with the local gateway (for pull requests etc)
-        :param params dict: ros parameters used for the conductor.
-        :param publish_concert_clients: function that takes a _clients_by_state variable for concert clients publishing
-        :param publish_graph_callback: function callback that accepts an _all_client_dicts variable for ros or stdout publishing
+        :param dict params: ros parameters available to the conductor.
+        :param func publish_concert_clients: function that takes a _clients_by_state variable for concert clients publishing
+        :param func publish_graph_callback: function callback that accepts an _all_client_dicts variable for ros or stdout publishing
         """
         self._concert_name = local_gateway.name
         self._local_gateway = local_gateway
@@ -125,6 +131,9 @@ class ConcertClients(object):
         return self._flat_client_dict[gateway_name]
 
     def shutdown(self):
+        """
+        Uninvites all currently connected concert clients.
+        """
         for concert_client in self._clients_by_state[State.AVAILABLE].values():
             self._uninvite_client(concert_client)
 
@@ -134,7 +143,7 @@ class ConcertClients(object):
 
     def update(self, visible_remote_gateway_list):
         """
-        :param visible_remote_gateway_list gateway_msgs.RemoteGateway[]: list of the remote gateways visible on the concert hub.
+        :param gateway_msgs.RemoteGateway[] visible_remote_gateway_list: list of the remote gateways visible on the concert hub.
 
         :return: whether a pertinent change occured in this concert client's list needs republishing (e.g. went missing...)
         :rtype: bool
@@ -214,8 +223,9 @@ class ConcertClients(object):
 
         If the services are found, it extracts the information and dumps that into the concert client
         instance before switching state to UNINVITED.
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -273,8 +283,8 @@ class ConcertClients(object):
 
     def _update_blocking_client(self, remote_gateway, concert_client):
         """
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -286,8 +296,8 @@ class ConcertClients(object):
 
     def _update_busy_client(self, remote_gateway, concert_client):
         """
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -301,8 +311,8 @@ class ConcertClients(object):
         """
         Only handling automatic invitiations for now.
 
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -361,8 +371,8 @@ class ConcertClients(object):
 
     def _update_joining_client(self, remote_gateway, concert_client):
         """
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -392,8 +402,8 @@ class ConcertClients(object):
 
     def _update_available_client(self, remote_gateway, concert_client):
         """
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
+        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -425,7 +435,7 @@ class ConcertClients(object):
     def _update_gone_client(self, remote_gateway, concert_client):
         """
         :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
+        :param concert_client concert_client.ConcertClient: update a client that has left the concert.
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
@@ -440,7 +450,8 @@ class ConcertClients(object):
     def _transition(self, concert_client, new_state):
         """
         Wrap some common code for transitioning a client.
-        :param concert_client concert_clients.ConcertClient:
+
+        :param concert_clients.ConcertClient concert_client:
         :param new_state State:
         """
         old_state = concert_client.state
@@ -452,6 +463,8 @@ class ConcertClients(object):
         """
         Uninvite a client. For now, this is only done on shutdown and so we
         don't handle any errors yet.
+
+        :param concert_clients.ConcertClient concert_client:
         """
         if concert_client.state != State.AVAILABLE:
             rospy.logwarn("Conductor : stubbornly refusing to uninvite an uninvited client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
@@ -483,7 +496,7 @@ class ConcertClients(object):
         '''
         Generate a friendly concert alias for this client given the (usually) uuid suffixed gateway name.
 
-        :param gateway_name str: the uuid'd gateway name (e.g. kobuki95fbd06982344cfc9b013ef7b184e420)
+        :param str gateway_name: the uuid'd gateway name (e.g. kobuki95fbd06982344cfc9b013ef7b184e420)
         :return: the concert alias
         :rtype: str
         '''
@@ -507,28 +520,3 @@ class ConcertClients(object):
                 break
         concert_name = gateway_basename if human_friendly_index == 0 else gateway_basename + str(human_friendly_index)
         return concert_name
-
-    ##############################################################################
-    # Graveyard
-    ##############################################################################
-
-#     def _update_existing_client_list(self, remote_gateway_index):
-#         '''
-#         Update existing clients.
-#
-#         :param remote_gateway_index dict: index of already existing remote gateways { remote_gateway_name : gateway_msgs.RemoteGateway }.
-#         :return: whether a pertinent change occured in this concert client's list needs republishing (e.g. went missing...)
-#         :rtype: bool
-#         '''
-#         update_required = False
-#         to_be_pruned_clients = []
-#         # Gateway names are unique hashed names, client names are also unique, but more human friendly
-#         for (gateway_name, concert_client) in self._flat_client_dict.items():
-#             if not gateway_name in remote_gateway_index.keys():
-#                 if concert_client.is_invited():
-#                     rospy.loginfo("Conductor : client left : " + gateway_name)
-#                     to_be_pruned_clients.append(gateway_name)
-#                     update_required = True
-#         for gateway_name in to_be_pruned_clients:
-#             self._send_to_oblivion(gateway_name)
-#         return update_required

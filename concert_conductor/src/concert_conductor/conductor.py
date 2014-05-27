@@ -3,6 +3,13 @@
 # License: BSD
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+
+"""
+.. module:: conductor
+
+This module defines the primary class for the concert conductor node.
+"""
+
 ##############################################################################
 # Imports
 ##############################################################################
@@ -21,6 +28,10 @@ from .local_gateway import LocalGateway
 
 
 class Conductor(object):
+    """
+    This class is the primary class for the concert conductor node. It handles
+    the ros level startup, communications and shutdown.
+    """
 
     ###########################################################################
     # Construction & Destruction
@@ -109,6 +120,9 @@ class Conductor(object):
 
     def publish_conductor_graph(self, clients):
         """
+        Publish the full list of concert clients (i.e. clients from every state, including bad, gone). This publication
+        is typically only intended for introspecting tools.
+
         :param clients dict: massive dict of dicts of all clients by state (see ConcertClient._clients variable)
         """
         # I'd like to do this: if self.publishers['graph'].get_num_connections() > 0:
