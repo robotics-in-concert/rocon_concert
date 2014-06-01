@@ -3,6 +3,12 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: compatibility_tree_scheduler.compatibility_tree
+
+This module is the engine behind the resource allocation selection
+algorithm.
+"""
 ##############################################################################
 # Imports
 ##############################################################################
@@ -28,15 +34,10 @@ class CompatibilityBranch(object):
     minimum_leaves = 1
     maximum_leaves = 1
 
-    '''
-      Forms a relationship between the node and the clients it is related with.
-      (node is the branch, clients are the leaves).
-    '''
     def __init__(self, resource):
         '''
           Forms an empty branch.
-          @param resource
-          @type scheduler_msgs.Resource
+          :param scheduler_msgs.Resource resource:
         '''
         self.limb = resource
         self.leaves = []
@@ -48,8 +49,8 @@ class CompatibilityBranch(object):
         '''
           We prune by name, which we know is unique (avoids worrying about python references).
 
-          @param leaves
-          @type [concert_msgs.ConcertClient]
+          :param leaves:
+          :type leaves: [concert_msgs.ConcertClient]
         '''
         for leaf in leaves:
             self.leaves[:] = [l for l in self.leaves if l.name != leaf.name]
@@ -58,6 +59,9 @@ class CompatibilityBranch(object):
         '''
           Computes the difference between the number of leaves and the
           minimum required number of leaves.
+
+          :returns: how much we can potentially overallocate.
+          :rtype: int
         '''
         return len(self.leaves) - CompatibilityBranch.minimum_leaves
 
@@ -70,14 +74,14 @@ def create_compatibility_tree(resources, concert_clients):
       Checks off implementation node rules and matches them to potential clients fulfilling the
       required conditions (platform tuple, app, optionally name)
 
-      @param implementation node rules
-      @type [node.Node]
+      :param resources:
+      :type resources:
 
-      @param concert_clients: name indexed dictionary of concert client information
-      @type concert_msgs.ConcertClient[]
+      :param concert_clients: name indexed dictionary of concert client information
+      :type concert_clients: concert_msgs.ConcertClient[]
 
-      @return list of tuples, each of which is a node and list of clients that satisfy requirements for that node.
-      @rtype CompatibilityTree
+      :returns: list of tuples, each of which is a node and list of clients that satisfy requirements for that node.
+      :rtype: :class:`.CompatibilityTree`
     '''
     compatibility_tree = CompatibilityTree([])
     for resource in resources:
@@ -93,8 +97,11 @@ def prune_compatibility_tree(compatibility_tree, verbosity=False):
       the compatibility tree. It assumes none are currently fixed, so
       pruning can happen anywhere.
 
-      @param branches listing compatible node - clients relationships
-      @type [ CompatibilityBranch ]
+      :param compatibility_tree: branches listing compatible resource - clients relationships
+      :type compatibility_tree: :class:`.CompatibilityTree`
+      :param bool verbosity: adds some pretty printed output to screen for debugging.
+      :returns: the pruned branches
+      :rtype: [:class:`.CompatibilityBranch`]
     '''
     pruned_branches = []
     if verbosity:
@@ -103,7 +110,7 @@ def prune_compatibility_tree(compatibility_tree, verbosity=False):
     ##########################################
     # Stage 1 - prune resolvable branches
     ##########################################
-    newly_pruned_branches, remaining_compatibility_tree = prune_resolvable_branches(compatibility_tree, verbosity)
+    newly_pruned_branches, remaining_compatibility_tree = _prune_resolvable_branches(compatibility_tree, verbosity)
     pruned_branches.extend(newly_pruned_branches)
     # if there was an update and there is work left to do, dig down
     if newly_pruned_branches:
@@ -116,7 +123,7 @@ def prune_compatibility_tree(compatibility_tree, verbosity=False):
     ##########################################
     # Note - there was no newly_pruned_branches here, so we are
     # still dealing with the entire compatibility tree
-    pruned_compatibility_tree = prune_least_valuable_leaf(compatibility_tree, verbosity)
+    pruned_compatibility_tree = _prune_least_valuable_leaf(compatibility_tree, verbosity)
     if pruned_compatibility_tree is not None:
         pruned_branches.extend(prune_compatibility_tree(pruned_compatibility_tree, verbosity))
     else:
@@ -124,7 +131,16 @@ def prune_compatibility_tree(compatibility_tree, verbosity=False):
     return pruned_branches
 
 
-def prune_resolvable_branches(compatibility_tree, verbosity):
+def _prune_resolvable_branches(compatibility_tree, verbosity):
+    '''
+      todo.
+
+      :param compatibility_tree: branches listing compatible resource - clients relationships
+      :type compatibility_tree: :class:`.CompatibilityTree`
+      :param bool verbosity: adds some pretty printed output to screen for debugging.
+      :returns: the pruned branches and the trimmed tree
+      :rtype: ([:class:`.CompatibilityBranch`], :class:`.CompatibilityTree`)
+    '''
     if verbosity:
         #print("")
         compatibility_tree.print_branches("Pruning Resolvable Branches", "    ")
@@ -167,7 +183,7 @@ def prune_resolvable_branches(compatibility_tree, verbosity):
         return [], None
 
 
-def prune_least_valuable_leaf(compatibility_tree, verbosity):
+def _prune_least_valuable_leaf(compatibility_tree, verbosity):
     '''
        This should be only called on a tree with branches
        that have redundancy, i.e. more potential clients than
@@ -179,8 +195,10 @@ def prune_least_valuable_leaf(compatibility_tree, verbosity):
        This branch is typically the most sensitive to variations so we
        attack it first.
 
-       @param subtree
-       @type CompatibilityBranch[]
+       :param compatibility_tree:
+       :type compatibility_tree: :class:`.CompatibilityTree`
+       :returns: the pruned compatibility_tree:
+       :rtype: :class:`.CompatibilityTree`
    '''
     if verbosity:
         compatibility_tree.print_branches('Pruning Least Valuable Leaf', '    ')
@@ -229,28 +247,32 @@ def print_branches(branches, name='Branches', indent=''):
 
 
 def print_leaves(leaves, name='Leaves', indent=''):
-    '''
-      Pretty prints a list of clients (names only)
-
-      @param leaves
-      @type [concert_msgs.ConcertClient]
-    '''
     console.pretty_println(indent + "%s" % name, console.bold)
     console.pretty_print(indent + "  Clients: ", console.cyan)
     console.pretty_println("%s " % [leaf.name for leaf in leaves], console.yellow)
 
 
 class CompatibilityTree(object):
+    '''
+    Stores the resource - concert client list compatibility
+    tree with algorithms to manipulate it.
+
+    Here a branch is a resource, e.g. ``rocon_apps/teleop``, on which leaves
+    are the concert clients that can run that resource (i.e. compatible).
+    '''
     ERROR_NONE = 0
     ERROR_MINIMUM_REQUIREMENT_UNMET = 1
     ERROR_EXCEEDED_MAXIMUM_REQUIREMENT = 2
     ERROR_DUPLICATE_LEAVES = 3
-    '''
-      Stores the implementation node - concert client list compatibility
-      tree with algorithms to manipulate it.
-    '''
+
     def __init__(self, branches):
+        """
+        Do not use this directly. Use :func:`.create_compatibility_tree` instead.
+        """
         self.branches = branches
+        """
+        The branches on the tree (dict like objects of {resource : clients} type.
+        """
         self.error_message = ""  # Used to indicate a failure reason.
         self.error_type = CompatibilityTree.ERROR_NONE
 
@@ -258,12 +280,24 @@ class CompatibilityTree(object):
     #    return [branch.limb for branch in self.branches]
 
     def leaves(self):
+        """
+        Return a list of all the leaves (concert clients) on the tree.
+        :returns: leaves
+        :rtype: :class:`.common.ConcertClient`
+        """
         leaves = []
         for branch in self.branches:
             leaves.extend(branch.leaves)
         return list(set(leaves))
 
     def is_valid(self):
+        """
+        Checks to see if the compatibility tree is a valid tree. Note this has
+        nothing to do with allocatability, just checks that minimum leaves are met
+        and there are no duplicate leaves.
+        :returns: valid or not
+        :rtype: bool
+        """
         leaves = []
         self.error_message = ""
         for branch in self.branches:
@@ -289,6 +323,10 @@ class CompatibilityTree(object):
     def add_leaf(self, leaf):
         '''
           Just add to the first compatible branch (worry about more intelligent adding later)
+
+          :param leaf:
+          :type leaf: :class:`.common.ConcertClient`.
+
         '''
         for branch in self.branches:
             if branch.node.is_compatible(leaf):
@@ -301,6 +339,9 @@ class CompatibilityTree(object):
         '''
           Just remove the first matching leaf name. Assumption is the name is unique of course
           (guaranteed by the conductor).
+
+          :param leaf:
+          :type leaf: :class:`.common.ConcertClient`.
         '''
         for branch in self.branches:
             for l in branch.leaves:

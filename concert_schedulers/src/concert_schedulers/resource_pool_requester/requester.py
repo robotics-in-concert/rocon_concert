@@ -3,6 +3,11 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: resource_pool_requester.requester
+
+The resource pool requester.
+"""
 ##############################################################################
 # Imports
 ##############################################################################
@@ -27,10 +32,11 @@ def request_completely_unallocated(request):
       lost (i.e. unallocated). This will trigger the responder to
       cleanup (i.e. release the request).
 
-      @param resources
-      @type scheduler_msgs.Request
+      :param request:
+      :type request: scheduler_msgs.Request
 
-      @return true or false if entirely unallocated or not.
+      :returns: true or false if entirely unallocated or not.
+      :rtype: bool
     '''
     for resource in request.msg.resources:
         if rocon_uri.parse(resource.uri).name.string != concert_msgs.Strings.SCHEDULER_UNALLOCATED_RESOURCE:
@@ -76,17 +82,12 @@ class ResourcePoolRequester(object):
           Loads the requester up with a collecation of resource groups that have min/max requirements
           for each resource type.
 
-          @param resource_groups : many resource groups that will form the bases for this requester
-          @type resource_group.MinMaxResourceGroup[]
+          :param resource_groups: many resource groups that will form the bases for this requester
+          :type resource_groups: resource_group.MinMaxResourceGroup[]
 
-          @param feedback : external feedback callback function
-          @type method
-
-          @param high_priority : priority to set for necessary (minimum) resource requirements
-          @type int
-
-          @param low_priority : priority to set for optional resource requirements
-          @type int
+          :param func feedback: external feedback callback function
+          :param int high_priority: priority to set for necessary (minimum) resource requirements
+          :param int low_priority: priority to set for optional resource requirements
         '''
         self._requester = concert_scheduler_requests.Requester(self._requester_feedback, uuid, 0, topic, frequency)
         self._resource_groups = resource_groups
