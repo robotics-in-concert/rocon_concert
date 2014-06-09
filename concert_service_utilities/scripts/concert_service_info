@@ -10,123 +10,26 @@
 
 import argparse
 import rospy
-import rocon_python_comms
-import rocon_console.console as console
-import concert_msgs.msg as concert_msgs
+import concert_service_utilities
 
 import sys
-from PyQt4 import QtGui  # QtCore
+
 
 ##############################################################################
 # Functions
 ##############################################################################
 
-
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Prettifies concert information.')
+    parser = argparse.ArgumentParser(description='View service information details.\n\nThis command will defer \
+             to the rqt plugin if available, otherwise it will simply print details to the console.')
+    parser.add_argument('-c', '--console', action='store_true', help='force output to the console only')
     myargs = rospy.myargv(argv=sys.argv)
     return parser.parse_args(args=myargs[1:])
-
-
-def print_info(name, attribute):
-    print(console.cyan + name + console.yellow + str(attribute) + console.reset)
-
-##############################################################################
-# Classes
-##############################################################################
-
-
-class Window(QtGui.QWidget):
-
-    def __init__(self, title, icon, services):
-        super(Window, self).__init__()
-
-        self._title = title
-        self._icon = icon
-        self._services = services
-
-    def initUI(self):
-        pixmap = QtGui.QPixmap(self._icon)
-        self.pic = QtGui.QLabel(self)
-        self.pic.setPixmap(pixmap)
-        self.pic.resize(pixmap.width(), pixmap.height())
-        #self.pic.setGeometry(10, 10, pixmap.width(), pixmap.height())
-
-        """
-        self.text = QtGui.QLabel(self)
-        self.text.resize(200, pixmap.height())
-        self.text.move(pixmap.width()+10,0)
-        self.text.setText('<b>Version:</b> %s<br/><b>Description:</b> %s' %(self._version, self._description))
-        self.text.setWordWrap(True)
-        self.text.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        """
-
-        self.setWindowTitle(self._title)
-        self.setWindowIcon(QtGui.QIcon(self._icon))
-        self.putUnderMouse()
-
-    def putUnderMouse(self):
-        mouse = QtGui.QCursor.pos()
-        self.move(mouse.x() - (210 + self.pic.geometry().width()) / 2,
-                    mouse.y() - (self.pic.geometry().height()) / 2)
-
 
 ##############################################################################
 # Main
 ##############################################################################
 
 if __name__ == '__main__':
-    rospy.init_node('concert_service_info')
     args = parse_arguments()
-
-    try:
-        topic_name = rocon_python_comms.find_topic('concert_msgs/Services', timeout=rospy.rostime.Duration(5.0), unique=True)
-    except rocon_python_comms.NotFoundException as e:
-        print(console.red + "failed to find unique topic of type 'concert_msgs/Services' [%s]" % str(e) + console.reset)
-        sys.exit(1)
-
-    service_info_proxy = rocon_python_comms.SubscriberProxy(topic_name, concert_msgs.Services)
-    try:
-        service_info_proxy.wait_for_publishers()
-    except rospy.exceptions.ROSInterruptException:
-        rospy.logwarn('Concert Service Info : ros shut down before concert info could be found.')
-
-    concert_service_info = concert_msgs.Services()
-    trial = 0
-    MAX_TRIAL = 5
-    while not rospy.is_shutdown():
-        result = service_info_proxy(rospy.Duration(0.2))
-        if result:
-            service_info = result
-            break
-        rospy.rostime.wallsleep(1.0)  # human time
-        trial = trial + 1
-
-        if trial > MAX_TRIAL:
-            rospy.logerr('Concert Service info : concert is not found within ' + MAX_TRIAL + ' trials')
-            sys.exit(1)
-
-    console.pretty_println('Concert Service Information', console.bold)
-    for s in service_info.services:
-        print_info('  Resource      : ', s.resource_name)
-        print_info('  Name          : ', s.name)
-        print_info('  Description   : ', s.description)
-        print_info('  Author        : ', s.author)
-        print_info('  Priority      : ', s.priority)
-        print_info('  Launcher Type : ', s.launcher_type)
-        print_info('  Status        : ', s.status)
-        print_info('  Enabled       : ', s.enabled)
-        print ''
-
-    """
-    TODO enable Qt later.
-
-    icon = rocon_python_utils.ros.find_resource_from_string('rocon_icons/rocon_logo.png')
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL) # make sure this comes after the rospy call, otherwise it will handle signals.
-    app = QtGui.QApplication(sys.argv)
-    window = Window('Concert Service Information', icon, service_info.services)
-    window.initUI()
-    window.show()
-    sys.exit(app.exec_())
-    """
+    concert_service_utilities.service_information.main('concert_service_info', 'Concert Service Information', console=args.console)
