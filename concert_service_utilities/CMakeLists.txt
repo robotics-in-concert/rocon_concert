@@ -26,3 +26,8 @@ endif()
 # Installs
 ##############################################################################
 
+install(
+    PROGRAMS 
+        scripts/concert_service_info
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
