@@ -1,0 +1,24 @@
+actions: []
+authors: Daniel Stonier
+brief: ''
+bugtracker: https://github.com/robotics-in-concert/rocon_concert/issues
+depends:
+- concert_scheduler_requests
+- catkin
+- rosgraph
+- scheduler_msgs
+- rocon_app_manager_msgs
+- concert_msgs
+- rospy
+- uuid_msgs
+- rocon_console
+- rocon_uri
+- unique_id
+description: Various schedulers for the concert
+license: BSD
+maintainers: Daniel Stonier <d.stonier@gmail.com>
+msgs: []
+package_type: package
+repo_url: https://github.com/robotics-in-concert/rocon_concert
+srvs: []
+url: http://ros.org/wiki/concert_schedulers

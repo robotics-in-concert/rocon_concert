@@ -3,6 +3,12 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: common.concert_client
+
+This module wraps the concert_msgs data structure for a concert client in a
+python class for convenient handling inside a scheduler node.
+"""
 ##############################################################################
 # Imports
 ##############################################################################
@@ -23,6 +29,11 @@ from .exceptions import FailedToStartRappsException, FailedToAllocateException
 
 
 class ConcertClient(object):
+    """
+    Envelops the concert client msg data structure that is published
+    to the rest of the concert with a few extra fields and methods useful
+    for management by the scheduler.
+    """
     __slots__ = [
             'msg',           # concert_msgs/ConcertClient
             'name',          # alias to msg.name
@@ -38,15 +49,26 @@ class ConcertClient(object):
     ##########################################################################
 
     def __init__(self, msg):
+        '''
+        Initialise this concert client with the data from a msg received
+        from the concert conductor.
+
+        :param concert_msgs.ConcertClient msg:
+        '''
         self.msg = msg
+        """The subscribed data structure describing a concert client."""
         self.allocated = False
+        """Whether or not it is currently allocated."""
         self._request_id = None
         self._resource = None
         self.allocated_priority = 0  # irrelevant while self.allocated is false
+        """If allocated, this indicates its priority."""
 
         # aliases
         self.name = self.msg.name
+        """The human readable concert alias for this client."""
         self.gateway_name = self.msg.gateway_name
+        """The concert client's name on the gateway network (typically has postfixed uuid)"""
 
     ##########################################################################
     # Convert
@@ -69,6 +91,9 @@ class ConcertClient(object):
           Convert this instances to a scheduler_msgs.CurrentStatus msg type.
           The scheduler typically uses this to publish the resource on it's
           scheduler_resources_pool topic.
+
+          :returns: the message, with updated status if allocated.
+          :rtype: concert_msgs.ConcertClient
         '''
         msg = scheduler_msgs.CurrentStatus()
         msg.uri = self.msg.platform_info.uri
@@ -86,6 +111,18 @@ class ConcertClient(object):
     ##########################################################################
 
     def reallocate(self, request_id, request_priority, resource):
+        '''
+        Ungraceful reallocation. Stops the rapp and starts the new one.
+        Should be sending a request off to the service to gracefully cancel
+        the request at the time of its choosing instead.
+
+        :param str request_id:
+        :param int request_priority: usually one of ``scheduler_msgs.Request.XXX_PRIORITY`` values
+        :param str resource:
+
+        :returns: the old request id (so the requester can be updated)
+        :rtype: str
+        '''
         # assert checks that it has already been allocated?
         old_request_id = self._request_id
         self.abandon()
@@ -93,6 +130,15 @@ class ConcertClient(object):
         return old_request_id
 
     def allocate(self, request_id, request_priority, resource):
+        '''
+        Allocate the resource. This involves also starting the rapp.
+
+        :param str request_id:
+        :param int request_priority: usually one of ``scheduler_msgs.Request.XXX_PRIORITY`` values
+        :param str resource:
+
+        :raises: :exc:`.FailedToAllocateException` if the start_rapp service failed.
+        '''
         self.allocated_priority = request_priority
         self.allocated = True
         self._request_id = request_id
@@ -106,6 +152,10 @@ class ConcertClient(object):
             raise FailedToAllocateException(str(e))
 
     def abandon(self):
+        '''
+        Abandon the resource. Usually called after a request is cancelled or on shutdown.
+        This stops the rapp.
+        '''
         self._stop(self.msg.gateway_name)
         self.allocated = False
         self.allocated_priority = 0  # must set this after we set allocated to false
@@ -113,6 +163,13 @@ class ConcertClient(object):
         self._resource = None
 
     def is_compatible(self, resource):
+        '''
+        Simple boolean test to check if the client can run the specified resource.
+
+        :param str resource:
+        :returns: true if compatible, false otherwise
+        :rtype: bool
+        '''
         return utils.is_compatible(self.msg, resource)
 
     def _start(self, gateway_name, resource):

@@ -3,6 +3,12 @@
 #
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
+"""
+.. module:: compatibility_tree_scheduler.scheduler
+
+The compatibility tree scheduler node.
+"""
+
 ##############################################################################
 # Imports
 ##############################################################################
@@ -29,6 +35,28 @@ from .ros_parameters import setup_ros_parameters
 
 
 class CompatibilityTreeScheduler(object):
+    """
+    An implementation of the `concert_scheduler_requests`_ abstract Scheduler that
+    uses the compatibility tree algorithm.
+
+    It has the following characteristics:
+
+    * attempts to resolve the highest priority request first
+    * requests are resolved singly (resolving across multiple request being quite difficult)
+    * if the highest priority requests are unresolved, lower priority requests are blocked
+    * compatibility tree resolution of a single request works across:
+
+     * branches - the required resource (e.g. rocon_apps/teleop)
+     * leaves - concert clients that can satisfy that resource (e.g. turtlebot_1)
+
+    * resource allocation follows the two rules:
+
+     * always consider leaves on the lowest count branches first.
+     * always take the least visible leaf away from low count branches.
+
+    .. _`concert_scheduler_requests`: http://wiki.ros.org/concert_scheduler_requests
+
+    """
 
     __slots__ = [
             '_subscribers',
@@ -47,11 +75,8 @@ class CompatibilityTreeScheduler(object):
     ##########################################################################
     def __init__(self, concert_clients_topic_name, requests_topic_name):
         '''
-          @param concert_clients_topic_name : concert client joining/leaving notifications
-          @type string
-
-          @param requests_topic_name : incoming requests for resources topic
-          @type string
+          :param str concert_clients_topic_name: concert client joining/leaving notifications
+          :param str requests_topic_name: incoming requests for resources topic
         '''
         self._subscribers = {}       # ros subscribers
         self._publishers = {}        # ros publishers

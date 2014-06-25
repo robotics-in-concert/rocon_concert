@@ -4,6 +4,18 @@
 #   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 ##############################################################################
+# Documentation
+##############################################################################
+
+"""
+This is the top-level namespace of the concert_schedulers_ ROS
+package. It contains various requester-scheduler implementations
+and a library of scheduler launchers.
+
+.. _concert_schedulers: http://wiki.ros.org/concert_schedulers
+
+"""
+##############################################################################
 # Imports
 ##############################################################################
 
