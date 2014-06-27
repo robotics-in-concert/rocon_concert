@@ -179,6 +179,7 @@ class ConcertClient(object):
         request = rapp_manager_srvs.StartRappRequest()
         request.name = resource.rapp
         request.remappings = resource.remappings
+        request.parameters = resource.parameters
         try:
             start_rapp(request)
         except (rospy.service.ServiceException, rospy.exceptions.ROSInterruptException) as e:  # Service not found or ros is shutting down

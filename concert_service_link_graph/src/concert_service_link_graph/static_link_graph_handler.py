@@ -146,7 +146,8 @@ def load_linkgraph_from_yaml(yaml):
         node['min'] = node['min'] if 'min' in node else 1
         node['max'] = node['max'] if 'max' in node else 1
         node['force_name_matching'] = node['force_name_matching'] if 'force_name_matching' in node else False
-        lg.nodes.append(concert_msgs.LinkNode(node['id'], node['uri'], node['min'], node['max'], node['force_name_matching']))
+        node['parameters'] = node['parameters'] if 'parameters' in node else {}
+        lg.nodes.append(concert_msgs.LinkNode(node['id'], node['uri'], node['min'], node['max'], node['force_name_matching'],node['parameters']))
     for topic in yaml['topics']:
         lg.topics.append(concert_msgs.LinkConnection(topic['id'], topic['type']))
     if 'service' in yaml:
@@ -196,4 +197,5 @@ def _node_to_resource(node, linkgraph):
     resource.rapp = rocon_uri.parse(node.resource).rapp
     resource.uri = node.resource
     resource.remappings = [rocon_std_msgs.Remapping(e.remap_from, e.remap_to) for e in linkgraph.edges if e.start == node.id or e.finish == node.id]
+    resource.parameters = [rocon_std_msgs.KeyValue(key,str(val)) for key, val in node.parameters.items()]
     return resource
