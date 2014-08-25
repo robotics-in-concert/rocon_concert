@@ -2,9 +2,8 @@
 Changelog
 =========
 
-0.5.6 (2014-08-25)
-------------------
-* documentation for the concert conductor.
+Forthcoming
+-----------
 * documentation for the concert conductor.
 * use proper lists for hubs/concerts now roslaunch can handle it.
 * need the invite handle so we can uninvite it later, this was a regresion
@@ -77,11 +76,6 @@ Changelog
 * simple role manager launcher that publishes the concert icon, closes `#38 <https://github.com/robotics-in-concert/rocon_concert/issues/38>`_.
 * concert_roles stub package.
 * Contributors: Daniel Stonier, Jihoon Lee, piyushk
-
-* drop management of non-gateway clients (moved to rocon interactions)
-* gather and publish wireless connection statistics of wireless clients
-* manage wireless client states (available, missing, gone).
-* major code redesign to handle the complexity of wireless handling (formal state machine).
 
 0.5.3 (2013-07-17)
 ------------------
