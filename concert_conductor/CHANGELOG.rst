@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.6.0 (2014-08-25)
+------------------
 * documentation for the concert conductor.
 * use proper lists for hubs/concerts now roslaunch can handle it.
 * need the invite handle so we can uninvite it later, this was a regresion
