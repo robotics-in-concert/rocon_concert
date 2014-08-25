@@ -2,6 +2,14 @@
 Changelog for package rocon_concert
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.6 (2014-08-25)
+------------------
+* interactions moved to rocon_tools, also updates for the rocon_utilities breakup.
+* concert_service_roslaunch -> concert_service_link_graph.
+* concert_roles -> rocon_interactions
+* remove legacy references to concert_orchestra.
+* Contributors: Daniel Stonier
+
 0.5.5 (2013-08-30)
 ------------------
 

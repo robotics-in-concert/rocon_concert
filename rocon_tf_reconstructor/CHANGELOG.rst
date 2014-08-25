@@ -2,6 +2,13 @@
 Changelog for package rocon_tf_reconstructor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.6 (2014-08-25)
+------------------
+* replace string constant with string...this should eventually depracate anyway.
+* merging hydro-devel
+* disambiguate concert client update topics
+* Contributors: Daniel Stonier, Jihoon Lee
+
 0.5.5 (2013-08-30)
 ------------------
 
