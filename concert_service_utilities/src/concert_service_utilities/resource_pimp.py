@@ -183,7 +183,7 @@ class ResourcePimp(object):
             self.loginfo("released teleopable robot [%s][%s]" % (uri, self.allocated_requests[uri].hex))
             self.requester.rset[self.allocated_requests[uri]].cancel()
             self.requester.send_requests()
-            del self.allocated_requests[msg.rocon_uri]
+            del self.allocated_requests[uri]
 
     @abc.abstractmethod
     def setup_variables(self):
