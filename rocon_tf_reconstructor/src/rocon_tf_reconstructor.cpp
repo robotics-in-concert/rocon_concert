@@ -29,6 +29,7 @@ namespace rocon {
   {
     this->nh.param<std::string>("concert_client_changes",this->sub_client_list_topic, "/concert/conductor/concert_client_changes");
     this->nh.param<std::string>("robotpose_topic",this->sub_robotpose_topic,"robot_pose");
+    this->nh.param<int>("spin_rate", this->spin_rate_, 10);
   }
 
 
@@ -92,7 +93,7 @@ namespace rocon {
   {
     ROS_INFO("In Spin!");
     RoconPoseClient* rpc;
-    ros::Rate spin_rate(1000);
+    ros::Rate r(spin_rate_);
 
     while(ros::ok())
     {
@@ -108,7 +109,7 @@ namespace rocon {
           publishClientTF(client_name,client_pose);
         }
       }
-      spin_rate.sleep();
+      r.sleep();
     }
   }
 }

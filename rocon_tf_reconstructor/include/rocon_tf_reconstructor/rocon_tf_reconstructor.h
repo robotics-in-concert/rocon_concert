@@ -73,6 +73,7 @@ namespace rocon {
       std::string sub_client_list_topic;
       std::string sub_robotpose_topic;
 
+      int spin_rate_;
   };
 }
 
