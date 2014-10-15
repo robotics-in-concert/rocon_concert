@@ -1,9 +1,9 @@
 <launch>
-  <arg name="auto_enable_services" default="false"/> <!-- autoenable services, e.g. true/false -->
+  <arg name="auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up -->
   <arg name="services" default="[]"/>  <!-- comma separated list of service resource names (e.g. 'chatter_concert/chatter') -->
 
   <node pkg="concert_service_manager" name="services" type="service_manager">
     <rosparam param="services" subst_value="True">$(arg services)</rosparam>
-    <param name="auto_enable_services" value="$(arg auto_enable_services)"/>
+    <rosparam param="auto_enable_services" subst_value="True">$(arg auto_enable_services)</rosparam>
   </node>
 </launch>
