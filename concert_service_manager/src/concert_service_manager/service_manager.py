@@ -55,11 +55,17 @@ class ServiceManager(object):
             raise e
         self._publishers = self._setup_ros_publishers()
 
-        for name in self._parameters['auto_enable_services']:
+        if self._parameters['auto_enable_services'] == 'all':
             if name in self._service_pool.service_profiles.keys():
                 self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
             else:
                 rospy.logwarn("Service Manager : %s is not available. cannot auto enable")
+        elif type(self._parameters['auto_enable_services']) is list:
+            for name in self._parameters['auto_enable_services']:
+                if name in self._service_pool.service_profiles.keys():
+                    self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+                else:
+                    rospy.logwarn("Service Manager : %s is not available. cannot auto enable")
         else:
             self.publish_update()  # publish the available list
         # now we let the service threads compete
