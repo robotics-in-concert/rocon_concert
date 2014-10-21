@@ -175,7 +175,7 @@ class ConcertClient(object):
     def _start(self, gateway_name, resource):
         if self._resource == None:
             raise FailedToStartRappsException("this client hasn't been allocated yet [%s]" % self.name)
-        start_rapp = rospy.ServiceProxy('/' + gateway_name + '/start_rapp', rapp_manager_srvs.StartRapp)
+        start_rapp = rospy.ServiceProxy('/' + gateway_name.lower().replace(' ', '_') + '/start_rapp', rapp_manager_srvs.StartRapp)
         request = rapp_manager_srvs.StartRappRequest()
         request.name = resource.rapp
         request.remappings = resource.remappings
@@ -189,7 +189,7 @@ class ConcertClient(object):
         if self._resource == None:
             rospy.logwarn("Scheduler : this client hasn't been allocated yet, aborting stop app request  [%s]" % self.name)
             return False
-        stop_rapp = rospy.ServiceProxy('/' + gateway_name + '/stop_rapp', rapp_manager_srvs.StopRapp)
+        stop_rapp = rospy.ServiceProxy('/' + gateway_name.lower().replace(' ', '_') + '/stop_rapp', rapp_manager_srvs.StopRapp)
         request = rapp_manager_srvs.StopRappRequest()
         try:
             stop_rapp(request)
