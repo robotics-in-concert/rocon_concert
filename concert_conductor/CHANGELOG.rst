@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.6.1 (2014-11-21)
+------------------
 * [rocon_concert] permit esoteric names once more.
 * Contributors: Daniel Stonier
 
