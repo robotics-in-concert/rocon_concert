@@ -21,6 +21,7 @@
   <arg name="auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
 
   <!-- Interactions -->
+  <arg name="enable_rosbridge"  default="false"/>
   <arg name="rosbridge_address" default="localhost"/>
   <arg name="rosbridge_port" default="9090"/>
   <!--                  Schedulers
@@ -89,4 +90,11 @@
     </node>
   </group>
 
+  <!-- ****************************** Rosbridge ******************************** -->
+  <group if="$(arg enable_rosbridge)">
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+      <arg name="address"   value="$(arg rosbridge_address)"/>
+      <arg name="port"   value="$(arg rosbridge_port)"/>
+    </include>
+  </group>
 </launch>
