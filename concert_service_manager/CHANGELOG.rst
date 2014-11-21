@@ -2,7 +2,15 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.6 (2014-08-25)
+Forthcoming
+-----------
+* now it properly prints not auto enabled service. `#247 <https://github.com/robotics-in-concert/rocon_concert/issues/247>`_
+* add arg comments for all command. fix typo `#247 <https://github.com/robotics-in-concert/rocon_concert/issues/247>`_
+* add all to enable all services
+* now auto enable services are selectable
+* Contributors: Jihoon Lee
+
+0.6.0 (2014-08-25)
 ------------------
 * update publisher queue_size to avoid warning in indigo.
 * temporary code for upgraded package exports indexer.

@@ -1,7 +1,14 @@
 Changelog
 =========
 
-0.5.6 (2014-08-25)
+Forthcoming
+-----------
+* add option to start rosbridge with concert.
+* add arg comments for all command. fix typo `#247 <https://github.com/robotics-in-concert/rocon_concert/issues/247>`_
+* now auto enable services are selectable
+* Contributors: Jihoon Lee
+
+0.6.0 (2014-08-25)
 ------------------
 * documentation for the concert conductor.
 * documentation for the concert conductor.

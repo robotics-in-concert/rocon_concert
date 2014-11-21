@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* [rocon_concert] permit esoteric names once more.
+* Contributors: Daniel Stonier
+
 0.6.0 (2014-08-25)
 ------------------
 * documentation for the concert conductor.

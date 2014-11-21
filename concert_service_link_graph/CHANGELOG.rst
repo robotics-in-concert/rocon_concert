@@ -2,7 +2,10 @@
 Changelog for package concert_service_link_graph
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.6 (2014-08-25)
+Forthcoming
+-----------
+
+0.6.0 (2014-08-25)
 ------------------
 * parameter enabled link graph
 * usable configuration for service priorities.

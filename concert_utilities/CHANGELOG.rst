@@ -2,7 +2,10 @@
 Changelog for package concert_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.6 (2014-08-25)
+Forthcoming
+-----------
+
+0.6.0 (2014-08-25)
 ------------------
 * concert_roles -> rocon_interactions
 * concert_utilities package prepared, `#80 <https://github.com/robotics-in-concert/rocon_concert/issues/80>`_
