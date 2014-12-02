@@ -2,6 +2,9 @@
 Changelog for package concert_service_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.1 (2014-11-21)
 ------------------
 * typo fix

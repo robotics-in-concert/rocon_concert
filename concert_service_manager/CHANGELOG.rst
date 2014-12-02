@@ -2,6 +2,9 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.1 (2014-11-21)
 ------------------
 * now it properly prints not auto enabled service. `#247 <https://github.com/robotics-in-concert/rocon_concert/issues/247>`_

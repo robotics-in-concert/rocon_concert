@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* add webserver_address param resolves `#251 <https://github.com/robotics-in-concert/rocon_concert/issues/251>`_
+* Contributors: Jihoon Lee
+
 0.6.1 (2014-11-21)
 ------------------
 * add option to start rosbridge with concert.
