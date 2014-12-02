@@ -24,6 +24,7 @@
   <arg name="enable_rosbridge"  default="false"/>
   <arg name="rosbridge_address" default="localhost"/>
   <arg name="rosbridge_port" default="9090"/>
+  <arg name="webserver_address" default="localhost"/>
   <!--                  Schedulers
       - preemptive_compatibility_tree : concert_schedulers/preemptive_compatibility_tree_scheduler.launch
       - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
@@ -59,6 +60,7 @@
     <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions">
       <param name="rosbridge_address" value="$(arg rosbridge_address)"/>
       <param name="rosbridge_port" value="$(arg rosbridge_port)"/>
+      <param name="webserver_address" value="$(arg webserver_address)"/>
     </node>
 
     <!-- ******************************** Hub ********************************** -->
