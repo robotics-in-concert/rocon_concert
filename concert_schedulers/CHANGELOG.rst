@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* update install rule fixes `#253 <https://github.com/robotics-in-concert/rocon_concert/issues/253>`_
+* Contributors: Jihoon Lee
+
 0.6.2 (2014-12-02)
 ------------------
 
