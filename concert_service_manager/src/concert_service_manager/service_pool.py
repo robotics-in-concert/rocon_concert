@@ -19,6 +19,7 @@ import rocon_std_msgs.msg as rocon_std_msgs
 from .exceptions import InvalidSolutionConfigurationException
 from .exceptions import InvalidServiceProfileException, NoServiceExistsException
 from .service_profile import ServiceProfile
+from .utils import *
 
 ##############################################################################
 # Classes
@@ -70,16 +71,18 @@ def load_solution_configuration(yaml_file):
 
 
 class ServiceConfigurationData(object):
+
     """
       Represents a single entry in the solution service configuration (.services) file.
       We hash the important bits so we can track when the file changes.
     """
 
     __slots__ = [
-            'resource_name',  # ros resource name for the service
-            'overrides',      # dictionary of override keys for the service (use a dic so we can pack it into a ros msg later)
-            'hash',             # hash of this configuration data
-         ]
+        'resource_name',                       # ros resource name for the service
+        'overrides',                            # dictionary of override keys for the service (use a dic so we can pack it into a ros msg later)
+        'hash',                                  # hash of this configuration data
+        '_is_reading_from_cache'              # flag for checking whether reading chache or not
+    ]
 
     override_keys = ['name', 'description', 'icon', 'priority', 'interactions', 'parameters']
 
@@ -110,6 +113,7 @@ class ServiceConfigurationData(object):
 
 
 class ServicePool(object):
+
     """
       Stores the current solution's service related configuration. This is
       obtained from a ros resource yaml file which typically specifies the
@@ -117,19 +121,21 @@ class ServicePool(object):
       configuration they may have.
     """
     __slots__ = [
-            '_yaml_file',      # os.path to solution configuration file
-            '_last_modified',  # timestamp of last file modifications
-            'service_profiles',  # { name : ServiceProfile }
-            '_cached_service_profile_locations'  # all known service profiles on the ros package path : { resource_name : os.path to .service file }
-        ]
+        '_yaml_file',      # os.path to solution configuration file
+        '_last_modified',  # timestamp of last file modifications
+        'service_profiles',  # { name : ServiceProfile }
+        '_cached_service_profile_locations'  # all known service profiles on the ros package path : { resource_name : os.path to .service file }
+    ]
 
-    def __init__(self, resource_name):
+    def __init__(self, resource_name, concert_name):
         """
           Initialise the class with a pointer to the yaml that will be
           scanned and later monitored for changes that can be applied
           to a running concert.
 
           :param resource_name: pkg/filename of a yaml formatted service configuration for a solution
+          :type resource_name: str
+          :param resource_name: concert name for storing cache file
           :type resource_name: str
 
           :raises: :exc:`rospkg.ResourceNotFound` if resource_name cannot be resolved.
@@ -141,15 +147,55 @@ class ServicePool(object):
         self._cached_service_profile_locations = {}
         for cached_resource_name, (cached_filename, unused_catkin_package) in cached_service_profile_information.iteritems():
             self._cached_service_profile_locations[cached_resource_name] = cached_filename
+        # init cache path
+        concert_name = concert_name.lower().replace(' ', '_')
+        setup_home_dirs(concert_name)
         # load
         if resource_name != "":
             try:
-                self._yaml_file = rocon_python_utils.ros.find_resource_from_string(resource_name)  # rospkg.ResourceNotFound
-                self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
+                (self._is_reading_from_cache, self._yaml_file) = self._check_cache(rocon_python_utils.ros.find_resource_from_string(resource_name), concert_name)  # rospkg.ResourceNotFound
                 service_configurations = load_solution_configuration(self._yaml_file)  # InvalidSolutionConfigurationException
                 self._load_service_profiles(service_configurations)
+                self._save_yaml_cache(concert_name)
+                self._last_modified = time.ctime(os.path.getmtime(self._yaml_file))
             except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
                 raise e
+
+    def _save_yaml_cache(self, concert_name):
+        """
+          Save yaml cache file in temporary directory. If service manager is restarted, it load cached yaml file.
+
+          :param yaml_file: temporary location for storing cache file as concert name
+          :type str
+        """
+
+        yaml_file_name = self._yaml_file.split('/')[-1]
+        if '.services' in yaml_file_name:
+            yaml_stream = yaml.load(open(self._yaml_file, 'r'))
+            cache_yaml_file = get_home(concert_name) + '/' + yaml_file_name
+            cache_yaml_stream = file(cache_yaml_file, 'w')
+            yaml.safe_dump(yaml_stream, cache_yaml_stream, default_flow_style=False)
+
+    def _check_cache(self, yaml_file, concert_name):
+        """
+          Check whether cached yaml file is existed or not
+
+          :param yaml_file: yaml file name about services list for checking
+          :type str
+          :param yaml_file: temporary location for checking as concert name
+          :type str
+
+          :returns: flag and full path yaml file as result of check existence about cache file. If cache file is existed, return true and cache path. Otherwise, return false and original path
+          :rtype: (bool, str)
+
+        """
+
+        yaml_file_name = yaml_file.split('/')[-1]
+        cache_yaml_file = get_home(concert_name) + '/' + yaml_file_name
+        if os.path.isfile(cache_yaml_file):
+            return (True, cache_yaml_file)
+        else:
+            return (False, yaml_file)
 
     def __str__(self):
         s = ''
@@ -173,11 +219,12 @@ class ServicePool(object):
         for service_configuration in service_configurations:
             try:
                 service_profile = ServiceProfile(
-                                        service_configuration.hash,
-                                        service_configuration.resource_name,
-                                        service_configuration.overrides,
-                                        self._cached_service_profile_locations
-                                        )
+                    service_configuration.hash,
+                    service_configuration.resource_name,
+                    service_configuration.overrides,
+                    self._cached_service_profile_locations,
+                    self._is_reading_from_cache
+                )
             except (InvalidServiceProfileException) as e:
                 rospy.logwarn("Service Manager : %s" % e)
                 continue

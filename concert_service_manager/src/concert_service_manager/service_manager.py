@@ -50,7 +50,7 @@ class ServiceManager(object):
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._service_pool = ServicePool(self._parameters['solution_configuration'])
+            self._service_pool = ServicePool(self._parameters['solution_configuration'], self._parameters['concert_name'])
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
         self._publishers = self._setup_ros_publishers()
@@ -72,6 +72,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
+        parameters['concert_name'] = rospy.get_param('/concert/name/', "")
         parameters['solution_configuration'] = rospy.get_param('~services', "")  #@IgnorePep8
         parameters['auto_enable_services']   = rospy.get_param('~auto_enable_services', [])  #@IgnorePep8
         return parameters

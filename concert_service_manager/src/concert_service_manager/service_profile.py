@@ -17,6 +17,8 @@ import rospy
 import unique_id
 import rocon_console.console as console
 import scheduler_msgs.msg as scheduler_msgs
+import rocon_std_msgs.msg as rocon_std_msgs
+
 
 from .exceptions import InvalidServiceProfileException
 
@@ -27,17 +29,19 @@ from .exceptions import InvalidServiceProfileException
 
 class ServiceProfile(object):
     __slots__ = [
-            'msg',              # basic data storage for the profile - concert_msgs.ServiceProfile
-            '_last_modified',   # timestamp of last .service file modification
-            'hash',             # hashlib.sha224 used by the service pool to track this profile
-            'resource_name',    # local copy of the resource name
-            '_overrides',       # any overrides that need to be applied after any loading
-            '_location_cache',  # pointer to the service profile location cache maintained by the service pool { resource_name : filename }
-            # aliases
-            'name'
-        ]
+        'msg',              # basic data storage for the profile - concert_msgs.ServiceProfile
+        '_last_modified',   # timestamp of last .service file modification
+        'hash',             # hashlib.sha224 used by the service pool to track this profile
+        'resource_name',    # local copy of the resource name
+        '_overrides',       # any overrides that need to be applied after any loading
+        '_location_cache',  # pointer to the service profile location cache maintained by the service pool { resource_name : filename }
+        # aliases
+        'name',
+        '_concert_name', # concert name for searching cached service profile
+        '_is_config_from_cache' # flag informed whether solution config is loaded from cahce or not
+    ]
 
-    def __init__(self, hash_id, resource_name, overrides, service_profile_location_cache):
+    def __init__(self, hash_id, resource_name, overrides, service_profile_location_cache, is_reading_solution_config_from_cache):
         """
           Loads the service profile given the data provided by the solution configuration
           (i.e. resource name + overrides). We provide an arg for the filename here even
@@ -56,6 +60,9 @@ class ServiceProfile(object):
           :param service_profile_location_cache: this class will use and update the cache if it's own filename changes
           :type service_profile_location_cache: { resource_name : os pathname }
 
+          :param is_reading_service_profile_from_cache: flag informed whether solution config is loaded from cahce file or not
+          :type is_reading_service_profile_from_cache: bool
+
           :returns: the solution configuration data for services in this concert
           :rtype: concert_msgs.ServiceProfile
 
@@ -66,6 +73,7 @@ class ServiceProfile(object):
         self._overrides = overrides
         self.resource_name = resource_name
         self._last_modified = None  # gets updated when we load the profile
+        self._is_config_from_cache = is_reading_solution_config_from_cache
         try:
             self.msg = self._load_profile()
             self._last_modified = time.ctime(os.path.getmtime(self._filename()))
@@ -145,7 +153,23 @@ class ServiceProfile(object):
 
         # fill in unique identifier used by services and their requesters
         msg.uuid = unique_id.toMsg(unique_id.fromRandom())
-
+        # dump parameter detail as type of key-value
+        if 'parameters' in loaded_profile.keys():
+            replace['parameters_detail'] = []
+            # todo if cache, if original
+            parameters_yaml_file = ''
+            if self._is_config_from_cache:
+                parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(loaded_profile['parameters'] + '.parameters')
+            else:
+                parameters_yaml_file = ''
+            try:
+                with open(parameters_yaml_file) as f:
+                    parameters_yaml = yaml.load(f)
+                    for param_key in parameters_yaml.keys():
+                        msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, parameters_yaml[param_key]))
+            except rospkg.ResourceNotFound as e:
+                raise e
+        
         return msg
 
     def reload(self):
