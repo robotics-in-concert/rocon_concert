@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="concert_software_manager" name="software" type="software_manager.py">
+  </node>
+</launch>

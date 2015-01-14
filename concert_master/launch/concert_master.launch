@@ -45,6 +45,9 @@
       <arg name="auto_enable_services" value="$(arg auto_enable_services)" />
     </include>
 
+    <!-- ***************************** Software Manager *************************** -->
+    <include file="$(find concert_software_manager)/launch/software_manager.launch"/>
+
     <!-- ****************************** Conductor ****************************** -->
     <include file="$(find concert_conductor)/launch/conductor.launch">
       <arg name="auto_invite" value="$(arg conductor_auto_invite)" />

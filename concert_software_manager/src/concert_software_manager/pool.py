@@ -8,6 +8,7 @@
 import yaml
 import os
 
+import rospkg
 import genpy
 import rocon_python_utils
 import rocon_std_msgs.msg as rocon_std_msgs
@@ -37,7 +38,7 @@ class SoftwareProfile(object):
         '''
         msg  = concert_msgs.SoftwareProfile()
 
-        with open(self._filename) as f:
+        with open(self._filepath) as f:
             loaded_profile = yaml.load(f)
 
         loaded_profile['resource_name'] = self.resource_name
@@ -70,18 +71,20 @@ class SoftwarePool(object):
         self._software_profiles, self._invalid_software_profiles = self._load_software_profiles(self._registered_software)
 
     def status(self):
-        return self._software_profiles, invalid_software_profiles
+        return self._software_profiles, self._invalid_software_profiles
 
     def _scan_registered_software(self): 
         '''
         parses package exports to scan all available software in the system. and returns name and location
         '''
         cached_software_profile_information, unused_invalid_software = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SOFTWARE)
-        cached_service_profile_locations = {}
-        for cached_resource_name, (cached_filename, unused_catkin_package) in cached_service_profile_information.iteritems():
-            cached_service_profile_locations[cached_resource_name] = cached_filename
+        print(str(cached_software_profile_information))
+        print(str(unused_invalid_software))
+        cached_software_profile_locations = {}
+        for cached_resource_name, (cached_filename, unused_catkin_package) in cached_software_profile_information.iteritems():
+            cached_software_profile_locations[cached_resource_name] = cached_filename
 
-        return cached_service_profile_locations
+        return cached_software_profile_locations
 
     def _load_software_profiles(self, software_locations):
         '''
@@ -95,9 +98,10 @@ class SoftwarePool(object):
         '''
         profiles = {}
         invalid_profiles = {}
+
         for name, location in software_locations.items():
             try:
-                profiles[name] = SoftwareProfile(name, location) 
+                profiles[name] = SoftwareProfile(name, location)
             except InvalidSoftwareprofileException as e:
                 invalid_profiles[name] = str(e)
-        return profiles
+        return profiles, invalid_profiles
