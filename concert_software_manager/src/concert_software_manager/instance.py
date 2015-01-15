@@ -10,6 +10,9 @@
 import rospy
 import os
 import subprocess
+import tempfile
+import roslaunch
+import rocon_python_utils.ros
 import concert_msgs.msg as concert_msgs
 
 class SoftwareInstance(object):
@@ -19,14 +22,23 @@ class SoftwareInstance(object):
     
     def __init__(self, profile):
         self._profile = profile
-        self._namespace = concert_msgs.Strings.SOFTWARE_NAMESPACE  + '/' + str(self.profile.name)
+        self._namespace = concert_msgs.Strings.SOFTWARE_NAMESPACE  + '/' + str(self._profile.name)
         self._users = []
 
-    def start(self):
+    def to_msg(self):
+        msg = concert_msgs.SoftwareInstance()
+        msg.name = self._profile.msg.name
+        msg.resource_name = self._profile.msg.resource_name
+        msg.max_count =  self._profile.msg.max_count
+        msg.namespace = self._namespace
+        msg.users = self._users
+        return msg
+
+    def start(self, user):
         success = False
         try:
-            force_scree = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True) 
-            roslaunch_file_path = rocon_python_utils.ros._find_resource_from_string(self._profile.msg.launch, extension='launch')
+            force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
+            roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self._profile.msg.launch, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             launch_text =self._prepare_launch_text(roslaunch_file_path, self._namespace)
             temp.write(launch_text)
@@ -37,17 +49,18 @@ class SoftwareInstance(object):
         finally:
             if temp:
                 os.unlink(temp.name)
-        self._profile.counts = 1
+        
+        self.add_user(user)
         return success
 
     def stop(self):
+        count = 0
         while self._roslaunch.pm and not self._roslaunch.pm.done:
             if count == 2 * SoftwareInstance.shutdown_timeout: 
                 self._roslaunch.shutdown()
             rospy.rostime.wallsleep(0.5)
             count = count + 1
-
-        self._profile.counts = 0
+        self._users = []
         return True
 
     def _prepare_launch_text(self, roslaunch_filepath, namespace):
@@ -58,22 +71,20 @@ class SoftwareInstance(object):
 
     def add_user(self, user):
         if user in self._users:
-            return False, self._profile.counts
+            return False, len(self._users)
         else:
             self._users.append(user)
-            self._profile.counts = self._profile.counts + 1
-        return True, self._profile.counts
+        return True, len(self._users)
         
     def remove_user(self, user):
         if user in self._users:
             self._users.remove(user)
-            self._profile.counts = self._profile.counts - 1
-            return True, self._profile.counts
+            return True, len(self._users)
         else:
-            return False, self._profile.counts
+            return False, len(self._users) 
 
     def is_max_capacity(self):
-        return self._profile.counts == self._profile.max_count
+        return len(self._users) == self._profile.msg.max_count
 
     def get_namespace(self):
         return self._namespace

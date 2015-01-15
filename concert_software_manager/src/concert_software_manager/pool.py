@@ -47,16 +47,17 @@ class SoftwareProfile(object):
         # generate message
         genpy.message.fill_message_args(msg, loaded_profile)
         self.msg = msg 
+        self.name = msg.name
     def to_msg(self):
         return self.msg
 
     def __str__(self):
         s = ''
-        s += console.cyan + "     resource_name" + console.reset + ": " + console.yellow + "%s\n" % self.resource_name + console.reset
-        s += console.cyan + "     name" + console.reset + ": " + console.yellow + "%s\n" % self.msg.name + console.reset
-        s += console.cyan + "     description" + console.reset + ": " + console.yellow + "%s\n" % self.msg.description + console.reset
-        s += console.cyan + "     author" + console.reset + ": " + console.yellow + "%s\n" % self.msg.author + console.reset
-        s += console.cyan + "     launch" + console.reset + ": " + console.yellow + "%s\n" % self.msg.launch + console.reset
+        s += "     resource_name : %s\n" % self.resource_name
+        s += "     name          : %s\n" % self.msg.name
+        s += "     description   : %s\n" % self.msg.description
+        s += "     author        : %s\n" % self.msg.author
+        s += "     launch        : %s\n" % self.msg.launch
         return s
 
 
@@ -73,13 +74,17 @@ class SoftwarePool(object):
     def status(self):
         return self._software_profiles, self._invalid_software_profiles
 
+    def get_profile(self, resource_name):
+        if not resource_name in self._software_profiles: 
+            raise SoftwareNotExistException("%s does not exist"%str(resource_name))
+        return self._software_profiles[resource_name]
+
+
     def _scan_registered_software(self): 
         '''
         parses package exports to scan all available software in the system. and returns name and location
         '''
         cached_software_profile_information, unused_invalid_software = rocon_python_utils.ros.resource_index_from_package_exports(rocon_std_msgs.Strings.TAG_SOFTWARE)
-        print(str(cached_software_profile_information))
-        print(str(unused_invalid_software))
         cached_software_profile_locations = {}
         for cached_resource_name, (cached_filename, unused_catkin_package) in cached_software_profile_information.iteritems():
             cached_software_profile_locations[cached_resource_name] = cached_filename

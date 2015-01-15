@@ -10,3 +10,6 @@ class SoftwareProfileException(Exception):
 
 class SoftwareInstanceException(Exception):
     pass
+
+class SoftwareNotExistException(Exception):
+    pass
