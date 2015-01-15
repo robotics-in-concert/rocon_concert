@@ -234,8 +234,8 @@ class ConcertClients(object):
             self._transition(concert_client, State.GONE)()
 
         # Check for handles
-        platform_info_service_name = '/' + concert_client.gateway_name + '/' + 'platform_info'
-        list_rapps_service_name = '/' + concert_client.gateway_name + '/' + 'list_rapps'
+        platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
+        list_rapps_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'list_rapps'
         try:
             rospy.wait_for_service(platform_info_service_name, 0.1)
             rospy.wait_for_service(list_rapps_service_name, 0.1)
@@ -329,10 +329,10 @@ class ConcertClients(object):
             return True
         elif self._param['auto_invite']:
             # try an invite
-            invite = rospy.ServiceProxy('/' + concert_client.gateway_name + '/invite', rocon_app_manager_srvs.Invite)
+            invite = rospy.ServiceProxy('/' + concert_client.gateway_name.lower().replace(' ', '_') + '/invite', rocon_app_manager_srvs.Invite)
             try:
                 response = invite(remote_target_name=self._concert_name,
-                                  application_namespace=concert_client.concert_alias,
+                                  application_namespace=concert_client.concert_alias.lower().replace(' ', '_'),
                                   cancel=False
                                   )
                 if response.result:
@@ -382,8 +382,8 @@ class ConcertClients(object):
             return True
 
         # Check for handles
-        start_app_service_name = '/' + concert_client.gateway_name + '/start_rapp'
-        stop_app_service_name = '/' + concert_client.gateway_name + '/stop_rapp'
+        start_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/start_rapp'
+        stop_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/stop_rapp'
         try:
             rospy.wait_for_service(start_app_service_name, 0.1)
             rospy.wait_for_service(stop_app_service_name, 0.1)
@@ -469,7 +469,7 @@ class ConcertClients(object):
         if concert_client.state != State.AVAILABLE:
             rospy.logwarn("Conductor : stubbornly refusing to uninvite an uninvited client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
             return
-        invite = rospy.ServiceProxy('/' + concert_client.gateway_name + '/invite', rocon_app_manager_srvs.Invite)
+        invite = rospy.ServiceProxy('/' + concert_client.gateway_name.lower().replace(' ', '_') + '/invite', rocon_app_manager_srvs.Invite)
         try:
             response = invite(remote_target_name=self._concert_name,
                               application_namespace=concert_client.concert_alias,

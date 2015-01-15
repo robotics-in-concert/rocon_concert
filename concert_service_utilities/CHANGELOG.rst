@@ -2,7 +2,19 @@
 Changelog for package concert_service_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.6 (2014-08-25)
+0.6.3 (2015-01-05)
+------------------
+
+0.6.2 (2014-12-02)
+------------------
+
+0.6.1 (2014-11-21)
+------------------
+* typo fix
+* resource pimp working
+* Contributors: Jihoon Lee
+
+0.6.0 (2014-08-25)
 ------------------
 * Install update
 * Removed Unneccessary .launch file

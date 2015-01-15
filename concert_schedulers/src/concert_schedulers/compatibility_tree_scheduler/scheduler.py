@@ -286,7 +286,7 @@ class CompatibilityTreeScheduler(object):
                             break
                         resource = copy.deepcopy(branch.limb)
                         uri = rocon_uri.parse(leaf.msg.platform_info.uri)  # leaf.msg is concert_msgs/ConcertClient
-                        uri.name = leaf.msg.gateway_name  # store the unique name of the concert client
+                        uri.name = leaf.msg.gateway_name.lower().replace(' ', '_')  # store the unique name of the concert client
                         resource.uri = str(uri)
                         resources.append(resource)
                 if failed_to_allocate:

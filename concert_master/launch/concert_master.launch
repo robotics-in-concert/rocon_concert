@@ -18,11 +18,13 @@
   <arg name="conductor_local_clients_only" default="false"/>
   <!-- Service Manager -->
   <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
-  <arg name="auto_enable_services" default=""/> <!-- autoenable services, e.g. true/false -->
+  <arg name="auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
 
   <!-- Interactions -->
+  <arg name="enable_rosbridge"  default="false"/>
   <arg name="rosbridge_address" default="localhost"/>
   <arg name="rosbridge_port" default="9090"/>
+  <arg name="webserver_address" default="localhost"/>
   <!--                  Schedulers
       - preemptive_compatibility_tree : concert_schedulers/preemptive_compatibility_tree_scheduler.launch
       - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
@@ -61,6 +63,7 @@
     <node pkg="rocon_interactions" type="interactions_manager.py" name="interactions">
       <param name="rosbridge_address" value="$(arg rosbridge_address)"/>
       <param name="rosbridge_port" value="$(arg rosbridge_port)"/>
+      <param name="webserver_address" value="$(arg webserver_address)"/>
     </node>
 
     <!-- ******************************** Hub ********************************** -->
@@ -92,4 +95,11 @@
     </node>
   </group>
 
+  <!-- ****************************** Rosbridge ******************************** -->
+  <group if="$(arg enable_rosbridge)">
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+      <arg name="address"   value="$(arg rosbridge_address)"/>
+      <arg name="port"   value="$(arg rosbridge_port)"/>
+    </include>
+  </group>
 </launch>

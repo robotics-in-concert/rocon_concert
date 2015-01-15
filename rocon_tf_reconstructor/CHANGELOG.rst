@@ -2,7 +2,18 @@
 Changelog for package rocon_tf_reconstructor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.6 (2014-08-25)
+0.6.3 (2015-01-05)
+------------------
+
+0.6.2 (2014-12-02)
+------------------
+
+0.6.1 (2014-11-21)
+------------------
+* adding params for spin rate configuration. default spin rate 10hz Fix `#240 <https://github.com/robotics-in-concert/rocon_concert/issues/240>`_
+* Contributors: Jihoon Lee
+
+0.6.0 (2014-08-25)
 ------------------
 * replace string constant with string...this should eventually depracate anyway.
 * merging hydro-devel

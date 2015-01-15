@@ -32,3 +32,6 @@ install(
         scripts/concert_scheduler_requests
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
+
+install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

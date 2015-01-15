@@ -2,6 +2,17 @@
 Changelog
 =========
 
+0.6.3 (2015-01-05)
+------------------
+
+0.6.2 (2014-12-02)
+------------------
+
+0.6.1 (2014-11-21)
+------------------
+* [rocon_concert] permit esoteric names once more.
+* Contributors: Daniel Stonier
+
 0.6.0 (2014-08-25)
 ------------------
 * documentation for the concert conductor.

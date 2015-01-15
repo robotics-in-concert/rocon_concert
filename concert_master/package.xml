@@ -1,6 +1,6 @@
 <package>
   <name>concert_master</name>
-  <version>0.6.0</version>
+  <version>0.6.3</version>
   <description>
     General concert functionality.
   </description>
@@ -29,6 +29,9 @@
   <run_depend>concert_conductor</run_depend>
   <run_depend>rocon_interactions</run_depend>
   <run_depend>concert_schedulers</run_depend>
+
+  <!-- To handle web components -->
+  <run_depend>rosbridge_server</run_depend>
   <!-- 
     Hardcode this dependency for now since we only test it on linux 
     Ideally, I wouldn't hardcode the zeroconf implementation though.

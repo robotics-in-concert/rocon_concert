@@ -84,7 +84,7 @@ class ConcertClient(object):
         self._timestamps['last_state_change'] = rospy.get_rostime()
 
         # status
-        rospy.Subscriber('/' + self.gateway_name + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
+        rospy.Subscriber('/' + self.gateway_name.lower().replace(' ', '_') + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
 
     ##############################################################################
     # Conveniences

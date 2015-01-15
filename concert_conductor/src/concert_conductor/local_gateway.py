@@ -121,13 +121,13 @@ class LocalGateway(object):
         req.remotes = []
         for service_name in service_names:
             rule = gateway_msgs.Rule()
-            rule.name = str('/' + remote_gateway_name + '/' + service_name)
+            rule.name = str('/' + remote_gateway_name.lower().replace(' ', '_') + '/' + service_name)
             rule.node = ''
             rule.type = gateway_msgs.ConnectionType.SERVICE
             req.remotes.append(gateway_msgs.RemoteRule(remote_gateway_name.lstrip('/'), rule))
         for publisher_name in topic_names:
             rule = gateway_msgs.Rule()
-            rule.name = str('/' + remote_gateway_name + '/' + publisher_name)
+            rule.name = str('/' + remote_gateway_name.lower().replace(' ', '_') + '/' + publisher_name)
             rule.node = ''
             rule.type = gateway_msgs.ConnectionType.PUBLISHER
             req.remotes.append(gateway_msgs.RemoteRule(remote_gateway_name.lstrip('/'), rule))

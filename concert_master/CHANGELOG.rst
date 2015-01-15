@@ -1,7 +1,22 @@
 Changelog
 =========
 
-0.5.6 (2014-08-25)
+0.6.3 (2015-01-05)
+------------------
+
+0.6.2 (2014-12-02)
+------------------
+* add webserver_address param resolves `#251 <https://github.com/robotics-in-concert/rocon_concert/issues/251>`_
+* Contributors: Jihoon Lee
+
+0.6.1 (2014-11-21)
+------------------
+* add option to start rosbridge with concert.
+* add arg comments for all command. fix typo `#247 <https://github.com/robotics-in-concert/rocon_concert/issues/247>`_
+* now auto enable services are selectable
+* Contributors: Jihoon Lee
+
+0.6.0 (2014-08-25)
 ------------------
 * documentation for the concert conductor.
 * documentation for the concert conductor.
