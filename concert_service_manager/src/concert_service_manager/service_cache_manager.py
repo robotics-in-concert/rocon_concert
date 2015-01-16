@@ -98,7 +98,7 @@ class ServiceCacheManager(object):
     ]
 
     def __init__(self, concert_name, resource_name):
-        self._concert_name = concert_name.lower().replace(' ', '_')
+        self._concert_name = concert_name.strip().lower().replace(' ', '_')
         self._resource_name = resource_name
 
         self.service_profiles = {}
@@ -231,7 +231,7 @@ class ServiceCacheManager(object):
                     loaded_profile[key] = overrides[key]
             if 'launcher_type' not in loaded_profile.keys():  # not set
                 loaded_profile['launcher_type'] = concert_msgs.ServiceProfile.TYPE_SHADOW
-            loaded_profile['name'] = loaded_profile['name'].lower().replace(" ", "_")
+            loaded_profile['name'] = loaded_profile['name'].strip().lower().replace(" ", "_")
 
             if 'parameters' in loaded_profile.keys():
                 loaded_profile['parameters_detail'] = []
