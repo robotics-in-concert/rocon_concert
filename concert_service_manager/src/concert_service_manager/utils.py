@@ -19,13 +19,20 @@ import rocon_std_msgs.msg as rocon_std_msgs
 
 def setup_home_dirs(concert_name):
     if not os.path.isdir(get_home(concert_name)):
-        print 'create path: ' + str(get_home(concert_name))
         os.makedirs(get_home(concert_name))
 
 
 def setup_service_profile_home_dirs(concert_name, service_name):
+    '''
+      Retrieve the location of the home directory for the service manager
+      temporary storage needs as concert name
+
+      @return the service manager home directory (path object).
+      @type str
+    '''
     if not os.path.isdir(get_service_profile_cache_home(concert_name, service_name)):
         os.makedirs(get_service_profile_cache_home(concert_name, service_name))
+
 
 def get_home(concert_name):
     '''

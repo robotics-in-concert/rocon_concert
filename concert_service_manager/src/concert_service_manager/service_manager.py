@@ -34,7 +34,7 @@ class ServiceManager(object):
         '_enabled_services',     # enabled services { resource_name : ConcertServiceInstance }
         '_interactions_loader',  # rocon_interactions.InteractionLoader
         'lock',
-        '_service_cache_manager', # todd
+        '_service_cache_manager',  # todd
     ]
 
     def __init__(self):
@@ -104,12 +104,28 @@ class ServiceManager(object):
     def _setup_ros_services(self):
         services = {}
         services['enable_service'] = rospy.Service('~enable', concert_srvs.EnableService, self._ros_service_enable_concert_service)
+        services['update_service_config'] = rospy.Service('~update_service_config', concert_srvs.UpdateServiceConfig, self._ros_service_update_service_config)
         return services
 
     def _setup_ros_publishers(self):
         publishers = {}
         publishers['list_concert_services'] = rospy.Publisher('~list', concert_msgs.Services, latch=True, queue_size=1)
         return publishers
+
+    def _ros_service_update_service_config(self, req):
+
+        success = False
+        message = ""
+        service_profile = req.service_profile
+
+        # write at cache
+        (success, message) = self._service_cache_manager.update_cache(service_profile)
+
+        if service_name in self._enabled_services.keys():
+            success = True
+            message = "%s service is running. restart service" % (service_name)
+
+        return concert_srvs.EnableServiceResponse(success, message)
 
     def _ros_service_enable_concert_service(self, req):
         name = req.name
@@ -176,5 +192,5 @@ class ServiceManager(object):
 
     def spin(self):
         while not rospy.is_shutdown():
-            self._service_cache_manager.check_cache_modification(update_callback = self.publish_update)
+            self._service_cache_manager.check_cache_modification(update_callback=self.publish_update)
             rospy.sleep(0.5)

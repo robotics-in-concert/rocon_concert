@@ -20,6 +20,7 @@ import rocon_std_msgs.msg as rocon_std_msgs
 import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 
+from rospy_message_converter import message_converter
 from .exceptions import InvalidSolutionConfigurationException
 from .exceptions import InvalidServiceProfileException, NoServiceExistsException
 from .utils import *
@@ -88,24 +89,60 @@ def load_solution_configuration_from_resource(yaml_file):
 class ServiceCacheManager(object):
 
     __slots__ = [
-        '_concert_name',      # todo
-        '_resource_name',     # todo
-        'service_profiles',  # todo
+        '_concert_name',         # todo
+        '_resource_name',       # todo
+        '_cache_list',          # todo
+        'service_profiles',    # todo
         'msg',                   # todo
-        '_cache_list',  # todo
+
     ]
 
     def __init__(self, concert_name, resource_name):
         self._concert_name = concert_name.lower().replace(' ', '_')
         self._resource_name = resource_name
+
         self.service_profiles = {}
         setup_home_dirs(self._concert_name)
         self._cache_list = {}
 
         yaml_file = self._check_cache()
-        print "checking cache result: " + yaml_file
-        self._load_services_cache(yaml_file)
+        self._load_cache(yaml_file)
         self._init_cache_list()
+
+    def update_cache(serlf, service_profile_msg):
+        '''
+        Todo 
+
+        :param service_profile_msg: Todo
+        :type service_profile_msg: concert_msgs/ServiceProfile
+
+        :return: boolean result of update cache with message
+        :rtype: (bool, str)
+        '''
+
+        result = True
+        message = ""
+
+        service_profile = message_converter.convert_ros_message_to_dictionary(service_profile_msg)
+        print service_profile
+        service_name = service_profile['name']
+        service_parameter_detail = service_profile['parameters_detail']
+
+        if service_profile['name'] in self.service_profiles.keys():
+            service_profile = self.service_profiles[service_profile['name']]
+            service_profile['parameters_detail'] = service_parameter_detail
+            try:
+                self._save_service_profile(service_profile)
+                result = True
+                message = 'Success'
+            except:
+                result = False
+                message = "Fail during saveing service profile"
+        else:
+            result = False
+            message = "Can not find service: %s" % service_name
+
+        return (result, message)
 
     def _init_cache_list(self):
         """
@@ -160,9 +197,7 @@ class ServiceCacheManager(object):
         yaml_file_name = yaml_file.split('/')[-1]
         cache_yaml_file = get_home(self._concert_name) + '/' + yaml_file_name
         if not os.path.isfile(cache_yaml_file) or os.stat(cache_yaml_file).st_size <= 0:
-            print "create cache!!"
             self._create_cache()
-            print "Save solution config"
             self._save_solution_configuration()
         return cache_yaml_file
 
@@ -179,9 +214,6 @@ class ServiceCacheManager(object):
 
             s_time = time.time()
             print "create service: " + resource_name
-
-            e_time = time.time()
-            print "create total time: " + str(e_time - s_time)
 
             try:
                 file_name = rocon_python_utils.ros.find_resource_from_string(resource_name)
@@ -222,13 +254,16 @@ class ServiceCacheManager(object):
                 except rospkg.ResourceNotFound as e:
                     raise e
 
+            e_time = time.time()
+            print "create total time: " + str(e_time - s_time)
+
             print "complete making service profile"
             self.service_profiles[loaded_profile['name']] = copy.deepcopy(loaded_profile)
             print "complete making service profile message"
-            self._save_profile(loaded_profile)
+            self._save_service_profile(loaded_profile)
             print "complete saving service profile"
 
-    def _load_services_cache(self, services_file_name):
+    def _load_cache(self, services_file_name):
         '''
         Todo 
 
@@ -238,13 +273,35 @@ class ServiceCacheManager(object):
         '''
         with open(services_file_name) as f:
             service_list = yaml.load(f)
-        print 'service_list: ' + str(service_list)
         for service in service_list:
-            print 'service name: ' + service['name']
             try:
                 service_file_name = get_service_profile_cache_home(self._concert_name, service['name']) + "/" + service['name'] + '.service'
+                if not os.path.isfile(service_file_name):
+                    rospy.logwarn("Service Manager : can not find service file in cache [%s]" % (service['name'] + '.service'))
+                    continue
                 with open(service_file_name) as f:
                     loaded_profile = yaml.load(f)
+
+                    if 'parameters' in loaded_profile.keys():
+                        loaded_profile['parameters_detail'] = []
+                        parameters_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['parameters'])
+                        try:
+                            with open(parameters_yaml_file) as f:
+                                parameters_yaml = yaml.load(f)
+                                loaded_profile['parameters_detail'] = parameters_yaml
+                        except rospkg.ResourceNotFound as e:
+                            raise e
+
+                    if 'interactions' in loaded_profile.keys():
+                        loaded_profile['interactions_detail'] = []
+                        interactions_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['interactions'])
+                        try:
+                            with open(interactions_yaml_file) as f:
+                                interactions_yaml = yaml.load(f)
+                                loaded_profile['interactions_detail'] = interactions_yaml
+                        except rospkg.ResourceNotFound as e:
+                            raise e
+
             except rospkg.ResourceNotFound as e:
                 raise e
 
@@ -289,7 +346,7 @@ class ServiceCacheManager(object):
 
         return msg
 
-    def _save_profile(self, loaded_service_profile_from_file):
+    def _save_service_profile(self, loaded_service_profile_from_file):
         '''
         Todo
 
@@ -320,6 +377,7 @@ class ServiceCacheManager(object):
             loaded_profile['parameters'] = service_parameters_file_name.split('/')[-1]
             with file(service_parameters_file_name, 'w') as f:
                 yaml.safe_dump(loaded_profile['parameters_detail'], f, default_flow_style=False)
+            del (loaded_profile['parameters_detail'])
 
         # if 'launcher' in loaded_profile.keys():
         #    loaded_profile['launcher'] = rocon_python_utils.ros.find_resource_from_string(loaded_profile['launcher'] + '.launch')
@@ -383,6 +441,20 @@ class ServiceCacheManager(object):
                 return service_profile
         return None
 
+    def check_cache_modification(self, update_callback):
+        '''
+        Todo
+
+        :param update_callback:
+        :type update_callback: method with no args
+
+        '''
+        if self._cache_list != self._get_cache_list():
+            yaml_file = self._check_cache()
+            self._load_cache(yaml_file)
+            self._init_cache_list()
+            update_callback()
+
     def find(self, name):
         """
           Scan the service data to see if a service has been configured with the specified name. Check if it
@@ -406,17 +478,3 @@ class ServiceCacheManager(object):
             return service_profile
         except KeyError:
             raise NoServiceExistsException("service profile not found in the configured service pool [%s]" % name)
-
-    def check_cache_modification(self, update_callback):
-        '''
-        Todo
-
-        :param update_callback:
-        :type update_callback: method with no args
-
-        '''
-        if self._cache_list != self._get_cache_list():
-            yaml_file = self._check_cache()
-            self._load_services_cache(yaml_file)
-            self._init_cache_list()
-            update_callback()

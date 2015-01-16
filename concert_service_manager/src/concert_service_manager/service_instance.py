@@ -210,10 +210,10 @@ class ServiceInstance(object):
         return self.msg
 
     def loginfo(self, msg):
-        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.loginfo("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logerr(self, msg):
-        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.logerr("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logwarn(self, msg):
-        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.logwarn("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
