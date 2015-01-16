@@ -34,7 +34,7 @@ class ServiceManager(object):
         '_enabled_services',     # enabled services { resource_name : ConcertServiceInstance }
         '_interactions_loader',  # rocon_interactions.InteractionLoader
         'lock',
-        '_service_cache_manager',  # todd
+        '_service_cache_manager',  # todo
     ]
 
     def __init__(self):
@@ -50,7 +50,7 @@ class ServiceManager(object):
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'])
+            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'], self.publish_update)
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
         self._publishers = self._setup_ros_publishers()
@@ -73,7 +73,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
-        parameters['concert_name'] = rospy.get_param('/concert/name/', "")
+        parameters['concert_name'] = rospy.get_param('~concert_name', "")
         parameters['solution_configuration'] = rospy.get_param('~services', "")  # @IgnorePep8
         parameters['auto_enable_services'] = rospy.get_param('~auto_enable_services', [])  # @IgnorePep8
         return parameters
@@ -116,16 +116,18 @@ class ServiceManager(object):
 
         success = False
         message = ""
+        
         service_profile = req.service_profile
-
+        service_name = service_profile.name
         # write at cache
-        (success, message) = self._service_cache_manager.update_cache(service_profile)
-
+        self.lock.acquire()  # could be an expensive lock?
+        (success, message) = self._service_cache_manager.update_service_cache(service_profile)
+        self.lock.release()  # could be an expensive lock?
         if service_name in self._enabled_services.keys():
             success = True
             message = "%s service is running. restart service" % (service_name)
 
-        return concert_srvs.EnableServiceResponse(success, message)
+        return concert_srvs.UpdateServiceConfigResponse(success, message)
 
     def _ros_service_enable_concert_service(self, req):
         name = req.name
@@ -140,10 +142,11 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
+                self._service_cache_manager.load_service_cache()
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
                     try:
-                        service_instance = ServiceInstance(self._parameters['concert_name'], self._service_cache_manager.find(name)['msg'], update_callback=self.publish_update)
+                        service_instance = ServiceInstance(self._parameters['concert_name'], self._service_cache_manager.find(name)['msg'])
                     except NoServiceExistsException:
                         # do some updating of the service pool here
                         raise NoServiceExistsException("service not found on the package path [%s]" % name)
@@ -192,5 +195,7 @@ class ServiceManager(object):
 
     def spin(self):
         while not rospy.is_shutdown():
-            self._service_cache_manager.check_cache_modification(update_callback=self.publish_update)
+            self.lock.acquire()  # could be an expensive lock?
+            self._service_cache_manager.check_service_cache_modification()
+            self.lock.release()  # could be an expensive lock?
             rospy.sleep(0.5)

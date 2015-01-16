@@ -35,7 +35,7 @@ class ServiceInstance(object):
 
     __slots__ = [
         'msg',                  # concert_msgs.ServiceProfile fixed and variable parameters
-        '_update_callback',     # used to trigger an external callback (service manager publisher) when the state changes.
+        
         '_namespace',           # namespace that the service will run in
         '_lock',                # protect service enabling/disabling
         '_proc',                # holds the custom subprocess variable if TYPE_CUSTOM
@@ -49,7 +49,7 @@ class ServiceInstance(object):
     shutdown_timeout = 5
     kill_timeout = 10
 
-    def __init__(self, concert_name=None, service_profile=None, env=os.environ, update_callback=dummy_cb):
+    def __init__(self, concert_name=None, service_profile=None, env=os.environ):
         '''
           @param service_profile :
           @type concert_msgs.msg.ConcertService
@@ -60,7 +60,7 @@ class ServiceInstance(object):
         self.name = self.msg.name
         # other
         self._namespace = '/services/' + str(self.msg.name)
-        self._update_callback = update_callback
+        
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
@@ -99,7 +99,7 @@ class ServiceInstance(object):
                 interactions_loader.load(interaction_path, namespace=self._namespace, load=True, is_relative_path=False)
             # if there's a failure point, it will have thrown an exception before here.
             success = True
-            self._update_callback()
+            
             self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
