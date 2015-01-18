@@ -103,7 +103,7 @@ class ServiceCacheManager(object):
         self._modification_callback = modification_callback
         self._cache_service_list = {}
         self.service_profiles = {}
-        
+
         setup_home_dirs(self._concert_name)
         self.load_service_cache()
 
@@ -165,7 +165,7 @@ class ServiceCacheManager(object):
         loaded_profiles = {}
         service_configurations = load_solution_configuration_from_default(rocon_python_utils.ros.find_resource_from_string(self._resource_name))
         for service_configuration in service_configurations:
-            resource_name = service_configuration['resource_name'] + '.service'
+            resource_name = check_extension_name(service_configuration['resource_name'], '.service')
             overrides = service_configuration['overrides']
 
             loaded_profile = self._load_service_profile_from_default(resource_name, overrides)
@@ -211,7 +211,7 @@ class ServiceCacheManager(object):
         if 'parameters' in loaded_profile.keys():
             loaded_profile['parameters_detail'] = []
             # todo if cache, if original
-            parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(loaded_profile['parameters'] + '.parameters')
+            parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['parameters'], '.parameters'))
             try:
                 with open(parameters_yaml_file) as f:
                     parameters_yaml = yaml.load(f)
@@ -220,7 +220,7 @@ class ServiceCacheManager(object):
                 raise e
 
         if 'interactions' in loaded_profile.keys():
-            interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(loaded_profile['interactions'] + '.interactions')
+            interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['interactions'], '.interactions'))
             try:
                 with open(interactions_yaml_file) as f:
                     interactions_yaml = yaml.load(f)
@@ -244,9 +244,9 @@ class ServiceCacheManager(object):
             service_list = yaml.load(f)
         for service in service_list:
             try:
-                service_file_name = get_service_profile_cache_home(self._concert_name, service['name']) + "/" + service['name'] + '.service'
+                service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), check_extension_name(service['name'], '.service'))
                 if not os.path.isfile(service_file_name) or os.stat(service_file_name).st_size <= 0:
-                    rospy.logwarn("Service Manager : can not find service file in cache [%s]" % (service['name'] + '.service'))
+                    rospy.logwarn("Service Manager : can not find service file in cache [%s]" % check_extension_name(service['name'], '.service'))
                     continue
                 with open(service_file_name) as f:
                     loaded_profile = yaml.load(f)
@@ -330,7 +330,7 @@ class ServiceCacheManager(object):
 
         # writting interaction data
         if 'interactions_detail' in loaded_profile.keys():
-            service_interactions_file_name = service_profile_cache_home + '/' + service_name + '.interactions'
+            service_interactions_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.interactions'))
             loaded_profile['interactions'] = service_interactions_file_name.split('/')[-1]
             with file(service_interactions_file_name, 'w') as f:
                 yaml.safe_dump(loaded_profile['interactions_detail'], f, default_flow_style=False)
@@ -338,7 +338,7 @@ class ServiceCacheManager(object):
 
         # writting parameter data
         if 'parameters_detail' in loaded_profile.keys():
-            service_parameters_file_name = service_profile_cache_home + '/' + service_name + '.parameters'
+            service_parameters_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.parameters'))
             loaded_profile['parameters'] = service_parameters_file_name.split('/')[-1]
             with file(service_parameters_file_name, 'w') as f:
                 yaml.safe_dump(loaded_profile['parameters_detail'], f, default_flow_style=False)
@@ -346,13 +346,13 @@ class ServiceCacheManager(object):
 
         # if 'launcher' in loaded_profile.keys():
         #    loaded_profile['launcher'] = rocon_python_utils.ros.find_resource_from_string(loaded_profile['launcher'] + '.launch')
-        
+
         # delete msg data
         if 'msg' in loaded_profile.keys():
             del (loaded_profile['msg'])
-        
+
         # writting service profile data
-        service_profile_file_name = service_profile_cache_home + '/' + service_name + '.service'
+        service_profile_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.service'))
         with file(service_profile_file_name, 'w') as f:
             yaml.safe_dump(loaded_profile, f, default_flow_style=False)
 
@@ -400,7 +400,7 @@ class ServiceCacheManager(object):
         except rospkg.ResourceNotFound:
             raise rospkg.ResourceNotFound("[%s] is not a package or launch file name [%s]" % (package, package + '/' + filename))
         return None
-    
+
     def _loginfo(self, msg):
         rospy.loginfo("Service Manager : " + str(msg))
 
@@ -426,7 +426,7 @@ class ServiceCacheManager(object):
         service_parameter_detail = {}
         for param_pair in service_profile['parameters_detail']:
             service_parameter_detail[param_pair['key']] = param_pair['value']
-        
+
         if service_profile['name'] in self.service_profiles.keys():
             service_profile = self.service_profiles[service_profile['name']]
             service_profile['parameters_detail'] = service_parameter_detail
@@ -459,7 +459,7 @@ class ServiceCacheManager(object):
         Todo
 
         '''
-        if self._cache_service_list != self._get_service_cache_list():            
+        if self._cache_service_list != self._get_service_cache_list():
             self.load_service_cache()
             if self._modification_callback:
                 self._modification_callback()

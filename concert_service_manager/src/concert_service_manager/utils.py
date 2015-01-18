@@ -53,3 +53,17 @@ def get_service_profile_cache_home(concert_name, service_name):
       @type str
     '''
     return os.path.join(get_home(concert_name), 'services', service_name)
+
+
+def check_extension_name(file_name, extension_name):
+    '''
+    Check whether file name include extension name. If it does not include extension name, return file name added extension name.
+
+    @return file name included extension name
+    @type str
+    '''
+
+    if extension_name in file_name:
+        return file_name
+    else:
+        return file_name + extension_name
