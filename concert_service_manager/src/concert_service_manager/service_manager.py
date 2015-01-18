@@ -113,19 +113,18 @@ class ServiceManager(object):
         return publishers
 
     def _ros_service_update_service_config(self, req):
-
         success = False
         message = ""
-        
         service_profile = req.service_profile
         service_name = service_profile.name
         # write at cache
-        self.lock.acquire()  # could be an expensive lock?
-        (success, message) = self._service_cache_manager.update_service_cache(service_profile)
-        self.lock.release()  # could be an expensive lock?
         if service_name in self._enabled_services.keys():
-            success = True
-            message = "%s service is running. restart service" % (service_name)
+            success = False
+            message = "%s service is running. First, stop %s service" % (service_name, service_name)
+        else:
+            self.lock.acquire()
+            (success, message) = self._service_cache_manager.update_service_cache(service_profile)
+            self.lock.release()
 
         return concert_srvs.UpdateServiceConfigResponse(success, message)
 
@@ -195,7 +194,7 @@ class ServiceManager(object):
 
     def spin(self):
         while not rospy.is_shutdown():
-            self.lock.acquire()  # could be an expensive lock?
-            self._service_cache_manager.check_service_cache_modification()
-            self.lock.release()  # could be an expensive lock?
+            self.lock.acquire()
+            self._service_cache_manager.check_modification_service_cache()
+            self.lock.release()
             rospy.sleep(0.5)

@@ -139,7 +139,7 @@ class ServiceCacheManager(object):
 
     def _check_service_cache(self):
         """
-          Check whether cached yaml file is existed or not
+          Check whether cached yaml file regarding service profile is generated or not
 
           :returns: flag and full path yaml file as result of check existence about cache file. If cache file is existed, return true and cache path. Otherwise, return false and original path
           :rtype: str
@@ -158,7 +158,7 @@ class ServiceCacheManager(object):
 
     def _create_service_cache(self):
         """
-          Todo: Create cache as loading service configuration from default value.
+          Create cache as loading service configuration from default value.
 
         """
         # read resource file
@@ -454,7 +454,7 @@ class ServiceCacheManager(object):
         self._load_service_cache_from_cache(solution_configuration_cache)
         self._init_service_cache_list()
 
-    def check_service_cache_modification(self):
+    def check_modification_service_cache(self):
         '''
         Todo
 
