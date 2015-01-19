@@ -42,8 +42,6 @@ def load_solution_configuration_from_default(yaml_file):
 
       :param yaml_file: filename of the solution configuration file
       :type yaml_file: str
-      :param is_cached: todo
-      :type is_cached: bool
 
       :returns: the solution configuration data for services in this concert
       :rtype: [ServiceData]
@@ -89,12 +87,12 @@ def load_solution_configuration_from_default(yaml_file):
 class ServiceCacheManager(object):
 
     __slots__ = [
-        '_concert_name',            # todo
-        '_resource_name',           # todo
-        '_cache_service_list',     # todo
-        '_modification_callback',  # todo
-        'service_profiles',         # todo
-        'msg',                        # todo
+        '_concert_name',            # concert name to classify cache directory
+        '_resource_name',           # service resource name. It is composed 'package name/service resource name'. ex. )chatter_concert/chatter.service
+        '_cache_service_list',     # file and directory list cached the service profile. It is used to check file modification
+        '_modification_callback',  # callback function about file modification. It is called when _cache_service_list's item is changed.
+        'service_profiles',         # dictionary data of service profile to use in service manager
+        'msg',                        # ros message regarding service profile to use in servvice manager
     ]
 
     def __init__(self, concert_name, resource_name, modification_callback=None):
@@ -109,14 +107,14 @@ class ServiceCacheManager(object):
 
     def _init_service_cache_list(self):
         """
-          Todo
+          Initialize last modification time about cached file and directory to check cache modification
 
         """
         self._cache_service_list = self._get_service_cache_list()
 
     def _get_service_cache_list(self):
         """
-          Todo
+          Get the current modification time about cached file and directory
 
           :returns: cache list
           :rtype: dict
@@ -176,17 +174,17 @@ class ServiceCacheManager(object):
 
     def _load_service_profile_from_default(self, resource_name, overrides):
         """
-          Todo: Create cache as loading service configuration from default value.
+          Load service profile information from default.
 
-          :param resource_name: Todo
+          :param resource_name: default resource name. It is composed package name/services name.
           :type resource_name: str
-          :param overrides: Todo
+          :param overrides: overrided informantion. Its propertise are 'name', 'description', 'icon', 'priority', 'interactions' and 'parameters'. If the property does not setting, its has default value as None
           :type overrides: dict
 
-          :return: dictionary about service profile
+          :return: dictionary data about service profile
           :rtype: dict
 
-          :raises: :exc:`rospkg.ResourceNotFound` Todo
+          :raises: :exc:`rospkg.ResourceNotFound` 
 
         """
         # load service profile from default
@@ -210,7 +208,6 @@ class ServiceCacheManager(object):
 
         if 'parameters' in loaded_profile.keys():
             loaded_profile['parameters_detail'] = []
-            # todo if cache, if original
             parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['parameters'], '.parameters'))
             try:
                 with open(parameters_yaml_file) as f:
@@ -232,12 +229,12 @@ class ServiceCacheManager(object):
 
     def _load_service_cache_from_cache(self, services_file_name):
         '''
-        Todo
+        Load service profile information from cache.
 
-        :param service_file_name: todo
+        :param service_file_name: cached services file. It is included service name and enabled status.
         :type service_file_name: str
 
-        :raises: :exc:`rospkg.ResourceNotFound` Todo
+        :raises: :exc:`rospkg.ResourceNotFound`
 
         '''
         with open(services_file_name) as f:
@@ -278,7 +275,7 @@ class ServiceCacheManager(object):
 
     def _service_profile_to_msg(self, loaded_profile):
         '''
-        Todo
+        Change service proflies data to ros message
 
         :returns: generated service profile message
         :rtype: [concert_msgs.ServiceProfile]
@@ -316,9 +313,9 @@ class ServiceCacheManager(object):
 
     def _save_service_profile(self, loaded_service_profile_from_file):
         '''
-        Todo
+        Save cache from loaded service profile
 
-        :param loaded_service_profile_from_file: Todo
+        :param loaded_service_profile_from_file: data of dictionary type regarding service profile
         :type loaded_service_profile_from_file: dict
 
         '''
@@ -358,9 +355,9 @@ class ServiceCacheManager(object):
 
     def _save_solution_configuration(self, service_profiles):
         '''
-        Todo
+        Save solution configuration about loaded service profiles
 
-        :param service_profiles: Todo
+        :param service_profiles: data of dictionary type regarding service profiles
         :type service_profiles: dict
 
         '''
@@ -381,11 +378,11 @@ class ServiceCacheManager(object):
         '''
         Todo, It is not implemented,yet.
 
-        :param resource: Todo
+        :param resource: finding resource name
         :type resource: string
 
         '''
-        # todo package name cahce
+
         package, filename = roslib.names.package_resource_name(resource)
         if not package:
             raise rospkg.ResourceNotFound("resource could not be split with a valid leading package name [%s]" % (resource))
@@ -409,9 +406,9 @@ class ServiceCacheManager(object):
 
     def update_service_cache(self, service_profile_msg):
         '''
-        Todo 
+        Update service cache with ros message regarding service profile
 
-        :param service_profile_msg: Todo
+        :param service_profile_msg: ros message of service profile. concert_msgs/ServiceProfile
         :type service_profile_msg: concert_msgs/ServiceProfile
 
         :return: boolean result of update cache with message
@@ -445,7 +442,7 @@ class ServiceCacheManager(object):
 
     def load_service_cache(self):
         '''
-        Todo
+        load service profile from cache
 
         '''
         (check_result, solution_configuration_cache) = self._check_service_cache()
@@ -456,7 +453,7 @@ class ServiceCacheManager(object):
 
     def check_modification_service_cache(self):
         '''
-        Todo
+        Check modification of service cahce file and directory.If they are changed, modification callback is called.
 
         '''
         if self._cache_service_list != self._get_service_cache_list():
