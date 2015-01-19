@@ -1,6 +1,9 @@
 Changelog
 =========
 
+0.6.3 (2015-01-05)
+------------------
+
 0.6.2 (2014-12-02)
 ------------------
 * add webserver_address param resolves `#251 <https://github.com/robotics-in-concert/rocon_concert/issues/251>`_
