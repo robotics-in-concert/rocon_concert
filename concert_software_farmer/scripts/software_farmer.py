@@ -7,12 +7,12 @@
 # Imports
 ##############################################################################
 import rospy
-from concert_software_manager import Manager
+from concert_software_farmer import SoftwareFarmer
 
 if __name__ == '__main__':
-    rospy.init_node('software_manager')
+    rospy.init_node('software_farmer')
     
-    manager = Manager()
-    manager.loginfo("Initialized")
-    manager.spin()
-    manager.loginfo("Bye Bye")
+    farmer = SoftwareFarmer()
+    farmer.loginfo("Initialized")
+    farmer.spin()
+    farmer.loginfo("Bye Bye")

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>concert_software_manager</name>
+  <name>concert_software_farmer</name>
   <version>0.0.0</version>
   <description>
     Concert Software farm is to manage software being utilised across services 
@@ -9,7 +9,7 @@
   <maintainer email="jihoonlee.in@gmail.com">Jihoon Lee</maintainer>
   <author>Jihoon Lee</author>
   <license>BSD</license>
-  <url type="website">http://wiki.ros.org/concert_software_manager</url>
+  <url type="website">http://wiki.ros.org/concert_software_farmer</url>
   <url type="repository">https://github.com/robotics-in-concert/rocon_concert</url>
   <url type="bugtracker">https://github.com/robotics-in-concert/rocon_concert/issues</url>
 

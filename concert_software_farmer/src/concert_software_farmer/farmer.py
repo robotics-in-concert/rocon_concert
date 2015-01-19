@@ -14,10 +14,10 @@ from .instance import SoftwareInstance
 from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileException, SoftwareProfileException, SoftwareNotExistException
 
 ##############################################################################
-# Manager
+# Softwarefarmer 
 ##############################################################################
 
-class Manager(object):
+class SoftwareFarmer(object):
     
     __slots__ = ['_params', '_software_pool', '_running_software', '_pub', '_srv']
 

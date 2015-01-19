@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="concert_software_farmer" name="software" type="software_farmer.py">
+  </node>
+</launch>
