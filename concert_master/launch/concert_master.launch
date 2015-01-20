@@ -18,7 +18,7 @@
   <arg name="conductor_local_clients_only" default="false"/>
   <!-- Service Manager -->
   <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
-  <arg name="auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
+  <arg name="default_auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
 
   <!-- Interactions -->
   <arg name="enable_rosbridge"  default="false"/>
@@ -43,8 +43,9 @@
 
     <!-- ***************************** Service Manager *************************** -->
     <include file="$(find concert_service_manager)/launch/service_manager.launch">
+      <arg name="concert_name" value="$(arg concert_name)"/>
       <arg name="services" value="$(arg services)" />
-      <arg name="auto_enable_services" value="$(arg auto_enable_services)" />
+      <arg name="default_auto_enable_services" value="$(arg default_auto_enable_services)" />
     </include>
 
     <!-- ***************************** Software Farmer *************************** -->

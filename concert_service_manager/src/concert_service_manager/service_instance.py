@@ -20,6 +20,7 @@ import rocon_interactions
 import unique_id
 
 from .load_params import load_parameters_from_file
+from .utils import *
 
 ##############################################################################
 # Methods
@@ -33,31 +34,33 @@ def dummy_cb():
 class ServiceInstance(object):
 
     __slots__ = [
-            'msg',                  # concert_msgs.ServiceProfile fixed and variable parameters
-            '_update_callback',     # used to trigger an external callback (service manager publisher) when the state changes.
-            '_namespace',           # namespace that the service will run in
-            '_lock',                # protect service enabling/disabling
-            '_proc',                # holds the custom subprocess variable if TYPE_CUSTOM
-            '_roslaunch',           # holds the roslaunch parent variable if TYPE_ROSLAUNCH
-            '_shutdown_publisher',  # used for disabling the service
-            # aliases
-            'name',
-        ]
+        'msg',                  # concert_msgs.ServiceProfile fixed and variable parameters
+
+        '_namespace',           # namespace that the service will run in
+        '_lock',                # protect service enabling/disabling
+        '_proc',                # holds the custom subprocess variable if TYPE_CUSTOM
+        '_roslaunch',           # holds the roslaunch parent variable if TYPE_ROSLAUNCH
+        '_shutdown_publisher',  # used for disabling the service
+        '_concert_name',  # todo
+        # aliases
+        'name',
+    ]
 
     shutdown_timeout = 5
     kill_timeout = 10
 
-    def __init__(self, service_profile=None, env=os.environ, update_callback=dummy_cb):
+    def __init__(self, concert_name=None, service_profile=None, env=os.environ):
         '''
           @param service_profile :
           @type concert_msgs.msg.ConcertService
         '''
+        self._concert_name = rocon_python_utils.ros.get_ros_friendly_name(concert_name)
         self.msg = service_profile
         # aliases
         self.name = self.msg.name
         # other
         self._namespace = '/services/' + str(self.msg.name)
-        self._update_callback = update_callback
+
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
@@ -84,16 +87,18 @@ class ServiceInstance(object):
             # load up parameters first so that when start runs, it can find the params immediately
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=True)
+                parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
+                load_parameters_from_file(parameter_path, namespace, self.msg.name, load=True)
             # Refresh the unique id
             self.msg.uuid = unique_id.toMsg(unique_identifier)
             self._start()
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=True)
+                interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
+                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
             success = True
-            self._update_callback()
+
             self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
@@ -114,10 +119,12 @@ class ServiceInstance(object):
         try:
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interactions_loader.load(self.msg.interactions, namespace=self._namespace, load=False)
+                interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
+                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=False)
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                load_parameters_from_file(self.msg.parameters, namespace, self.msg.name, load=False)
+                parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
+                load_parameters_from_file(parameter_path, namespace, self.msg.name, load=False)
 
             launcher_type = self.msg.launcher_type
             force_kill = False
@@ -201,10 +208,10 @@ class ServiceInstance(object):
         return self.msg
 
     def loginfo(self, msg):
-        rospy.loginfo("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.loginfo("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logerr(self, msg):
-        rospy.logerr("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.logerr("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
 
     def logwarn(self, msg):
-        rospy.logwarn("Service Manager: %s [%s]" % (str(msg), str(self.msg.name)))
+        rospy.logwarn("Service Manager : %s [%s]" % (str(msg), str(self.msg.name)))
