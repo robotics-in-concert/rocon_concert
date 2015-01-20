@@ -149,14 +149,14 @@ class ServiceCacheManager(object):
             default_service_configuration_file = rocon_python_utils.ros.find_resource_from_string(self._resource_name)
         except rospkg.ResourceNotFound as e:
             raise e
+        
+        service_configuration_file_name = default_service_configuration_file.split('/')[-1]
+        service_configuration_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
+        if not os.path.isfile(service_configuration_file) or os.stat(service_configuration_file).st_size <= 0:
+            check_result = False
+            self._loginfo("load from default: [%s]" % self._resource_name)
         else:
-            service_configuration_file_name = default_service_configuration_file.split('/')[-1]
-            service_configuration_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
-            if not os.path.isfile(service_configuration_file) or os.stat(service_configuration_file).st_size <= 0:
-                check_result = False
-                self._loginfo("load from default: [%s]" % self._resource_name)
-            else:
-                self._loginfo("load from cache: [%s]" % service_configuration_file)
+            self._loginfo("load from cache: [%s]" % service_configuration_file)
         return (check_result, service_configuration_file)
 
     def _create_service_cache(self):
