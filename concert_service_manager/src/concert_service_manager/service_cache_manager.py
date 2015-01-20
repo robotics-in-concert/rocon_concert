@@ -96,7 +96,7 @@ class ServiceCacheManager(object):
     ]
 
     def __init__(self, concert_name, resource_name, modification_callback=None):
-        self._concert_name = concert_name.strip().lower().replace(' ', '_')
+        self._concert_name = rocon_python_utils.ros.get_ros_friendly_name(concert_name)
         self._resource_name = resource_name
         self._modification_callback = modification_callback
         self._cache_service_list = {}
@@ -212,7 +212,7 @@ class ServiceCacheManager(object):
                 loaded_profile[key] = overrides[key]
         if 'launcher_type' not in loaded_profile.keys():  # not set
             loaded_profile['launcher_type'] = concert_msgs.ServiceProfile.TYPE_SHADOW
-        loaded_profile['name'] = loaded_profile['name'].strip().lower().replace(" ", "_")
+        loaded_profile['name'] = rocon_python_utils.ros.get_ros_friendly_name(loaded_profile['name'])
 
         if 'parameters' in loaded_profile.keys():
             loaded_profile['parameters_detail'] = []

@@ -35,7 +35,7 @@ class ServiceInstance(object):
 
     __slots__ = [
         'msg',                  # concert_msgs.ServiceProfile fixed and variable parameters
-        
+
         '_namespace',           # namespace that the service will run in
         '_lock',                # protect service enabling/disabling
         '_proc',                # holds the custom subprocess variable if TYPE_CUSTOM
@@ -54,13 +54,13 @@ class ServiceInstance(object):
           @param service_profile :
           @type concert_msgs.msg.ConcertService
         '''
-        self._concert_name = concert_name.lower().replace(' ', '_')
+        self._concert_name = rocon_python_utils.ros.get_ros_friendly_name(concert_name)
         self.msg = service_profile
         # aliases
         self.name = self.msg.name
         # other
         self._namespace = '/services/' + str(self.msg.name)
-        
+
         self._lock = threading.Lock()
         self._proc = None
         self._roslaunch = None
@@ -98,7 +98,7 @@ class ServiceInstance(object):
                 interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
             success = True
-            
+
             self.loginfo("service enabled [%s]" % self.msg.name)
             message = "success"
         except (rocon_interactions.YamlResourceNotFoundException, rocon_interactions.MalformedInteractionsYaml) as e:
