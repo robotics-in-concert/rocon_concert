@@ -139,19 +139,25 @@ class ServiceCacheManager(object):
         """
           Check whether cached yaml file regarding service profile is generated or not
 
-          :returns: flag and full path yaml file as result of check existence about cache file. If cache file is existed, return true and cache path. Otherwise, return false and original path
+          :returns: flag and full path of cache file. If cache file is existed, return true and cache path. Otherwise, return false and default resource path
           :rtype: str
+
+          :raises: :exc:`rospkg.ResourceNotFound` 
 
         """
         check_result = True
-        default_service_configuration_file = rocon_python_utils.ros.find_resource_from_string(self._resource_name)
-        service_configuration_file_name = default_service_configuration_file.split('/')[-1]
-        service_configuration_file = get_home(self._concert_name) + '/' + service_configuration_file_name
-        if not os.path.isfile(service_configuration_file) or os.stat(service_configuration_file).st_size <= 0:
-            check_result = False
-            self._loginfo("load from default: [%s]" % self._resource_name)
+        try:
+            default_service_configuration_file = rocon_python_utils.ros.find_resource_from_string(self._resource_name)
+        except rospkg.ResourceNotFound as e:
+            raise e
         else:
-            self._loginfo("load from cache: [%s]" % service_configuration_file)
+            service_configuration_file_name = default_service_configuration_file.split('/')[-1]
+            service_configuration_file = get_home(self._concert_name) + '/' + service_configuration_file_name
+            if not os.path.isfile(service_configuration_file) or os.stat(service_configuration_file).st_size <= 0:
+                check_result = False
+                self._loginfo("load from default: [%s]" % self._resource_name)
+            else:
+                self._loginfo("load from cache: [%s]" % service_configuration_file)
         return (check_result, service_configuration_file)
 
     def _create_service_cache(self):
@@ -165,10 +171,13 @@ class ServiceCacheManager(object):
         for service_configuration in service_configurations:
             resource_name = check_extension_name(service_configuration['resource_name'], '.service')
             overrides = service_configuration['overrides']
-
-            loaded_profile = self._load_service_profile_from_default(resource_name, overrides)
-            self._save_service_profile(loaded_profile)
-            loaded_profiles[loaded_profile['name']] = copy.deepcopy(loaded_profile)
+            try:
+                loaded_profile = self._load_service_profile_from_default(resource_name, overrides)
+                self._save_service_profile(loaded_profile)
+                loaded_profiles[loaded_profile['name']] = copy.deepcopy(loaded_profile)
+            except rospkg.ResourceNotFound as e:
+                self.logwarn('Cannot load service configuration: [%s]' % resource_name)
+                continue
         # save solution configuration
         self._save_solution_configuration(loaded_profiles)
 
@@ -194,8 +203,8 @@ class ServiceCacheManager(object):
                 loaded_profile = yaml.load(f)
         except rospkg.ResourceNotFound as e:
             raise e
-
         loaded_profile['resource_name'] = resource_name
+
         # set priority to default if it was not configured
         if 'priority' not in loaded_profile.keys():
             loaded_profile['priority'] = scheduler_msgs.Request.DEFAULT_PRIORITY
@@ -208,8 +217,8 @@ class ServiceCacheManager(object):
 
         if 'parameters' in loaded_profile.keys():
             loaded_profile['parameters_detail'] = []
-            parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['parameters'], '.parameters'))
             try:
+                parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['parameters'], '.parameters'))
                 with open(parameters_yaml_file) as f:
                     parameters_yaml = yaml.load(f)
                     loaded_profile['parameters_detail'] = parameters_yaml
@@ -217,14 +226,13 @@ class ServiceCacheManager(object):
                 raise e
 
         if 'interactions' in loaded_profile.keys():
-            interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['interactions'], '.interactions'))
             try:
+                interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['interactions'], '.interactions'))
                 with open(interactions_yaml_file) as f:
                     interactions_yaml = yaml.load(f)
                     loaded_profile['interactions_detail'] = interactions_yaml
             except rospkg.ResourceNotFound as e:
                 raise e
-
         return loaded_profile
 
     def _load_service_cache_from_cache(self, services_file_name):
@@ -237,38 +245,39 @@ class ServiceCacheManager(object):
         :raises: :exc:`rospkg.ResourceNotFound`
 
         '''
+        if not os.path.isfile(services_file_name):
+            raise rospkg.ResourceNotFound('Cannot find service file: [%s]' % services_file_name)
+
         with open(services_file_name) as f:
             service_list = yaml.load(f)
         for service in service_list:
-            try:
-                service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), check_extension_name(service['name'], '.service'))
-                if not os.path.isfile(service_file_name) or os.stat(service_file_name).st_size <= 0:
-                    rospy.logwarn("Service Manager : can not find service file in cache [%s]" % check_extension_name(service['name'], '.service'))
-                    continue
-                with open(service_file_name) as f:
-                    loaded_profile = yaml.load(f)
-                    if 'parameters' in loaded_profile.keys():
-                        loaded_profile['parameters_detail'] = []
-                        parameters_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['parameters'])
-                        try:
-                            with open(parameters_yaml_file) as f:
-                                parameters_yaml = yaml.load(f)
-                                loaded_profile['parameters_detail'] = parameters_yaml
-                        except rospkg.ResourceNotFound as e:
-                            raise e
+            service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), check_extension_name(service['name'], '.service'))
+            if not os.path.isfile(service_file_name) or os.stat(service_file_name).st_size <= 0:
+                rospy.logwarn("Service Manager : can not find service file in cache [%s]" % check_extension_name(service['name'], '.service'))
+                continue
+            with open(service_file_name) as f:
+                loaded_profile = yaml.load(f)
+                if 'parameters' in loaded_profile.keys():
+                    loaded_profile['parameters_detail'] = []
+                    parameters_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['parameters'])
+                    if not os.path.isfile(parameters_yaml_file) or os.stat(parameters_yaml_file).st_size <= 0:
+                        rospy.logwarn("Service Manager : can not find parameters file in cache [%s]" % parameters_yaml_file)
+                        continue
 
-                    if 'interactions' in loaded_profile.keys():
-                        loaded_profile['interactions_detail'] = []
-                        interactions_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['interactions'])
-                        try:
-                            with open(interactions_yaml_file) as f:
-                                interactions_yaml = yaml.load(f)
-                                loaded_profile['interactions_detail'] = interactions_yaml
-                        except rospkg.ResourceNotFound as e:
-                            raise e
+                    with open(parameters_yaml_file) as f:
+                        parameters_yaml = yaml.load(f)
+                        loaded_profile['parameters_detail'] = parameters_yaml
 
-            except rospkg.ResourceNotFound as e:
-                raise e
+                if 'interactions' in loaded_profile.keys():
+                    loaded_profile['interactions_detail'] = []
+                    interactions_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['interactions'])
+                    if not os.path.isfile(interactions_yaml_file) or os.stat(interactions_yaml_file).st_size <= 0:
+                        rospy.logwarn("Service Manager : can not find interactions file in cache [%s]" % interactions_yaml_file)
+                        continue
+
+                    with open(interactions_yaml_file) as f:
+                        interactions_yaml = yaml.load(f)
+                        loaded_profile['interactions_detail'] = interactions_yaml
 
             loaded_profile['msg'] = self._service_profile_to_msg(loaded_profile)
             self.service_profiles[loaded_profile['name']] = copy.deepcopy(loaded_profile)
@@ -341,10 +350,7 @@ class ServiceCacheManager(object):
                 yaml.safe_dump(loaded_profile['parameters_detail'], f, default_flow_style=False)
             del (loaded_profile['parameters_detail'])
 
-        # if 'launcher' in loaded_profile.keys():
-        #    loaded_profile['launcher'] = rocon_python_utils.ros.find_resource_from_string(loaded_profile['launcher'] + '.launch')
-
-        # delete msg data
+        # delete data unused in msg
         if 'msg' in loaded_profile.keys():
             del (loaded_profile['msg'])
 
@@ -373,30 +379,6 @@ class ServiceCacheManager(object):
             cache_srv_config_file = get_home(self._concert_name) + '/' + service_configuration_file_name
             with file(cache_srv_config_file, 'w') as f:
                 yaml.safe_dump(solution_configuration, f, default_flow_style=False)
-
-    def _find_resource_from_string(self, resource):
-        '''
-        Todo, It is not implemented,yet.
-
-        :param resource: finding resource name
-        :type resource: string
-
-        '''
-
-        package, filename = roslib.names.package_resource_name(resource)
-        if not package:
-            raise rospkg.ResourceNotFound("resource could not be split with a valid leading package name [%s]" % (resource))
-        try:
-            resolved = roslib.packages.find_resource(package, filename, None)
-            if not resolved:
-                raise rospkg.ResourceNotFound("cannot locate [%s] in package [%s]" % (filename, package))
-            elif len(resolved) == 1:
-                return resolved[0]
-            elif len(resolved) > 1:
-                raise rospkg.ResourceNotFound("multiple resources named [%s] in package [%s]:%s\nPlease specify full path instead" % (filename, package, ''.join(['\n- %s' % r for r in resolved])))
-        except rospkg.ResourceNotFound:
-            raise rospkg.ResourceNotFound("[%s] is not a package or launch file name [%s]" % (package, package + '/' + filename))
-        return None
 
     def _loginfo(self, msg):
         rospy.loginfo("Service Manager : " + str(msg))
@@ -445,11 +427,14 @@ class ServiceCacheManager(object):
         load service profile from cache
 
         '''
-        (check_result, solution_configuration_cache) = self._check_service_cache()
-        if not check_result:
-            self._create_service_cache()
-        self._load_service_cache_from_cache(solution_configuration_cache)
-        self._init_service_cache_list()
+        try:
+            (check_result, solution_configuration_cache) = self._check_service_cache()
+            if not check_result:
+                self._create_service_cache()
+            self._load_service_cache_from_cache(solution_configuration_cache)
+            self._init_service_cache_list()
+        except rospkg.ResourceNotFound as e:
+            self._logwarn(str(e))            
 
     def check_modification_service_cache(self):
         '''
