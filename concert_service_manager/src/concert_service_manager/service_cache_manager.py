@@ -102,7 +102,6 @@ class ServiceCacheManager(object):
         self._cache_service_list = {}
         self.service_profiles = {}
 
-        setup_home_dirs(self._concert_name)
         self.load_service_cache()
 
     def _init_service_cache_list(self):
@@ -121,7 +120,7 @@ class ServiceCacheManager(object):
 
         """
         cache_list = {}
-        for root, dirs, files in os.walk(get_home(self._concert_name)):
+        for root, dirs, files in os.walk(get_concert_home(self._concert_name)):
             for dir_name in dirs:
                 dir_path = str(os.path.join(root, dir_name))
                 cache_list[dir_path] = {}
@@ -152,7 +151,7 @@ class ServiceCacheManager(object):
             raise e
         else:
             service_configuration_file_name = default_service_configuration_file.split('/')[-1]
-            service_configuration_file = get_home(self._concert_name) + '/' + service_configuration_file_name
+            service_configuration_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
             if not os.path.isfile(service_configuration_file) or os.stat(service_configuration_file).st_size <= 0:
                 check_result = False
                 self._loginfo("load from default: [%s]" % self._resource_name)
@@ -169,7 +168,7 @@ class ServiceCacheManager(object):
         loaded_profiles = {}
         service_configurations = load_solution_configuration_from_default(rocon_python_utils.ros.find_resource_from_string(self._resource_name))
         for service_configuration in service_configurations:
-            resource_name = check_extension_name(service_configuration['resource_name'], '.service')
+            resource_name = rocon_python_utils.ros.check_extension_name(service_configuration['resource_name'], '.service')
             overrides = service_configuration['overrides']
             try:
                 loaded_profile = self._load_service_profile_from_default(resource_name, overrides)
@@ -218,7 +217,7 @@ class ServiceCacheManager(object):
         if 'parameters' in loaded_profile.keys():
             loaded_profile['parameters_detail'] = []
             try:
-                parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['parameters'], '.parameters'))
+                parameters_yaml_file = rocon_python_utils.ros.find_resource_from_string(rocon_python_utils.ros.check_extension_name(loaded_profile['parameters'], '.parameters'))
                 with open(parameters_yaml_file) as f:
                     parameters_yaml = yaml.load(f)
                     loaded_profile['parameters_detail'] = parameters_yaml
@@ -227,7 +226,7 @@ class ServiceCacheManager(object):
 
         if 'interactions' in loaded_profile.keys():
             try:
-                interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(check_extension_name(loaded_profile['interactions'], '.interactions'))
+                interactions_yaml_file = rocon_python_utils.ros.find_resource_from_string(rocon_python_utils.ros.check_extension_name(loaded_profile['interactions'], '.interactions'))
                 with open(interactions_yaml_file) as f:
                     interactions_yaml = yaml.load(f)
                     loaded_profile['interactions_detail'] = interactions_yaml
@@ -251,9 +250,9 @@ class ServiceCacheManager(object):
         with open(services_file_name) as f:
             service_list = yaml.load(f)
         for service in service_list:
-            service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), check_extension_name(service['name'], '.service'))
+            service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
             if not os.path.isfile(service_file_name) or os.stat(service_file_name).st_size <= 0:
-                rospy.logwarn("Service Manager : can not find service file in cache [%s]" % check_extension_name(service['name'], '.service'))
+                rospy.logwarn("Service Manager : can not find service file in cache [%s]" % rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
                 continue
             with open(service_file_name) as f:
                 loaded_profile = yaml.load(f)
@@ -331,12 +330,11 @@ class ServiceCacheManager(object):
         loaded_profile = copy.deepcopy(loaded_service_profile_from_file)
         service_name = loaded_profile['name']
 
-        setup_service_profile_home_dirs(self._concert_name, service_name)
         service_profile_cache_home = get_service_profile_cache_home(self._concert_name, service_name)
 
         # writting interaction data
         if 'interactions_detail' in loaded_profile.keys():
-            service_interactions_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.interactions'))
+            service_interactions_file_name = os.path.join(service_profile_cache_home, rocon_python_utils.ros.check_extension_name(service_name, '.interactions'))
             loaded_profile['interactions'] = service_interactions_file_name.split('/')[-1]
             with file(service_interactions_file_name, 'w') as f:
                 yaml.safe_dump(loaded_profile['interactions_detail'], f, default_flow_style=False)
@@ -344,7 +342,7 @@ class ServiceCacheManager(object):
 
         # writting parameter data
         if 'parameters_detail' in loaded_profile.keys():
-            service_parameters_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.parameters'))
+            service_parameters_file_name = os.path.join(service_profile_cache_home, rocon_python_utils.ros.check_extension_name(service_name, '.parameters'))
             loaded_profile['parameters'] = service_parameters_file_name.split('/')[-1]
             with file(service_parameters_file_name, 'w') as f:
                 yaml.safe_dump(loaded_profile['parameters_detail'], f, default_flow_style=False)
@@ -355,7 +353,7 @@ class ServiceCacheManager(object):
             del (loaded_profile['msg'])
 
         # writting service profile data
-        service_profile_file_name = os.path.join(service_profile_cache_home, check_extension_name(service_name, '.service'))
+        service_profile_file_name = os.path.join(service_profile_cache_home, rocon_python_utils.ros.check_extension_name(service_name, '.service'))
         with file(service_profile_file_name, 'w') as f:
             yaml.safe_dump(loaded_profile, f, default_flow_style=False)
 
@@ -376,7 +374,7 @@ class ServiceCacheManager(object):
 
         service_configuration_file_name = rocon_python_utils.ros.find_resource_from_string(self._resource_name).split('/')[-1]
         if '.services' in service_configuration_file_name:
-            cache_srv_config_file = get_home(self._concert_name) + '/' + service_configuration_file_name
+            cache_srv_config_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
             with file(cache_srv_config_file, 'w') as f:
                 yaml.safe_dump(solution_configuration, f, default_flow_style=False)
 
@@ -396,7 +394,6 @@ class ServiceCacheManager(object):
         :return: boolean result of update cache with message
         :rtype: (bool, str)
         '''
-
         result = True
         message = ""
 
@@ -434,7 +431,7 @@ class ServiceCacheManager(object):
             self._load_service_cache_from_cache(solution_configuration_cache)
             self._init_service_cache_list()
         except rospkg.ResourceNotFound as e:
-            self._logwarn(str(e))            
+            self._logwarn(str(e))
 
     def check_modification_service_cache(self):
         '''

@@ -95,7 +95,7 @@ class ServiceInstance(object):
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
-                interactions_loader.load(interaction_path, namespace=self._namespace, load=True, is_relative_path=False)
+                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
             success = True
             
@@ -120,7 +120,7 @@ class ServiceInstance(object):
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
-                interactions_loader.load(interaction_path, namespace=self._namespace, load=False, is_relative_path=False)
+                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=False)
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
                 parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
