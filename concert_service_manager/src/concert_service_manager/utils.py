@@ -25,7 +25,8 @@ def get_concert_home(concert_name):
       @return the service manager home directory (path object).
       @type str
     '''
-    concert_home = os.path.join(rocon_python_utils.ros.get_rocon_home(), concert_name)
+    SOLUTION_ROOT = 'solutions'
+    concert_home = os.path.join(rocon_python_utils.ros.get_rocon_home(), SOLUTION_ROOT, concert_name)
     if not os.path.isdir(concert_home):
         os.makedirs(concert_home)
     return concert_home
