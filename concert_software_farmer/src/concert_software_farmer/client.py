@@ -11,12 +11,11 @@ class FailedToStartSoftwareException(Exception):
 class SoftwareFarmClient(object):
 
     def __init__(self):
-        self.software_farm_srv_name = rocon_python_comms.find_service('concert_msgs/AllocateSoftware', timeout=rospy.rostime.Duration(5.0), unique=True)
-        self.software_farm_srv = rospy.ServiceProxy(software_farm_srv_name, concert_srvs.AllocateSoftware)
+        software_farm_srv_name = rocon_python_comms.find_service('concert_msgs/AllocateSoftware', timeout=rospy.rostime.Duration(5.0), unique=True)
+        self._software_farm_srv = rospy.ServiceProxy(software_farm_srv_name, concert_srvs.AllocateSoftware)
 
     def allocate(self, software_name):
-        namespace = self._request_farmer(software_name, True)
-        return namespace
+        return self._request_farmer(software_name, True)
 
     def deallocate(self, software_name):
         return self._request_farmer(software_name, False)
@@ -26,9 +25,6 @@ class SoftwareFarmClient(object):
         req.user = rospy.get_name()
         req.software = software_name 
         req.allocate = enable 
-        resp = software_farm_handle(req)
+        resp = self._software_farm_srv(req)
  
-        if resp.success:
-            return resp.success
-        else:
-            raise FailedToStartSoftwareException("Failed to start world canvas")
+        return resp.success, resp.namespace
