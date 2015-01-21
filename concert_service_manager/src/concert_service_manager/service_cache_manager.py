@@ -369,7 +369,7 @@ class ServiceCacheManager(object):
         for service_profile in service_profiles.keys():
             configuration_item = {}
             configuration_item['name'] = service_profile
-            configuration_item['enabled'] = False
+            #configuration_item['enabled'] = False
             solution_configuration.append(configuration_item)
 
         service_configuration_file_name = rocon_python_utils.ros.find_resource_from_string(self._resource_name).split('/')[-1]
