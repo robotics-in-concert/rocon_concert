@@ -315,7 +315,7 @@ class ServiceCacheManager(object):
             msg.parameters = loaded_profile['parameters']
         if 'parameters_detail' in loaded_profile:
             for param_key in loaded_profile['parameters_detail'].keys():
-                msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, loaded_profile['parameters_detail'][param_key]))
+                msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, str(loaded_profile['parameters_detail'][param_key])))
 
         return msg
 
