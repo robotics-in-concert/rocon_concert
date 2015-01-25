@@ -175,7 +175,7 @@ class ServiceCacheManager(object):
                 self._save_service_profile(loaded_profile)
                 loaded_profiles[loaded_profile['name']] = copy.deepcopy(loaded_profile)
             except rospkg.ResourceNotFound as e:
-                self.logwarn('Cannot load service configuration: [%s]' % resource_name)
+                self._logwarn('Cannot load service configuration: [%s] (%s)' % (resource_name, str(e)))
                 continue
         # save solution configuration
         self._save_solution_configuration(loaded_profiles)
