@@ -20,11 +20,11 @@ catkin_python_setup()
 # Installs
 ##############################################################################
 
-#install(
-#    PROGRAMS 
-#        scripts/rocon_interactions
-#    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#    )
+install(
+    PROGRAMS 
+        scripts/conductor_graph_to_string.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 #install(DIRECTORY launch
 #  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
