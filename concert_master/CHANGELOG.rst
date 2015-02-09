@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* add graph to stringpublihser closes `#270 <https://github.com/robotics-in-concert/rocon_concert/issues/270>`_
+* Merge branch 'indigo' into admin_app_patch
+* rename software_manager as software_farmer
+* change name of auto enable service argument
+* add the concert_name arg in service manager launcher
+* Merge branch 'indigo' into software_farm
+* draft of software manager
+* Contributors: Jihoon Lee, dwlee
+
 0.6.3 (2015-01-05)
 ------------------
 
