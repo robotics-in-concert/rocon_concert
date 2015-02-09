@@ -73,6 +73,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
+        parameters['load_from_cache'] = rospy.get_param('~load_from_cache', "false")
         parameters['concert_name'] = rospy.get_param('~concert_name', "")
         parameters['solution_configuration'] = rospy.get_param('~services', "")  # @IgnorePep8
         parameters['default_auto_enable_services'] = rospy.get_param('~default_auto_enable_services', [])  # @IgnorePep8
