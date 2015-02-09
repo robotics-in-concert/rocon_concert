@@ -2,8 +2,8 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.4 (2015-02-09)
+------------------
 * add package version software farmer
 * fix typo
 * add client library closes `#264 <https://github.com/robotics-in-concert/rocon_concert/issues/264>`_

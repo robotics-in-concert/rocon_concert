@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.6.4 (2015-02-09)
+------------------
 * add graph to stringpublihser closes `#270 <https://github.com/robotics-in-concert/rocon_concert/issues/270>`_
 * Merge branch 'indigo' into admin_app_patch
 * rename software_manager as software_farmer

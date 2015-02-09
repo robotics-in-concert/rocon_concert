@@ -2,8 +2,8 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.4 (2015-02-09)
+------------------
 * fixed typo in function name. also print actual error message to make debugging easier. closes `#266 <https://github.com/robotics-in-concert/rocon_concert/issues/266>`_
 * do not write enabled field until `#258 <https://github.com/robotics-in-concert/rocon_concert/issues/258>`_ get resolved
 * convert to string. KeyValue expects value as string
