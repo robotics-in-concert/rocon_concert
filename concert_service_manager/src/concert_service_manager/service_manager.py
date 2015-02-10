@@ -50,7 +50,7 @@ class ServiceManager(object):
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'], self.publish_update)
+            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'], self._parameters['load_services_from_cache'], self.publish_update)
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
         self._publishers = self._setup_ros_publishers()
@@ -73,7 +73,7 @@ class ServiceManager(object):
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
-        parameters['load_from_cache'] = rospy.get_param('~load_from_cache', "false")
+        parameters['load_services_from_cache'] = rospy.get_param('~load_services_from_cache', "false")
         parameters['concert_name'] = rospy.get_param('~concert_name', "")
         parameters['solution_configuration'] = rospy.get_param('~services', "")  # @IgnorePep8
         parameters['default_auto_enable_services'] = rospy.get_param('~default_auto_enable_services', [])  # @IgnorePep8
@@ -142,11 +142,11 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
-                self._service_cache_manager.load_service_cache()
+                self._service_cache_manager.load_service()
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
                     try:
-                        service_instance = ServiceInstance(self._parameters['concert_name'], self._service_cache_manager.find(name)['msg'])
+                        service_instance = ServiceInstance(self._parameters['concert_name'], self._parameters['load_services_from_cache'], self._service_cache_manager.find(name)['msg'])
                     except NoServiceExistsException:
                         # do some updating of the service pool here
                         raise NoServiceExistsException("service not found on the package path [%s]" % name)

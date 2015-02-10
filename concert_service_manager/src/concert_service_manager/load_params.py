@@ -17,7 +17,7 @@ INVALID_PARAM = ['name', 'description', 'uuid']
 ##############################################################################
 
 def load_parameters_from_resource(parameter_resource_name, namespace, name, load):
-    filepath = rocon_python_utils.ros.find_resource_from_string(resource_name, extension='parameters')
+    filepath = rocon_python_utils.ros.find_resource_from_string(parameter_resource_name, extension='parameters')
     load_parameters_from_file(filepath, namespace, name, load)
 
 def load_parameters_from_file(parameter_file_path, namespace, name, load):

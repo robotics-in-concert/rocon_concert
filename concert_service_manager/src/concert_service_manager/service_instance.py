@@ -19,7 +19,7 @@ import std_msgs.msg as std_msgs
 import rocon_interactions
 import unique_id
 
-from .load_params import load_parameters_from_file
+from .load_params import load_parameters_from_file, load_parameters_from_resource
 from .utils import *
 
 ##############################################################################
@@ -42,6 +42,7 @@ class ServiceInstance(object):
         '_roslaunch',           # holds the roslaunch parent variable if TYPE_ROSLAUNCH
         '_shutdown_publisher',  # used for disabling the service
         '_concert_name',  # todo
+        '_load_services_from_cache',  # todo
         # aliases
         'name',
     ]
@@ -49,12 +50,13 @@ class ServiceInstance(object):
     shutdown_timeout = 5
     kill_timeout = 10
 
-    def __init__(self, concert_name=None, service_profile=None, env=os.environ):
+    def __init__(self, concert_name=None, load_services_from_cache=False, service_profile=None, env=os.environ):
         '''
           @param service_profile :
           @type concert_msgs.msg.ConcertService
         '''
         self._concert_name = rocon_python_utils.ros.get_ros_friendly_name(concert_name)
+        self._load_services_from_cache = load_services_from_cache
         self.msg = service_profile
         # aliases
         self.name = self.msg.name
@@ -85,17 +87,26 @@ class ServiceInstance(object):
         self._lock.acquire()
         try:
             # load up parameters first so that when start runs, it can find the params immediately
+            print "self.msg.parameters: " + str(self.msg.parameters)
+            print "self.msg.parameters: " + str(self.msg.interactions)
+
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
-                load_parameters_from_file(parameter_path, namespace, self.msg.name, load=True)
+                if self._load_services_from_cache:
+                    parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
+                    load_parameters_from_file(parameter_path, namespace, self.msg.name, load=True)
+                else:
+                    load_parameters_from_resource(self.msg.parameters, namespace, self.msg.name, load=True)
             # Refresh the unique id
             self.msg.uuid = unique_id.toMsg(unique_identifier)
             self._start()
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
-                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=True)
+                if self._load_services_from_cache:
+                    interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
+                    interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=True)
+                else:
+                    interactions_loader.load_from_resource(self.msg.interactions, namespace=self._namespace, load=True)
             # if there's a failure point, it will have thrown an exception before here.
             success = True
 
@@ -117,15 +128,20 @@ class ServiceInstance(object):
         self._lock.acquire()
         self._shutdown_publisher.publish(std_msgs.Empty())
         try:
-            if self.msg.interactions != '':
-                # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
-                interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
-                interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=False)
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
-                load_parameters_from_file(parameter_path, namespace, self.msg.name, load=False)
-
+                if self._load_services_from_cache:
+                    parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
+                    load_parameters_from_file(parameter_path, namespace, self.msg.name, load=False)
+                else:
+                    load_parameters_from_resource(self.msg.parameters, namespace, self.msg.name, load=False)
+            if self.msg.interactions != '':
+                # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
+                if self._load_services_from_cache:
+                    interaction_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.interactions')
+                    interactions_loader.load_from_file(interaction_path, namespace=self._namespace, load=False)
+                else:
+                    interactions_loader.load_from_resource(self.msg.interactions, namespace=self._namespace, load=False)
             launcher_type = self.msg.launcher_type
             force_kill = False
 
