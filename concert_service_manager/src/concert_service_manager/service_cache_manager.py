@@ -500,27 +500,31 @@ class ServiceCacheManager(object):
         '''
         result = True
         message = ""
-
-        service_profile = message_converter.convert_ros_message_to_dictionary(service_profile_msg)
-        service_name = service_profile['name']
-        service_parameter_detail = {}
-        for param_pair in service_profile['parameters_detail']:
-            service_parameter_detail[param_pair['key']] = param_pair['value']
-
-        if service_profile['name'] in self.service_profiles.keys():
-            service_profile = self.service_profiles[service_profile['name']]
-            service_profile['parameters_detail'] = service_parameter_detail
-            try:
-                self._save_service_profile(service_profile)
-                result = True
-                message = 'Success'
-            except:
-                result = False
-                message = "Fail during saveing service profile"
-        else:
+        if self._disable_cache:
             result = False
-            message = "Can not find service: %s" % service_name
+            message = "Disable_cache option is true.\n If you want to chage parameter. Set the disable_cache option to false"
+        else:
+            service_profile = message_converter.convert_ros_message_to_dictionary(service_profile_msg)
+            service_name = service_profile['name']
+            service_parameter_detail = {}
+            for param_pair in service_profile['parameters_detail']:
+                service_parameter_detail[param_pair['key']] = param_pair['value']
 
+            if service_profile['name'] in self.service_profiles.keys():
+                service_profile = self.service_profiles[service_profile['name']]
+                service_profile['parameters_detail'] = service_parameter_detail
+                try:
+                    self._save_service_profile(service_profile)
+                    result = True
+                    message = 'Success'
+                except:
+                    result = False
+                    message = "Fail during saveing service profile"
+            else:
+                result = False
+                message = "Can not find service: %s" % service_name
+        print "update_service_cache: "
+        print str((result, message))
         return (result, message)
 
     def update_solution_configuration(self, service_profiles_msg):
