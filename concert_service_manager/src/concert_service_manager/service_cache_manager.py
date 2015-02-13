@@ -87,14 +87,14 @@ def load_solution_configuration_from_default(yaml_file):
 class ServiceCacheManager(object):
 
     __slots__ = [
-        '_concert_name',              # concert name to classify cache directory
-        '_resource_name',             # service resource name. It is composed 'package name/service resource name'. ex. )chatter_concert/chatter.service
-        'service_caches_mod_time',  # modification time about files and directories cached the service profile . It is used to check file modification
-        '_modification_callback',    # callback function. It is called when service_caches_mod_time is changed.
-        '_disable_cache',              # todo
-        '_default_service_profiles',  # todo
-        'service_profiles',           # dictionary data of service profile to use in service manager
-        'solution_configuration',    # todo
+        '_concert_name',                # concert name to classify cache directory
+        '_resource_name',               # service resource name. It is composed 'package name/service resource name'. ex. )chatter_concert/chatter.service
+        'service_caches_mod_time',    # modification time about files and directories cached the service profile . It is used to check file modification
+        '_modification_callback',     # callback function. It is called when service_caches_mod_time is changed.
+        '_disable_cache',               # flag regarding whether using cache
+        '_default_service_profiles',  # dictionary data of default service profiles
+        'service_profiles',             # dictionary data of service profile to use in service manager
+        'solution_configuration',     # name and enabled status of service in solution.
         'msg',                            # ros message regarding service profile to use in servvice manager
     ]
 
@@ -238,10 +238,8 @@ class ServiceCacheManager(object):
 
     def _load_service_profiles_from_default(self):
         '''
-        Todo
-        Load service profile from default
+        Load service profile from default. The defalut service profile is loaded once.
 
-        :raises: :exc:`rospkg.ResourceNotFound`
         '''
         if len(self._default_service_profiles) is 0:
             loaded_solution_configuration = load_solution_configuration_from_default(rocon_python_utils.ros.find_resource_from_string(self._resource_name))
@@ -260,9 +258,9 @@ class ServiceCacheManager(object):
 
     def _load_service_profiles_from_cache(self, services_file_name):
         '''
-        Load service profile from cache.
+        Load service profile from cached solution configuration.
 
-        :param service_file_name: cached services file. It is included service name and enabled status.
+        :param service_file_name: cached solution configuration. It is included service name and enabled status.
         :type service_file_name: str
 
         :raises: :exc:`rospkg.ResourceNotFound`
@@ -346,7 +344,7 @@ class ServiceCacheManager(object):
 
     def _save_service_profile(self, loaded_service_profile_from_file):
         '''
-        Save cache from loaded service profile
+        Save cache about the loaded service profile
 
         :param loaded_service_profile_from_file: data of dictionary type regarding service profile
         :type loaded_service_profile_from_file: dict
@@ -383,10 +381,7 @@ class ServiceCacheManager(object):
 
     def _init_solution_configuration(self):
         '''
-        todo 
-
-        :param service_profiles: data of dictionary type regarding service profiles
-        :type service_profiles: dict
+        initialize solution configuration with loaded service profile. It is include only service name and enabled status in service profile
 
         '''
         for service_profile in self.service_profiles.values():
@@ -420,7 +415,7 @@ class ServiceCacheManager(object):
 
     def load_services(self):
         '''
-        Todo
+        Load services from cache or default. It is defined by disabled_cache argument.
         '''
         if self._disable_cache:
             self._load_default_soulution_config()
@@ -429,7 +424,7 @@ class ServiceCacheManager(object):
 
     def _load_cached_solution_config(self):
         '''
-        load service profile from cache
+        Load solution configuration from cache
 
         '''
         self._loginfo("load service profile from cached configuration")
@@ -447,7 +442,7 @@ class ServiceCacheManager(object):
 
     def _load_default_soulution_config(self):
         '''
-        Todo
+        Load solution configuration from default value
         '''
         self._loginfo("load service profile from default configuration")
         try:
@@ -530,7 +525,10 @@ class ServiceCacheManager(object):
 
     def update_solution_configuration(self, service_profiles_msg):
         '''
-        todo
+        Update service enabled status in cached solution config file.
+
+        :param service_profiles_msg: updated data of dictionary type regarding service profile
+        :type service_profiles_msg: concert_msgs/ServiceProfile
         '''
         is_changed = False
         for service_profile_msg in service_profiles_msg:
