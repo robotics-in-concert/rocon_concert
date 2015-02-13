@@ -2,6 +2,9 @@
 Changelog
 =========
 
+0.6.4 (2015-02-09)
+------------------
+
 0.6.3 (2015-01-05)
 ------------------
 * update install rule fixes `#253 <https://github.com/robotics-in-concert/rocon_concert/issues/253>`_

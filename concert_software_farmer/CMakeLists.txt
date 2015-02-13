@@ -8,7 +8,7 @@ catkin_package()
 
 install(
   PROGRAMS
-    scripts/software_farmer
+    scripts/software_farmer.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

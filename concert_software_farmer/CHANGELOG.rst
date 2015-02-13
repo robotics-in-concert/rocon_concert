@@ -1,10 +1,21 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package concert_utilities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package concert_software_farmer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 0.6.4 (2015-02-09)
 ------------------
-* conductor graph string publisher for web. and conductor graph dotcode generator code has been migrated
+* add package version software farmer
+* fix typo
+* add client library closes `#264 <https://github.com/robotics-in-concert/rocon_concert/issues/264>`_
+* add client library
+* rename software_manager as software_farmer
+* Contributors: Jihoon Lee
+
+* add package version software farmer
+* fix typo
+* add client library closes `#264 <https://github.com/robotics-in-concert/rocon_concert/issues/264>`_
+* add client library
+* rename software_manager as software_farmer
 * Contributors: Jihoon Lee
 
 0.6.3 (2015-01-05)
@@ -18,13 +29,6 @@ Changelog for package concert_utilities
 
 0.6.0 (2014-08-25)
 ------------------
-* concert_roles -> rocon_interactions
-* concert_utilities package prepared, `#80 <https://github.com/robotics-in-concert/rocon_concert/issues/80>`_
-* Contributors: Daniel Stonier
-
-* concert_roles -> rocon_interactions
-* concert_utilities package prepared, `#80 <https://github.com/robotics-in-concert/rocon_concert/issues/80>`_
-* Contributors: Daniel Stonier
 
 0.5.5 (2013-08-30)
 ------------------

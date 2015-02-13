@@ -2,6 +2,34 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.4 (2015-02-09)
+------------------
+* fixed typo in function name. also print actual error message to make debugging easier. closes `#266 <https://github.com/robotics-in-concert/rocon_concert/issues/266>`_
+* do not write enabled field until `#258 <https://github.com/robotics-in-concert/rocon_concert/issues/258>`_ get resolved
+* convert to string. KeyValue expects value as string
+* now solution caches are created under solutions
+* fix wrong try/catch
+* adjust get rocon friendly name function
+* move common util function and fix code as that
+* add exception handling at some part
+* share logic about load parameter from cahce, file, resource
+* revert src
+* add code documentation
+* change name of auto enable service argument
+* change modification checker name
+* add extension name checker
+* rename and code clear
+* fix wrong argument
+* add the string strip
+* update service manager launch
+* update
+* update service manager and instance as adding service cache manager
+* add function for loading parameter from cache
+* create service profile cache manager
+* function name change
+* create utils.py and create cache maker regarding solution configuration
+* Contributors: Jihoon Lee, Piyush Khandelwal, dwlee
+
 0.6.3 (2015-01-05)
 ------------------
 

@@ -1,6 +1,6 @@
 <package>
   <name>concert_utilities</name>
-  <version>0.6.3</version>
+  <version>0.6.4</version>
   <description>
     Utilities, libraries and modules for general concert support.
   </description>
@@ -14,4 +14,11 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>rospy</run_depend>
+  <run_depend>rosgraph</run_depend>
+  <run_depend>concert_msgs</run_depend>
+  <run_depend>concert_conductor</run_depend>
+  <run_depend>gateway_msgs</run_depend>
+  <run_depend>rocon_console</run_depend>
+  <run_depend>rocon_gateway_utils</run_depend>
+  <run_depend>rocon_python_comms</run_depend>
 </package>
