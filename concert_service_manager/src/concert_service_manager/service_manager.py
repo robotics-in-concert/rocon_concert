@@ -34,7 +34,7 @@ class ServiceManager(object):
         '_enabled_services',     # enabled services { resource_name : ConcertServiceInstance }
         '_interactions_loader',  # rocon_interactions.InteractionLoader
         'lock',
-        '_service_cache_manager',  # todo
+        '_service_cache_manager',  # manage cached services profile
     ]
 
     def __init__(self):
@@ -50,7 +50,11 @@ class ServiceManager(object):
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'], self._parameters['disable_cache'], self.publish_update)
+            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'],
+                                                              self._parameters['solution_configuration'],
+                                                              self._parameters['disable_cache'],
+                                                              self.publish_update)
+
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
         self._publishers = self._setup_ros_publishers()
@@ -61,13 +65,14 @@ class ServiceManager(object):
             self._eable_default_service()
         else:
             self._eable_cached_service()
+
         # now we let the service threads compete
         self._services = self._setup_ros_services()
 
     def _eable_cached_service(self):
         cached_solution_config = self._service_cache_manager.solution_configuration
         if len(cached_solution_config) is 0:
-            rospy.logwarn("Service Manager : No cached solution configuration. Load service by default setting")
+            rospy.logwarn("Service Manager : No cached solution configuration. Load services by default setting")
             self._eable_default_service()
         else:
             for cached_service in cached_solution_config.values():
@@ -168,7 +173,7 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
-                self._service_cache_manager.load_services()
+                self._service_cache_manager.reload_load_services()
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
                     try:
@@ -222,7 +227,8 @@ class ServiceManager(object):
 
     def spin(self):
         while not rospy.is_shutdown():
-            self.lock.acquire()
-            self._service_cache_manager.check_modification_service_cache()
-            self.lock.release()
+            if self._parameters['disable_cache'] == False:
+                self.lock.acquire()
+                self._service_cache_manager.reload_load_services()
+                self.lock.release()
             rospy.sleep(0.5)

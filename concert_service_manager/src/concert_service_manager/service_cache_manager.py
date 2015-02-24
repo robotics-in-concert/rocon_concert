@@ -65,7 +65,7 @@ def load_solution_configuration_from_default(yaml_file):
             if loaded_overrides:
                 invalid_keys = [key for key in loaded_overrides.keys() if key not in override_keys]
                 for key in invalid_keys:
-                    rospy.logwarn("Service Manager : invalid key in the service soln configuration yaml [%s]" % key)
+                    self._logwarn("invalid key in the service soln configuration yaml [%s]" % key)
             service_data['overrides'] = copy.deepcopy(overrides)
             service_configurations.append(service_data)
 
@@ -89,7 +89,7 @@ class ServiceCacheManager(object):
     __slots__ = [
         '_concert_name',                # concert name to classify cache directory
         '_resource_name',               # service resource name. It is composed 'package name/service resource name'. ex. )chatter_concert/chatter.service
-        'service_caches_mod_time',    # modification time about files and directories cached the service profile . It is used to check file modification
+        'service_caches_mod_time',    # modification time about files and directories the cached service profile. It is used to check file modification
         '_modification_callback',     # callback function. It is called when service_caches_mod_time is changed.
         '_disable_cache',               # flag regarding whether using cache
         '_default_service_profiles',  # dictionary data of default service profiles
@@ -103,11 +103,17 @@ class ServiceCacheManager(object):
         self._resource_name = resource_name
         self._disable_cache = disable_cache
         self._modification_callback = modification_callback
-        self.service_caches_mod_time = {}
         self._default_service_profiles = {}
         self.service_profiles = {}
         self.solution_configuration = {}
-        self.load_services()
+        self.service_caches_mod_time = {}
+
+        if self._disable_cache:
+            self._loginfo("load service profile from default configuration")
+            self._load_default_soulution_config()
+        else:
+            self._loginfo("load service profile from cached configuration")
+            self._load_cached_solution_config()
 
     def _init_service_caches_mod_time(self):
         """
@@ -158,12 +164,20 @@ class ServiceCacheManager(object):
             raise e
         solution_configuration_file_name = default_solution_configuration_file.split('/')[-1]
         cached_solution_configuration_file = get_concert_home(self._concert_name) + '/' + solution_configuration_file_name
+        
         if rocon_python_utils.ros.is_validation_file(cached_solution_configuration_file):
-            is_cached_solution_config = False
-            self._loginfo("load from default: [%s]" % self._resource_name)
+            with open(cached_solution_configuration_file) as f:
+                service_list = yaml.load(f)
+                for service in service_list:
+                    service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
+                    if not rocon_python_utils.ros.is_validation_file(service_file_name):
+                        is_cached_solution_config = False
+                        break
+                    else:
+                        is_cached_solution_config = True
         else:
-            is_cached_solution_config = True
-            self._loginfo("load from cache: [%s]" % cached_solution_configuration_file)
+            is_cached_solution_config = False
+            self._loginfo("No cached file!!. load from default configuration to create cache: [%s]" % self._resource_name)
 
         return (is_cached_solution_config, cached_solution_configuration_file)
 
@@ -198,10 +212,13 @@ class ServiceCacheManager(object):
 
         """
         # load service profile from resource
+        loaded_profile = {}
         try:
             file_name = rocon_python_utils.ros.find_resource_from_string(resource_name)
             with open(file_name) as f:
                 loaded_profile = yaml.load(f)
+            loaded_profile['mtime'] = []
+            loaded_profile['mtime'].append((file_name, time.ctime(os.path.getmtime(file_name))))
         except rospkg.ResourceNotFound as e:
             raise e
         loaded_profile['resource_name'] = resource_name
@@ -223,6 +240,7 @@ class ServiceCacheManager(object):
                 with open(parameters_yaml_file) as f:
                     parameters_yaml = yaml.load(f)
                     loaded_profile['parameters_detail'] = parameters_yaml
+                loaded_profile['mtime'].append((parameters_yaml_file, time.ctime(os.path.getmtime(parameters_yaml_file))))
             except rospkg.ResourceNotFound as e:
                 raise e
 
@@ -232,6 +250,7 @@ class ServiceCacheManager(object):
                 with open(interactions_yaml_file) as f:
                     interactions_yaml = yaml.load(f)
                     loaded_profile['interactions_detail'] = interactions_yaml
+                loaded_profile['mtime'].append((interactions_yaml_file, time.ctime(os.path.getmtime(interactions_yaml_file))))
             except rospkg.ResourceNotFound as e:
                 raise e
         return loaded_profile
@@ -241,7 +260,21 @@ class ServiceCacheManager(object):
         Load service profile from default. The defalut service profile is loaded once.
 
         '''
+        # checker modified time of default setting file
+        is_load = False
         if len(self._default_service_profiles) is 0:
+            is_load = True
+        else:
+            for default_service in self._default_service_profiles.values():
+                if 'mtime' in default_service.keys() and is_load == False:
+                    for t in default_service['mtime']:
+                        file_name = t[0]
+                        modified_time = t[1]
+                        if modified_time != time.ctime(os.path.getmtime(file_name)):
+                            self._loginfo("reload service profile from default configuration: detect modified file [%s]" % file_name)
+                            is_load = True
+
+        if is_load:
             loaded_solution_configuration = load_solution_configuration_from_default(rocon_python_utils.ros.find_resource_from_string(self._resource_name))
             for service in loaded_solution_configuration:
                 service_profile_file = rocon_python_utils.ros.check_extension_name(service['resource_name'], '.service')
@@ -249,12 +282,11 @@ class ServiceCacheManager(object):
                 try:
                     read_profile = self._read_service_profile_from_resource(service_profile_file, overrides)
                 except rospkg.ResourceNotFound as e:
-                    self.logwarn('Cannot load service profile: [%s]' % service_profile_file)
+                    self.logwarn('cannot load service profile: [%s]' % service_profile_file)
                     continue
-
                 read_profile['msg'] = self._service_profile_to_msg(read_profile)
                 self._default_service_profiles[read_profile['name']] = copy.deepcopy(read_profile)
-        self.service_profiles = copy.deepcopy(self._default_service_profiles)
+            self.service_profiles = copy.deepcopy(self._default_service_profiles)
 
     def _load_service_profiles_from_cache(self, services_file_name):
         '''
@@ -266,23 +298,23 @@ class ServiceCacheManager(object):
         :raises: :exc:`rospkg.ResourceNotFound`
 
         '''
-        if rocon_python_utils.ros.is_validation_file(services_file_name):
-            raise rospkg.ResourceNotFound('Cannot find service file: [%s]' % services_file_name)
+        if not rocon_python_utils.ros.is_validation_file(services_file_name):
+            raise rospkg.ResourceNotFound('cannot find service config file: [%s]' % services_file_name)
 
         with open(services_file_name) as f:
             service_list = yaml.load(f)
         for service in service_list:
             service_file_name = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
-            if rocon_python_utils.ros.is_validation_file(service_file_name):
-                rospy.logwarn("Service Manager : can not find service file in cache [%s]" % rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
+            if not rocon_python_utils.ros.is_validation_file(service_file_name):
+                self._logwarn("can not find service file in cache [%s]" % rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
                 continue
             with open(service_file_name) as f:
                 loaded_profile = yaml.load(f)
                 if 'parameters' in loaded_profile.keys():
                     loaded_profile['parameters_detail'] = []
                     parameters_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['parameters'])
-                    if rocon_python_utils.ros.is_validation_file(parameters_yaml_file):
-                        rospy.logwarn("Service Manager : can not find parameters file in cache [%s]" % parameters_yaml_file)
+                    if not rocon_python_utils.ros.is_validation_file(parameters_yaml_file):
+                        self._logwarn("can not find parameters file in cache [%s]" % parameters_yaml_file)
                         continue
 
                     with open(parameters_yaml_file) as f:
@@ -292,8 +324,8 @@ class ServiceCacheManager(object):
                 if 'interactions' in loaded_profile.keys():
                     loaded_profile['interactions_detail'] = []
                     interactions_yaml_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), loaded_profile['interactions'])
-                    if rocon_python_utils.ros.is_validation_file(interactions_yaml_file):
-                        rospy.logwarn("Service Manager : can not find interactions file in cache [%s]" % interactions_yaml_file)
+                    if not rocon_python_utils.ros.is_validation_file(interactions_yaml_file):
+                        self._logwarn("can not find interactions file in cache [%s]" % interactions_yaml_file)
                         continue
 
                     with open(interactions_yaml_file) as f:
@@ -370,9 +402,13 @@ class ServiceCacheManager(object):
                 yaml.safe_dump(loaded_profile['parameters_detail'], f, default_flow_style=False)
             del (loaded_profile['parameters_detail'])
 
-        # delete data unused in msg
+        # delete msg key
         if 'msg' in loaded_profile.keys():
             del (loaded_profile['msg'])
+
+        # delete mtime key
+        if 'mtime' in loaded_profile.keys():
+            del (loaded_profile['mtime'])
 
         # writting service profile data
         service_profile_file_name = os.path.join(service_profile_cache_home, rocon_python_utils.ros.check_extension_name(service_name, '.service'))
@@ -401,11 +437,12 @@ class ServiceCacheManager(object):
         :type service_profiles: dict
 
         '''
-        service_configuration_file_name = rocon_python_utils.ros.find_resource_from_string(self._resource_name).split('/')[-1]
-        if '.services' in service_configuration_file_name:
-            cache_srv_config_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
-            with file(cache_srv_config_file, 'w') as f:
-                yaml.safe_dump(self.solution_configuration.values(), f, default_flow_style=False)
+        if not self._disable_cache:
+            service_configuration_file_name = rocon_python_utils.ros.find_resource_from_string(self._resource_name).split('/')[-1]
+            if '.services' in service_configuration_file_name:
+                cache_srv_config_file = get_concert_home(self._concert_name) + '/' + service_configuration_file_name
+                with file(cache_srv_config_file, 'w') as f:
+                    yaml.safe_dump(self.solution_configuration.values(), f, default_flow_style=False)
 
     def _loginfo(self, msg):
         rospy.loginfo("Service Manager : " + str(msg))
@@ -413,21 +450,11 @@ class ServiceCacheManager(object):
     def _logwarn(self, msg):
         rospy.logwarn("Service Manager : " + str(msg))
 
-    def load_services(self):
-        '''
-        Load services from cache or default. It is defined by disabled_cache argument.
-        '''
-        if self._disable_cache:
-            self._load_default_soulution_config()
-        else:
-            self._load_cached_solution_config()
-
     def _load_cached_solution_config(self):
         '''
         Load solution configuration from cache
 
         '''
-        self._loginfo("load service profile from cached configuration")
         try:
             (check_result, solution_configuration_file) = self._check_service_cache()
             if not check_result:
@@ -444,25 +471,25 @@ class ServiceCacheManager(object):
         '''
         Load solution configuration from default value
         '''
-        self._loginfo("load service profile from default configuration")
         try:
             self._load_service_profiles_from_default()
-            self._create_service_cache()
-            self._init_solution_configuration()
-            self._save_solution_configuration()
-            self._init_service_caches_mod_time()
         except rospkg.ResourceNotFound as e:
             self._logwarn(str(e))
 
-    def check_modification_service_cache(self):
+    def reload_load_services(self):
         '''
-        Check modification of service cahce file and directory.If they are changed, modification callback is called.
+        Reload services as checking modification of service cahce file and directory.
+        If they are changed, service reloaded and modification callback is called.
 
         '''
-        if self.service_caches_mod_time != self._get_service_caches_mod_time():
-            self.load_services()
-            if self._modification_callback:
-                self._modification_callback()
+        if self._disable_cache:
+            self._load_default_soulution_config()
+        else:
+            if self.service_caches_mod_time != self._get_service_caches_mod_time():
+                self._loginfo('detect changed cache. reload cache')
+                self._load_cached_solution_config()
+                if self._modification_callback:
+                    self._modification_callback()
 
     def find(self, name):
         """
@@ -481,8 +508,8 @@ class ServiceCacheManager(object):
             service_profile = self.service_profiles[name]
             # check if the name changed
             if service_profile['name'] != name:
-                rospy.logwarn("Service Manager : we are in the shits, the service profile name changed %s->%s" % (name, service_profile['name']))
-                rospy.logwarn("Service Manager : TODO upgrade the find function with a full reloader")
+                self._logwarn("we are in the shits, the service profile name changed %s->%s" % (name, service_profile['name']))
+                self._logwarn("TODO upgrade the find function with a full reloader")
                 raise NoServiceExistsException("we are in the shits, the service profile name changed %s->%s" % (name, service_profile['name']))
             return service_profile
         except KeyError:
@@ -502,7 +529,7 @@ class ServiceCacheManager(object):
         message = ""
         if self._disable_cache:
             result = False
-            message = "Disable_cache option is true.\n If you want to chage parameter. Set the disable_cache option to false"
+            message = "'disable_cache' option is true.\n If you want to chage parameter. Set the 'disable_cache' option into false"
         else:
             service_profile = message_converter.convert_ros_message_to_dictionary(service_profile_msg)
             service_name = service_profile['name']
@@ -523,8 +550,6 @@ class ServiceCacheManager(object):
             else:
                 result = False
                 message = "Can not find service: %s" % service_name
-        print "update_service_cache: "
-        print str((result, message))
         return (result, message)
 
     def update_solution_configuration(self, service_profiles_msg):
