@@ -173,7 +173,7 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
-                self._service_cache_manager.reload_load_services()
+                self._service_cache_manager.reload_services()
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
                     try:
@@ -229,6 +229,6 @@ class ServiceManager(object):
         while not rospy.is_shutdown():
             if self._parameters['disable_cache'] == False:
                 self.lock.acquire()
-                self._service_cache_manager.reload_load_services()
+                self._service_cache_manager.reload_services()
                 self.lock.release()
             rospy.sleep(0.5)

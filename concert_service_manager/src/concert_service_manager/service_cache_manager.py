@@ -476,7 +476,7 @@ class ServiceCacheManager(object):
         except rospkg.ResourceNotFound as e:
             self._logwarn(str(e))
 
-    def reload_load_services(self):
+    def reload_services(self):
         '''
         Reload services as checking modification of service cahce file and directory.
         If they are changed, service reloaded and modification callback is called.
