@@ -13,6 +13,12 @@
   <arg name="gateway_network_interface" default="$(optenv GATEWAY_NETWORK_INTERFACE)"/>  <!-- If you have multiple network interfaces and want to lock it on one (e.g. 'eth0') -->
   <arg name="gateway_unavailable_timeout" default="10"/>  <!-- how long before a concert client is flagged as missing when it drops off the wireless-->
 
+  <!-- Zeroconf -->
+  <arg name="disable_zeroconf"            default="false"/> <!-- It is required process to configure both hub and gateway. Configures rocon_hub zeroconf param and gateway disable_conf param -->
+  <arg name="hub_zeroconf"    if="$(arg disable_zeroconf)" value="false"/>
+  <arg name="hub_zeroconf"    unless="$(arg disable_zeroconf)" value="true"/>
+
+
   <!-- Conductor -->
   <arg name="conductor_auto_invite" default="true"/>
   <arg name="conductor_local_clients_only" default="false"/>
@@ -76,6 +82,7 @@
       <arg name="hub_port" value="$(arg hub_port)" />
       <arg name="external_shutdown" value="true"/> <!-- let the conductor shut it down -->
       <arg name="gateway_unavailable_timeout" value="$(arg gateway_unavailable_timeout)"/>
+      <arg name="zeroconf" value="$(arg hub_zeroconf)"/>
     </include>
 
     <!-- ******************************** Gateway ******************************** -->
@@ -90,13 +97,16 @@
       <param name="disable_uuids" value="$(arg gateway_disable_uuids)"/>
       <param name="network_interface" value="$(arg gateway_network_interface)"/>
       <param name="external_shutdown" value="true"/> <!-- let the conductor shut this node down -->
+      <param name="disable_zeroconf" value="$(arg disable_zeroconf)"/>
     </node>
     <!-- ****************************** Zeroconf ******************************* -->
-    <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
-      <rosparam param="services" subst_value="true">
+    <group unless="$(arg disable_zeroconf)">
+      <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
+        <rosparam param="services" subst_value="true">
           [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "$(arg concert_description)" } ] 
-      </rosparam>
-    </node>
+        </rosparam>
+      </node>
+    </group>
   </group>
 
   <!-- ****************************** Rosbridge ******************************** -->
