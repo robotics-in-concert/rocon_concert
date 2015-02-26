@@ -1,9 +1,9 @@
 <launch>
   <!-- ******************************* Arguments ******************************* -->
   <!-- Concert -->
-  <arg name="concert_name" default="Pirate Concert"/>
-  <arg name="concert_icon" default="rocon_icons/rocon.png"/>
-  <arg name="concert_description" default="Pirates in concert."/>
+  <arg name="concert_name" default="Pirate Concert" doc="concert name"/>
+  <arg name="concert_icon" default="rocon_icons/rocon.png" doc="concert icon path in resource pair. e.g)rocon_icons/rocon.png"/>
+  <arg name="concert_description" default="Pirates in concert." doc="Describe concert"/>
   
   <!-- Gateways -->
   <arg name="hub_port" default="6380" doc="port for rocon hub redis"/>
@@ -20,17 +20,17 @@
 
 
   <!-- Conductor -->
-  <arg name="conductor_auto_invite" default="true"/>
-  <arg name="conductor_local_clients_only" default="false"/>
+  <arg name="conductor_auto_invite" default="true" doc="invite clients automatically?"/>
+  <arg name="conductor_local_clients_only" default="false" doc="conductor invites only local clients"/>
   <!-- Service Manager -->
   <arg name="services" default="" doc="service list resource location. e.g. concert_tutorial/tutorial.services" />
   <arg name="default_auto_enable_services" default="[]" doc="autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or 'all' to enable all services"/>
 
   <!-- Interactions -->
-  <arg name="enable_rosbridge"  default="false"/>
-  <arg name="rosbridge_address" default="localhost"/>
-  <arg name="rosbridge_port" default="9090"/>
-  <arg name="webserver_address" default="localhost"/>
+  <arg name="enable_rosbridge"  default="false" doc="start rosbridge or not"/>
+  <arg name="rosbridge_address" default="localhost" doc="rosbridge address for rocon_interactions"/>
+  <arg name="rosbridge_port" default="9090" doc="rosbridge port for rocon_interactions"/>
+  <arg name="webserver_address" default="localhost" doc="webserver address for webapps in rocon_interactions"/>
   <!--                  Schedulers
       - preemptive_compatibility_tree : concert_schedulers/preemptive_compatibility_tree_scheduler.launch
       - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
