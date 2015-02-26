@@ -9,7 +9,7 @@ import os
 import time
 import yaml
 import copy
-
+import json
 
 import genpy
 import rospkg
@@ -40,7 +40,7 @@ class ServiceProfile(object):
         'enabled',  # enabled status
     ]
 
-    def __init__(self, concert_name, is_read_from_default, service_profile_file, overrides=[]):
+    def __init__(self, concert_name, is_read_from_default, service_profile_file, overrides=[], enabled=None):
         self._concert_name = concert_name
         self._is_read_from_default = is_read_from_default
         self.service_profile = None
@@ -61,10 +61,7 @@ class ServiceProfile(object):
         self.service_profile = copy.deepcopy(loaded_profile)
         self.name = self.service_profile['name']
         self.msg = self._service_profile_to_msg(self.service_profile)
-        if 'enabled' in self.service_profile.keys():
-            self.enabled = self.service_profile['enabled']
-        else:
-            self.enabled = None
+        self.enabled = enabled
 
     def _check_modification(self):
         """
@@ -139,6 +136,11 @@ class ServiceProfile(object):
         if 'parameters_detail' in loaded_profile:
             for param_key in loaded_profile['parameters_detail'].keys():
                 msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, str(loaded_profile['parameters_detail'][param_key])))
+                # t = type(loaded_profile['parameters_detail'][param_key])
+                # if t is list or t is dict:
+                #     msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, eval(loaded_profile['parameters_detail'][param_key])))
+                # else:
+                #     msg.parameters_detail.append(rocon_std_msgs.KeyValue(param_key, str(loaded_profile['parameters_detail'][param_key])))
         return msg
 
     def _read_service_profile_from_default(self):

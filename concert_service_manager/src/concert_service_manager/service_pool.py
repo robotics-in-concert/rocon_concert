@@ -139,7 +139,10 @@ class ServicePool(object):
             service_profile_file = rocon_python_utils.ros.check_extension_name(service['resource_name'], '.service')
             overrides = service['overrides']
             try:
-                read_profile = ServiceProfile(self._concert_name, True, service_profile_file, overrides)
+                read_profile = ServiceProfile(concert_name=self._concert_name,
+                                              is_read_from_default=True,
+                                              service_profile_file=service_profile_file,
+                                              overrides=overrides)
                 self.service_profiles[read_profile.name] = read_profile
             except rospkg.ResourceNotFound as e:
                 self._logwarn('cannot load service profile: [%s]' % service_profile_file)
@@ -168,8 +171,11 @@ class ServicePool(object):
                 enabled = service['enabled']
                 service_profile_file = os.path.join(get_service_profile_cache_home(self._concert_name, service['name']), rocon_python_utils.ros.check_extension_name(service['name'], '.service'))
                 try:
-                    read_profile = ServiceProfile(self._concert_name, False, service_profile_file, None)
-                    read_profile.set_enabled(enabled)
+                    read_profile = ServiceProfile(concert_name=self._concert_name,
+                                                  is_read_from_default=False,
+                                                  service_profile_file=service_profile_file,
+                                                  overrides=None,
+                                                  enabled=enabled)
                     self.service_profiles[read_profile.name] = read_profile
                 except rospkg.ResourceNotFound as e:
                     self._logwarn('cannot load service profile: [%s]' % service_profile_file)
@@ -409,9 +415,7 @@ class ServicePool(object):
                 service_name = service_profile['name']
                 service_enabled = service_profile['enabled']
                 if service_enabled != self.service_profiles[service_name].enabled:
-                    self._loginfo('[%s] service enabled status update into [%s]' % (str(service_name), str(service_enabled)))
                     self.service_profiles[service_name].enabled = service_enabled
-                    # self.service_profiles[service_name].set_enabled(service_enabled)
                     is_change = True
             if is_change:
                 self._save_solution_config()

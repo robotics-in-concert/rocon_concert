@@ -19,7 +19,7 @@ import std_msgs.msg as std_msgs
 import rocon_interactions
 import unique_id
 
-from .load_params import load_parameters_from_file, load_parameters_from_resource
+from .load_params import load_parameters_from_file, load_parameters_from_resource, load_parameters_from_key_value_msg
 from .utils import *
 
 ##############################################################################
@@ -89,11 +89,7 @@ class ServiceInstance(object):
             # load up parameters first so that when start runs, it can find the params immediately
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                if self._disable_cache:
-                    load_parameters_from_resource(self.msg.parameters, namespace, self.msg.name, load=True)
-                else:
-                    parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
-                    load_parameters_from_file(parameter_path, namespace, self.msg.name, load=True)
+                load_parameters_from_key_value_msg(self.msg.parameters_detail, namespace, self.msg.name, load=True)
 
             # Refresh the unique id
             self.msg.uuid = unique_id.toMsg(unique_identifier)
@@ -128,11 +124,8 @@ class ServiceInstance(object):
         try:
             if self.msg.parameters != '':
                 namespace = concert_msgs.Strings.SERVICE_NAMESPACE + '/' + self.msg.name
-                if self._disable_cache:
-                    load_parameters_from_resource(self.msg.parameters, namespace, self.msg.name, load=False)
-                else:
-                    parameter_path = os.path.join(get_service_profile_cache_home(self._concert_name, self.name), self.name + '.parameters')
-                    load_parameters_from_file(parameter_path, namespace, self.msg.name, load=False)
+                load_parameters_from_key_value_msg(self.msg.parameters_detail, namespace, self.msg.name, load=False)
+
             if self.msg.interactions != '':
                 # Can raise YamlResourceNotFoundException, MalformedInteractionsYaml
                 if self._disable_cache:

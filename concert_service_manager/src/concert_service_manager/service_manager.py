@@ -65,7 +65,6 @@ class ServiceManager(object):
         if self._parameters['disable_cache']:
             self._eable_default_service()
         else:
-            pass
             self._eable_cached_service()
 
         # now we let the service threads compete
