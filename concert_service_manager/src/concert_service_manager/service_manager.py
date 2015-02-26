@@ -17,7 +17,8 @@ import unique_id
 
 from .exceptions import NoServiceExistsException
 from .service_instance import ServiceInstance
-from .service_cache_manager import ServiceCacheManager
+#from .service_cache_manager import ServiceCacheManager
+from .service_pool import ServicePool
 from .exceptions import InvalidSolutionConfigurationException
 
 ##############################################################################
@@ -34,7 +35,7 @@ class ServiceManager(object):
         '_enabled_services',     # enabled services { resource_name : ConcertServiceInstance }
         '_interactions_loader',  # rocon_interactions.InteractionLoader
         'lock',
-        '_service_cache_manager',  # todo
+        '_service_pool',  # manage services profile
     ]
 
     def __init__(self):
@@ -50,29 +51,58 @@ class ServiceManager(object):
         self._interactions_loader = rocon_interactions.InteractionsLoader()
         roslaunch.pmon._init_signal_handlers()
         try:
-            self._service_cache_manager = ServiceCacheManager(self._parameters['concert_name'], self._parameters['solution_configuration'], self.publish_update)
+            self._service_pool = ServicePool(self._parameters['concert_name'],
+                                             self._parameters['solution_configuration'],
+                                             self._parameters['disable_cache'],
+                                             self.publish_update)
+
         except (rospkg.ResourceNotFound, InvalidSolutionConfigurationException) as e:
             raise e
         self._publishers = self._setup_ros_publishers()
+
         # auto enable service
+        # default enable service
+        if self._parameters['disable_cache']:
+            self._eable_default_service()
+        else:
+            self._eable_cached_service()
+
+        # now we let the service threads compete
+        self._services = self._setup_ros_services()
+
+    def _eable_cached_service(self):
+        cached_solution_config = self._service_pool.get_solution_config()
+        for cached_service in cached_solution_config.values():
+            name = cached_service['name']
+            enabled = cached_service['enabled']
+            if name in self._service_pool.service_profiles.keys():
+                if enabled is True:
+                    self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+                elif enabled is None:
+                    if self._parameters['default_auto_enable_services'] == 'all':
+                        self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+                    elif type(self._parameters['default_auto_enable_services']) is list and name in self._parameters['default_auto_enable_services']:
+                        self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
+            else:
+                rospy.logwarn("Service Manager : '%s' is not available. cannot auto enable" % str(name))
+
+    def _eable_default_service(self):
         if self._parameters['default_auto_enable_services'] == 'all':
-            for name in self._service_cache_manager.service_profiles.keys():
+            for name in self._service_pool.service_profiles.keys():
                 self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
         elif type(self._parameters['default_auto_enable_services']) is list:
             for name in self._parameters['default_auto_enable_services']:
-                if name in self._service_cache_manager.service_profiles.keys():
+                if name in self._service_pool.service_profiles.keys():
                     self._ros_service_enable_concert_service(concert_srvs.EnableServiceRequest(name, True))
                 else:
                     rospy.logwarn("Service Manager : '%s' is not available. cannot auto enable" % str(name))
         else:
             self.publish_update()  # publish the available list
 
-        # now we let the service threads compete
-        self._services = self._setup_ros_services()
-
     def _setup_ros_parameters(self):
         rospy.logdebug("Service Manager : parsing parameters")
         parameters = {}
+        parameters['disable_cache'] = rospy.get_param('~disable_cache', "false")
         parameters['concert_name'] = rospy.get_param('~concert_name', "")
         parameters['solution_configuration'] = rospy.get_param('~services', "")  # @IgnorePep8
         parameters['default_auto_enable_services'] = rospy.get_param('~default_auto_enable_services', [])  # @IgnorePep8
@@ -123,7 +153,7 @@ class ServiceManager(object):
             message = "%s service is running. First, stop %s service" % (service_name, service_name)
         else:
             self.lock.acquire()
-            (success, message) = self._service_cache_manager.update_service_cache(service_profile)
+            (success, message) = self._service_pool.update_service_cache(service_profile)
             self.lock.release()
 
         return concert_srvs.UpdateServiceConfigResponse(success, message)
@@ -141,11 +171,11 @@ class ServiceManager(object):
         # DJS : reload the service pool
         try:
             if req.enable:
-                self._service_cache_manager.load_service_cache()
+                self._service_pool.reload_services()
                 # Check if the service name is in the currently loaded service profiles
                 if name not in self._enabled_services.keys():
                     try:
-                        service_instance = ServiceInstance(self._parameters['concert_name'], self._service_cache_manager.find(name)['msg'])
+                        service_instance = ServiceInstance(self._parameters['concert_name'], self._parameters['disable_cache'], self._service_pool.find(name).msg)
                     except NoServiceExistsException:
                         # do some updating of the service pool here
                         raise NoServiceExistsException("service not found on the package path [%s]" % name)
@@ -181,9 +211,10 @@ class ServiceManager(object):
         '''
           This is not locked here - it should always be called inside a locked scope.
         '''
-        services = [service_profile['msg'] for service_profile in self._service_cache_manager.service_profiles.values()]
+        services = [service_profile.msg for service_profile in self._service_pool.service_profiles.values()]
         for service in services:
             service.enabled = True if service.name in self._enabled_services.keys() else False
+        self._service_pool.update_solution_configuration(services)
         self._publishers['list_concert_services'].publish(services)
 
     def loginfo(self, msg):
@@ -195,6 +226,6 @@ class ServiceManager(object):
     def spin(self):
         while not rospy.is_shutdown():
             self.lock.acquire()
-            self._service_cache_manager.check_modification_service_cache()
+            self._service_pool.reload_services()
             self.lock.release()
             rospy.sleep(0.5)
