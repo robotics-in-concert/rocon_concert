@@ -6,15 +6,15 @@
   <arg name="concert_description" default="Pirates in concert."/>
   
   <!-- Gateways -->
-  <arg name="hub_port" default="6380"/>
-  <arg name="hub_uri" default="http://localhost:6380"/>
-  <arg name="gateway_watch_loop_period" default="2"/> <!-- Polling period for multimaster advertising/flipping -->
-  <arg name="gateway_disable_uuids" default="false"/> <!-- manage unique naming of multiple gateways yourself -->
-  <arg name="gateway_network_interface" default="$(optenv GATEWAY_NETWORK_INTERFACE)"/>  <!-- If you have multiple network interfaces and want to lock it on one (e.g. 'eth0') -->
-  <arg name="gateway_unavailable_timeout" default="10"/>  <!-- how long before a concert client is flagged as missing when it drops off the wireless-->
+  <arg name="hub_port" default="6380" doc="port for rocon hub redis"/>
+  <arg name="hub_uri" default="http://localhost:6380" doc="gateway hub configuration"/>
+  <arg name="gateway_watch_loop_period" default="2" doc="Polling period for multimaster advertising/flipping"/>
+  <arg name="gateway_disable_uuids" default="false" doc="manage unique naming of multiple gateways yourself"/>
+  <arg name="gateway_network_interface" default="$(optenv GATEWAY_NETWORK_INTERFACE)" doc="If you have multiple network interfaces and want to lock it on one (e.g. 'eth0')"/>
+  <arg name="gateway_unavailable_timeout" default="10" doc="how long before a concert client is flagged as missing when it drops off the wireless"/>
 
   <!-- Zeroconf -->
-  <arg name="disable_zeroconf"            default="false"/> <!-- It is required process to configure both hub and gateway. Configures rocon_hub zeroconf param and gateway disable_conf param -->
+  <arg name="disable_zeroconf"            default="false" doc="It is required process to configure both hub and gateway. Configures rocon_hub zeroconf param and gateway disable_conf param.(e.g docker does not support zeroconf properly"/>
   <arg name="hub_zeroconf"    if="$(arg disable_zeroconf)" value="false"/>
   <arg name="hub_zeroconf"    unless="$(arg disable_zeroconf)" value="true"/>
 
@@ -23,8 +23,8 @@
   <arg name="conductor_auto_invite" default="true"/>
   <arg name="conductor_local_clients_only" default="false"/>
   <!-- Service Manager -->
-  <arg name="services" default=""/> <!-- service list resource location. e.g. concert_tutorial/tutorial.services --> 
-  <arg name="default_auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
+  <arg name="services" default="" doc="service list resource location. e.g. concert_tutorial/tutorial.services" />
+  <arg name="default_auto_enable_services" default="[]" doc="autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or 'all' to enable all services"/>
 
   <!-- Interactions -->
   <arg name="enable_rosbridge"  default="false"/>
@@ -36,7 +36,7 @@
       - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
       - simple                        : concert_schedulers/simple_scheduler.launch
    -->
-  <arg name="scheduler_type" default="compatibility_tree"/>
+  <arg name="scheduler_type" default="compatibility_tree" doc="available scheudlers : [preemptive_compatibility_tree, compatibility_tree, simple]"/>
 
   <group ns="concert">
     <!-- ****************************** Parameters ***************************** -->
