@@ -2,8 +2,8 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.5 (2015-02-27)
+------------------
 * add exception as param value
 * update service instance to load parameter information from parameter_detail in service profile msg
 * integrate cache manager with service pool

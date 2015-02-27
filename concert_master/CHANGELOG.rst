@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.6.5 (2015-02-27)
+------------------
 * more doc strings
 * create doc string for roslaunch
 * disable zerocon option available
