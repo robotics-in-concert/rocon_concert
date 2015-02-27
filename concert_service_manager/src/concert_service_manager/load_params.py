@@ -42,7 +42,7 @@ def load_parameter(key, value, namespace, name, load):
         if load:
             try:
                 rospy.set_param(param_name, eval(value))
-            except (NameError, TypeError):
+            except (NameError, TypeError, SyntaxError):
                 rospy.set_param(param_name, value)
         else:
             rospy.delete_param(param_name)
