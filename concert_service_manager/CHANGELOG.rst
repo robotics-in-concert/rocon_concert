@@ -2,6 +2,22 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add exception as param value
+* update service instance to load parameter information from parameter_detail in service profile msg
+* integrate cache manager with service pool
+* fix typo
+* do not write and read cache when disable_cache option is true and log clear
+* update change a couple of rosparam tag into param tag
+* discard updating service parameter when disabled_cache option is true
+* update code document
+* update to reflect service enabled status in cached file
+* name change to disable cache and set the default value as true
+* update load services from cache parameter
+* addlaucher arguments regarding load from cache
+* Contributors: dwlee
+
 0.6.4 (2015-02-09)
 ------------------
 * fixed typo in function name. also print actual error message to make debugging easier. closes `#266 <https://github.com/robotics-in-concert/rocon_concert/issues/266>`_

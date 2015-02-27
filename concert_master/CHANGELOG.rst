@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* more doc strings
+* create doc string for roslaunch
+* disable zerocon option available
+* Contributors: Jihoon Lee
+
 0.6.4 (2015-02-09)
 ------------------
 * add graph to stringpublihser closes `#270 <https://github.com/robotics-in-concert/rocon_concert/issues/270>`_
