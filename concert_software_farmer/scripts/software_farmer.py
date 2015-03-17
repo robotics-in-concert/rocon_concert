@@ -13,6 +13,4 @@ if __name__ == '__main__':
     rospy.init_node('software_farmer')
     
     farmer = SoftwareFarmer()
-    farmer.loginfo("Initialized")
     farmer.spin()
-    farmer.loginfo("Bye Bye")

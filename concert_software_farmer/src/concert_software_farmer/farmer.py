@@ -127,13 +127,15 @@ class SoftwareFarmer(object):
     def print_pool_status(self):
         profiles, invalid_profiles = self._software_pool.status()
 
-        self.loginfo("===== Available Softwares =====")
-        for name, profile in profiles.items():
-            self.loginfo("- %s : %s"%(name, str(profile.msg.description)))
-        self.loginfo("===== Invalid Softwares   =====")
-        for name, reason in invalid_profiles.items():
-            self.loginfo("- %s : %s"%(str(name),str(reason)))
-        self.loginfo("===============================")
+        if profiles:
+            self.loginfo("===== Available Softwares =====")
+            for name, profile in profiles.items():
+                self.loginfo("- %s : %s"%(name, str(profile.msg.description)))
+        if invalid_profiles:
+            self.loginfo("===== Invalid Softwares   =====")
+            for name, reason in invalid_profiles.items():
+                self.loginfo("- %s : %s"%(str(name),str(reason)))
+            self.loginfo("===============================")
 
     def loginfo(self, msg):
         rospy.loginfo('Software Farm : %s'%str(msg))

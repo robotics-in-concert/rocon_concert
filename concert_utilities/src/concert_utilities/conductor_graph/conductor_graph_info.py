@@ -45,7 +45,6 @@ class ConductorGraphInfo(object):
         """
         Hunt for the conductor's namespace and setup subscribers.
         """
-        print(console.green + "Searching for the conductor's ros topics..." + console.reset)
         while not rospy.is_shutdown() and not self._trigger_shutdown:
             try:
                 graph_topic_name = rocon_python_comms.find_topic('concert_msgs/ConductorGraph', timeout=rospy.rostime.Duration(0.1), unique=True)
