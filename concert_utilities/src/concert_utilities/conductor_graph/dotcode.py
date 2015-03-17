@@ -51,9 +51,9 @@ class ConductorGraphDotcodeGenerator:
         # colour strings defined as per http://qt-project.org/doc/qt-4.8/qcolor.html#setNamedColor
         # and http://www.w3.org/TR/SVG/types.html#ColorKeywords
         if node.state == concert_msgs.ConcertClientState.PENDING:
-            node_colour = "fuschia"
+            node_colour = "fuchsia"
         elif node.state == concert_msgs.ConcertClientState.JOINING:
-            node_colour = "fuschia"
+            node_colour = "fuchsia"
         elif node.state == concert_msgs.ConcertClientState.UNINVITED:
             node_colour = "midnightblue"
         elif node.state == concert_msgs.ConcertClientState.AVAILABLE:
