@@ -2,6 +2,13 @@
 Changelog for package concert_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [rocon_concert] remove debugging prints.
+* [concert_utilities] fuchsia->magenta, fixes `#275 <https://github.com/robotics-in-concert/rocon_concert/issues/275>`_.
+* fuschia->fuchsia, fixes `#275 <https://github.com/robotics-in-concert/rocon_concert/issues/275>`_.
+* Contributors: Daniel Stonier
+
 0.6.5 (2015-02-27)
 ------------------
 
