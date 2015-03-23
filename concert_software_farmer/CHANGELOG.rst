@@ -2,8 +2,8 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.6 (2015-03-23)
+------------------
 * [rocon_concert] remove debugging prints.
 * Contributors: Daniel Stonier
 
