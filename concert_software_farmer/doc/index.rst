@@ -3,14 +3,25 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to concert_software_farmer's documentation!
+Concert Software Farmer
 ===================================================
+
+The `concert_software_farmer`_ package allows users to dynamically start and stop ros applications via ros service.
+It is part of the `Robotics in Concert`_ framework.
+
+.. _`Robotics in Concert`: http://www.robotconcert.org
+.. _`concert_software_farmer`: http://wiki.ros.org/concert_software_farmer
 
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
+    farmer
+    client
+    rosapi  
+    modules
+    CHANGELOG 
 
 
 Indices and tables
