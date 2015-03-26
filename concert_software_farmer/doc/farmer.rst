@@ -21,7 +21,7 @@ concert_software_farmer.farmer
     :show-inheritance:
 
 concert_software_farmer.pool
-------------------------------
+----------------------------
 
 .. automodule:: concert_software_farmer.pool
     :members:
@@ -29,7 +29,7 @@ concert_software_farmer.pool
     :show-inheritance:
 
 concert_software_farmer.instance
-------------------------------
+--------------------------------
 
 .. automodule:: concert_software_farmer.instance
     :members:
@@ -37,7 +37,7 @@ concert_software_farmer.instance
     :show-inheritance:
 
 concert_software_farmer.exceptions
-------------------------------
+----------------------------------
 
 .. automodule:: concert_software_farmer.exceptions
     :members:

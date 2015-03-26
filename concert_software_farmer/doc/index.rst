@@ -17,10 +17,10 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-    farmer
-    client
     rosapi  
-    modules
+    specification
+    client
+    farmer
     CHANGELOG 
 
 
@@ -30,4 +30,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
