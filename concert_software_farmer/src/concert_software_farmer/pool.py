@@ -72,9 +72,23 @@ class SoftwarePool(object):
         self._software_profiles, self._invalid_software_profiles = self._load_software_profiles(self._registered_software)
 
     def status(self):
+        '''
+          Returns the current software pool status
+
+          :returns: Avaialble Software profiles, Invalid software profiles
+          :rtype: dict, dict
+        '''
         return self._software_profiles, self._invalid_software_profiles
 
     def get_profile(self, resource_name):
+        '''
+          Returns the profile of given resource name
+
+          :returns: Software profile object 
+          :rtype: :exc:`SoftwareProfile`
+
+          :raises: :exc:`SoftwareNotExistException` if the software profile is not available in pool
+        '''
         if not resource_name in self._software_profiles: 
             raise SoftwareNotExistException("%s does not exist"%str(resource_name))
         return self._software_profiles[resource_name]

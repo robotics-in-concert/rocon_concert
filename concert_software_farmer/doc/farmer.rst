@@ -1,45 +1,30 @@
 
 .. _modules-section-label:
 
-Farmer API
+Server API
 ==========
 
+Farmer
+------
 
-concert_software_farmer
------------------------
-
-.. automodule:: concert_software_farmer
+.. autoclass:: concert_software_farmer.SoftwareFarmer
   :synopsis: Dynamically allocates software for user.
+  :members:
 
 
-concert_software_farmer.farmer
-------------------------------
-
-.. automodule:: concert_software_farmer.farmer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-concert_software_farmer.pool
-----------------------------
+Pool API
+--------
 
 .. automodule:: concert_software_farmer.pool
     :members:
     :undoc-members:
     :show-inheritance:
 
-concert_software_farmer.instance
---------------------------------
+
+Instance API
+------------
 
 .. automodule:: concert_software_farmer.instance
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-concert_software_farmer.exceptions
-----------------------------------
-
-.. automodule:: concert_software_farmer.exceptions
     :members:
     :undoc-members:
     :show-inheritance:

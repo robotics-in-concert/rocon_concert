@@ -21,6 +21,7 @@ Contents:
     specification
     client
     farmer
+    exceptions
     CHANGELOG 
 
 

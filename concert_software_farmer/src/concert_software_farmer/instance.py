@@ -16,6 +16,9 @@ import rocon_python_utils.ros
 import concert_msgs.msg as concert_msgs
 
 class SoftwareInstance(object):
+    '''
+      Maintains runtime information of software. Such as users, parameters
+    '''
         
     shutdown_timeout = 5
     kill_timeout = 10
@@ -26,6 +29,12 @@ class SoftwareInstance(object):
         self._users = []
 
     def to_msg(self):
+        '''
+          returns data as message format
+
+          :returns: Software Instance data as message format
+          :rtype: :exc:`concert_msgs.msg.SoftwareInstance`
+        '''
         msg = concert_msgs.SoftwareInstance()
         msg.name = self._profile.msg.name
         msg.resource_name = self._profile.msg.resource_name
@@ -35,6 +44,14 @@ class SoftwareInstance(object):
         return msg
 
     def start(self, user):
+        '''
+          Starts software for given user
+
+          :param user str: user name
+
+          :returns: whether it is success of not
+          :rtype: bool
+        '''
         success = False
         try:
             force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
@@ -54,6 +71,12 @@ class SoftwareInstance(object):
         return success
 
     def stop(self):
+        '''
+          stops the software instance 
+
+          :returns: whether it is success of not
+          :rtype: bool
+        '''
         count = 0
         while self._roslaunch.pm and not self._roslaunch.pm.done:
             if count == 2 * SoftwareInstance.shutdown_timeout: 
@@ -70,6 +93,9 @@ class SoftwareInstance(object):
         return launch_text
 
     def add_user(self, user):
+        '''
+          Add user to already running software instance
+        '''
         if user in self._users:
             return False, len(self._users)
         else:
@@ -77,6 +103,9 @@ class SoftwareInstance(object):
         return True, len(self._users)
         
     def remove_user(self, user):
+        '''
+          remove user from running software instance
+        '''
         if user in self._users:
             self._users.remove(user)
             return True, len(self._users)
@@ -84,7 +113,13 @@ class SoftwareInstance(object):
             return False, len(self._users) 
 
     def is_max_capacity(self):
+        '''
+          Check if the software instance has reached it's max capacity
+        '''
         return len(self._users) == self._profile.msg.max_count
 
     def get_namespace(self):
+        '''
+          Returns the software instance namespace
+        '''
         return self._namespace
