@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Concert Software Farmer
-===================================================
+=======================
 
 The `concert_software_farmer`_ package allows users to dynamically start and stop ros applications via ros service.
 It is part of the `Robotics in Concert`_ framework.
