@@ -30,10 +30,16 @@ class SoftwareFarmer(object):
         roslaunch.pmon._init_signal_handlers()
 
     def _setup_ros_parameters(self):
+        '''
+          Read ros params to configure SoftwareFarmer Instance. Currently it does not read any param yet.
+        '''
         params = {}
         return params
 
     def _setup_ros_apis(self):
+        '''
+          Setup ROS publisher and service to provide farmer status and receive allocation request          
+        '''
         pub = {}
         pub['list']   = rospy.Publisher('~list',concert_msgs.SoftwareProfiles,latch=True, queue_size=1)
         pub['status'] = rospy.Publisher('~status', concert_msgs.SoftwareInstances, latch=True, queue_size=1)
@@ -45,6 +51,9 @@ class SoftwareFarmer(object):
         self._srv = srv
 
     def _process_allocate_software(self, req): 
+        '''
+          (De)allocate software based on users request
+        '''
         if req.allocate:
             response = self._allocate_software(req.software, req.user)
         else:
@@ -54,6 +63,12 @@ class SoftwareFarmer(object):
         return response
 
     def _allocate_software(self, software_name, user):
+        '''
+          Allocate software to given user
+
+          :param software_name str: software name to allocate
+          :param user str: user who requested allocation
+        '''
         resp = concert_srvs.AllocateSoftwareResponse()
         self.loginfo("User[%s] requested to use %s"%(user, software_name))
         if software_name in self._running_software.keys():
@@ -89,6 +104,12 @@ class SoftwareFarmer(object):
         return resp
 
     def _deallocate_software(self, software_name, user):
+        '''
+          Deallocate software for given user
+                                                              
+          :param software_name str: software name to deallocate
+          :param user str: user who requested deallocation
+        '''
         self.loginfo("User[%s] requested to cancel %s"%(user, software_name))
         success = False
         message = ""
@@ -109,22 +130,34 @@ class SoftwareFarmer(object):
         return concert_srvs.AllocateSoftwareResponse(success,"",message)
 
     def spin(self):
-        self.print_pool_status()
+        '''
+          Spinner
+        '''
+        self._print_pool_status()
         self.pub_pool_status()
         self.pub_instance_status()
         rospy.spin()
 
     def pub_instance_status(self):
+        '''
+          Publishes the status of instances currently running. It shows which software are running and who users are
+        '''
         instances = self._running_software.values() 
         msg = [i.to_msg() for i in instances]
         self._pub['status'].publish(concert_msgs.SoftwareInstances(msg))
 
     def pub_pool_status(self):
+        '''
+          Publishes the list of available software in the concert.
+        '''
         profiles, invalid_profiles = self._software_pool.status()
         msg = [p.to_msg() for p in profiles.values()]
         self._pub['list'].publish(concert_msgs.SoftwareProfiles(msg))
 
-    def print_pool_status(self):
+    def _print_pool_status(self):
+        '''
+          Logs the software pool status in console
+        '''
         profiles, invalid_profiles = self._software_pool.status()
 
         if profiles:
@@ -138,7 +171,17 @@ class SoftwareFarmer(object):
             self.loginfo("===============================")
 
     def loginfo(self, msg):
+        '''
+          Log info with Software Farm prefix
+
+          :param msg str: message to log 
+        '''
         rospy.loginfo('Software Farm : %s'%str(msg))
 
     def logwarn(self, msg):
+        '''
+          Log warn with Softwar Farm prefix
+          
+          :param msg str: message to log 
+        '''
         rospy.logwarn('Software Farm : %s'%str(msg))
