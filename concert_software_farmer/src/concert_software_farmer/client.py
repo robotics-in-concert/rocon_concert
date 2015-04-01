@@ -56,6 +56,7 @@ class SoftwareFarmClient(object):
         req.user = rospy.get_name()
         req.software = software_name 
         req.allocate = enable 
+        req.parameters = parameters
         resp = self._software_farm_srv(req)
  
         return resp.success, resp.namespace, resp.parameters

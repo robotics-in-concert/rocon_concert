@@ -55,7 +55,7 @@ class SoftwareFarmer(object):
           (De)allocate software based on users request
         '''
         if req.allocate:
-            response = self._allocate_software(req.software, req.user. req.parameters)
+            response = self._allocate_software(req.software, req.user, req.parameters)
         else:
             response = self._deallocate_software(req.software, req.user)
         self.loginfo("%s['%s']"%(response.success, response.error_message))

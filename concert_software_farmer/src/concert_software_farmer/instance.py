@@ -100,6 +100,7 @@ class SoftwareInstance(object):
         launch_text = '<launch>\n   <include ns="%s" file="%s">\n' % (namespace, roslaunch_filepath)
         for param in parameters:
             launch_text += '<arg name="%s" value="%s"/>'%(param.key, param.value)
+        launch_text +='</include></launch>'
         return launch_text
 
     def add_user(self, user):
