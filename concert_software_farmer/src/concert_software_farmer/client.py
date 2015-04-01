@@ -17,7 +17,7 @@ class SoftwareFarmClient(object):
         software_farm_srv_name = rocon_python_comms.find_service('concert_msgs/AllocateSoftware', timeout=rospy.rostime.Duration(5.0), unique=True)
         self._software_farm_srv = rospy.ServiceProxy(software_farm_srv_name, concert_srvs.AllocateSoftware)
 
-    def allocate(self, software_name):
+    def allocate(self, software_name, parameters):
         """
           Sends allocation requets to Concert Software Farmer. 
 
@@ -26,7 +26,7 @@ class SoftwareFarmClient(object):
           :returns: whether it is successfull, the software namespace, and its current parameter configuration
           :rtype: bool, str, rocon_std_msgs/KeyValue[]
         """
-        return self._request_farmer(software_name, True)
+        return self._request_farmer(software_name, True, parameters)
 
     def deallocate(self, software_name):
         """
@@ -37,9 +37,9 @@ class SoftwareFarmClient(object):
           :returns: whether it is successfull, the software namespace, and its current parameter configuration
           :rtype: bool, str, rocon_std_msgs/KeyValue[]
         """
-        return self._request_farmer(software_name, False)
+        return self._request_farmer(software_name, False, [])
 
-    def _request_farmer(self, software_name, enable):
+    def _request_farmer(self, software_name, enable, parameters):
         """
           Generates request message and invoke rosservice call to acutally allocate software.
         
@@ -55,4 +55,4 @@ class SoftwareFarmClient(object):
         req.allocate = enable 
         resp = self._software_farm_srv(req)
  
-        return resp.success, resp.namespace
+        return resp.success, resp.namespace, resp.parameters

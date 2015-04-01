@@ -15,6 +15,8 @@ import roslaunch
 import rocon_python_utils.ros
 import concert_msgs.msg as concert_msgs
 
+from .exceptions import SoftwareInstanceException
+
 class SoftwareInstance(object):
     '''
       Maintains runtime information of software. Such as users, parameters
@@ -23,8 +25,14 @@ class SoftwareInstance(object):
     shutdown_timeout = 5
     kill_timeout = 10
     
-    def __init__(self, profile):
+    def __init__(self, profile, parameters):
         self._profile = profile
+        success, params, msg = self._profile.validate_parameters(parameters)
+        if success:
+            self._parameters = params
+        else:
+            raise SoftwareInstanceException(msg)
+
         self._namespace = concert_msgs.Strings.SOFTWARE_NAMESPACE  + '/' + str(self._profile.name)
         self._users = []
 
@@ -41,6 +49,7 @@ class SoftwareInstance(object):
         msg.max_count =  self._profile.msg.max_count
         msg.namespace = self._namespace
         msg.users = self._users
+        msg.parameters = self._parameters
         return msg
 
     def start(self, user):
@@ -57,7 +66,8 @@ class SoftwareInstance(object):
             force_screen = rospy.get_param(concert_msgs.Strings.PARAM_ROCON_SCREEN, True)
             roslaunch_file_path = rocon_python_utils.ros.find_resource_from_string(self._profile.msg.launch, extension='launch')
             temp = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
-            launch_text =self._prepare_launch_text(roslaunch_file_path, self._namespace)
+            launch_text =self._prepare_launch_text(roslaunch_file_path, self._namespace, self._parameters)
+
             temp.write(launch_text)
             temp.close()
             self._roslaunch = roslaunch.parent.ROSLaunchParent(rospy.get_param('/run_id'), [temp.name], is_core=False, process_listeners=[], force_screen=force_screen)
@@ -86,10 +96,10 @@ class SoftwareInstance(object):
         self._users = []
         return True
 
-    def _prepare_launch_text(self, roslaunch_filepath, namespace):
+    def _prepare_launch_text(self, roslaunch_filepath, namespace, parameters):
         launch_text = '<launch>\n   <include ns="%s" file="%s">\n' % (namespace, roslaunch_filepath)
-        launch_text += '</include>\n</launch>\n'
-
+        for param in parameters:
+            launch_text += '<arg name="%s" value="%s"/>'%(param.key, param.value)
         return launch_text
 
     def add_user(self, user):
@@ -123,3 +133,9 @@ class SoftwareInstance(object):
           Returns the software instance namespace
         '''
         return self._namespace
+
+    def get_parameters(self):
+        '''
+          Returns the software instance parameters
+        '''
+        return self._parameters

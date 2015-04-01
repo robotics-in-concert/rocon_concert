@@ -55,19 +55,22 @@ class SoftwareFarmer(object):
           (De)allocate software based on users request
         '''
         if req.allocate:
-            response = self._allocate_software(req.software, req.user)
+            response = self._allocate_software(req.software, req.user. req.parameters)
         else:
             response = self._deallocate_software(req.software, req.user)
         self.loginfo("%s['%s']"%(response.success, response.error_message))
         self.pub_instance_status()
         return response
 
-    def _allocate_software(self, software_name, user):
+    def _allocate_software(self, software_name, user, parameters):
         '''
           Allocate software to given user
+          TODO: currently it does not handle the case like an user requests software already running with different parameter configuration.
+                Later we may upgrade this to manage software with different parameter set as different instances
 
           :param software_name str: software name to allocate
           :param user str: user who requested allocation
+          :param parameters rocon_std_msgs.KeyValue[]: parameters for software
         '''
         resp = concert_srvs.AllocateSoftwareResponse()
         self.loginfo("User[%s] requested to use %s"%(user, software_name))
@@ -75,7 +78,7 @@ class SoftwareFarmer(object):
             instance = self._running_software[software_name]
             if instance.is_max_capacity(): 
                 resp.success = False
-                resp.error_message = "It exceeds software capacity" 
+                resp.error_message = "It exceeds software capacity"
             else:
                 success, num_user = instance.add_user(user)
         
@@ -88,11 +91,12 @@ class SoftwareFarmer(object):
         else:
             try:
                 software_profile = self._software_pool.get_profile(software_name)
-                instance = SoftwareInstance(software_profile)
+                instance = SoftwareInstance(software_profile, parameters)
                 instance.start(user)
                 self._running_software[software_name] = instance
                 resp.success = True
                 resp.namespace = instance.get_namespace() 
+                resp.parameters = instance.get_parameters()
             except SoftwareNotExistException as e:
                 resp.success= False
                 resp.error_message = str(e)

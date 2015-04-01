@@ -41,11 +41,20 @@ class SoftwareProfile(object):
         with open(self._filepath) as f:
             loaded_profile = yaml.load(f)
 
-        loaded_profile['resource_name'] = self.resource_name
-        loaded_profile['name'] = loaded_profile['name'].lower().replace(" ", "_")
+        if not 'launch' in loaded_profile:
+            raise InvalidSoftwareprofileException("'launch' field does not exist!!!")
+        msg.resource_name = loaded_profile['resource_name'] = self.resource_name
+        msg.name          = loaded_profile['name'] = loaded_profile['name'].lower().replace(" ", "_")
+        msg.description   = loaded_profile['description'] if 'description' in  loaded_profile else ""
+        msg.author        = loaded_profile['author'] if 'author' in loaded_profile else ""
+        msg.max_count     = loaded_profile['max_count'] if 'max_count' in loaded_profile else -1
+        msg.launch        = loaded_profile['launch'] 
+        msg.parameters    = []
+        if 'parameters' in loaded_profile:
+            for kv in loaded_profile['parameters']:
+                msg.parameters.append(rocon_std_msgs.KeyValue(str(kv['name']), str(kv['value'])))
 
         # generate message
-        genpy.message.fill_message_args(msg, loaded_profile)
         self.msg = msg 
         self.name = msg.name
     def to_msg(self):
@@ -53,12 +62,49 @@ class SoftwareProfile(object):
 
     def __str__(self):
         s = ''
-        s += "     resource_name : %s\n" % self.resource_name
-        s += "     name          : %s\n" % self.msg.name
-        s += "     description   : %s\n" % self.msg.description
-        s += "     author        : %s\n" % self.msg.author
-        s += "     launch        : %s\n" % self.msg.launch
+        s += "\tresource_name : %s\n" % self.resource_name
+        s += "\tname          : %s\n" % self.msg.name
+        s += "\tdescription   : %s\n" % self.msg.description
+        s += "\tauthor        : %s\n" % self.msg.author
+        s += "\tlaunch        : %s\n" % self.msg.launch
+        s += "\tparameters:       \n"
+        for p in self.msg.parameters:
+            s += "\t\t%s : %s\n"%(p.key,p.value)
+
         return s
+
+    def validate_parameters(self, given):
+        '''
+          validates the given parameter is usable for this software.
+
+          :param given rocon_std_msgs/KeyValue[]: parameter to validate
+
+          :returns: whether it is successful or not, the updated parameters, msg
+          :rtypes: bool, [rocon_std_msgs.KeyValue], str
+        '''
+        default = self.msg.parameters
+        default_dict = { i.key:i.value for i in default}
+        given_dict = {i.key:i.value for i in given}
+
+        # Check if given parameters are invalid
+        d_keys = default_dict.keys()
+        is_invalid = False
+        invalid_params = []
+        for k in given_dict.keys():
+            if not k in d_keys:
+                invalid_params.append(k)
+                is_invalid = True
+
+        if is_invalid:
+            msg = "Invalid parameter is given. %s"%str(invalid_params)
+            return False, [], msg
+
+        # Assign
+        params = {}
+        for key, value in default_dict.items():
+            params[key] = given_dict[key] if key in given_dict else value
+        params_keyvalue = [rocon_std_msgs.KeyValue(key, value) for key, value in params.items()]
+        return True, params_keyvalue, "Success"
 
 
 class SoftwarePool(object):
@@ -124,3 +170,4 @@ class SoftwarePool(object):
             except InvalidSoftwareprofileException as e:
                 invalid_profiles[name] = str(e)
         return profiles, invalid_profiles
+
