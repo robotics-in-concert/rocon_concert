@@ -5,6 +5,9 @@ import rocon_python_comms
 import concert_msgs.srv as concert_srvs
 import concert_msgs.msg as concert_msgs
 
+class FailedToStartSoftwareException(Exception):
+    pass
+
 class SoftwareFarmClient(object):
     """
         A client-side python module to interact with Concert Software Farmer(server-side).
@@ -17,7 +20,7 @@ class SoftwareFarmClient(object):
         software_farm_srv_name = rocon_python_comms.find_service('concert_msgs/AllocateSoftware', timeout=rospy.rostime.Duration(5.0), unique=True)
         self._software_farm_srv = rospy.ServiceProxy(software_farm_srv_name, concert_srvs.AllocateSoftware)
 
-    def allocate(self, software_name, parameters):
+    def allocate(self, software_name, parameters=[]):
         """
           Sends allocation requets to Concert Software Farmer. 
 
