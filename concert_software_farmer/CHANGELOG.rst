@@ -2,8 +2,8 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.7 (2015-04-06)
+------------------
 * lock at allocation and release
 * parameter works `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
 * expose exception for client `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
