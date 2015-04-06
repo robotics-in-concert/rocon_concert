@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* add sleep for spining closes `#278 <https://github.com/robotics-in-concert/rocon_concert/issues/278>`_
+* Contributors: Jihoon Lee
+
 0.6.6 (2015-03-23)
 ------------------
 

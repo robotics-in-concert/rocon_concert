@@ -2,6 +2,21 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* lock at allocation and release
+* parameter works `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
+* expose exception for client `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
+* fixes for parameter support `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
+* support software parameter closes `#279 <https://github.com/robotics-in-concert/rocon_concert/issues/279>`_
+* updates
+* updates
+* farmer doc working
+* in the middle of documentation
+* ready
+* doc init
+* Contributors: Jihoon Lee, dwlee
+
 0.6.6 (2015-03-23)
 ------------------
 * [rocon_concert] remove debugging prints.

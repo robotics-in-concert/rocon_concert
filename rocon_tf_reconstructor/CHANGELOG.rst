@@ -2,6 +2,9 @@
 Changelog for package rocon_tf_reconstructor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.6 (2015-03-23)
 ------------------
 
