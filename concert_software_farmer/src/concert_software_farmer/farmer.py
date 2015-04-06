@@ -9,6 +9,7 @@ import rospy
 import roslaunch
 import concert_msgs.srv as concert_srvs
 import concert_msgs.msg as concert_msgs
+import threading
 from .pool import SoftwarePool
 from .instance import SoftwareInstance
 from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileException, SoftwareProfileException, SoftwareNotExistException
@@ -19,13 +20,14 @@ from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileExcepti
 
 class SoftwareFarmer(object):
     
-    __slots__ = ['_params', '_software_pool', '_running_software', '_pub', '_srv']
+    __slots__ = ['_params', '_software_pool', '_running_software', '_pub', '_srv', '_lock']
 
     def __init__(self):
         self._params = self._setup_ros_parameters()
         self._setup_ros_apis()
         self._software_pool = SoftwarePool()
         self._running_software = {}
+        self._lock = threading.Lock()
 
         roslaunch.pmon._init_signal_handlers()
 
@@ -54,10 +56,12 @@ class SoftwareFarmer(object):
         '''
           (De)allocate software based on users request
         '''
+        self._lock.acquire()
         if req.allocate:
             response = self._allocate_software(req.software, req.user, req.parameters)
         else:
             response = self._deallocate_software(req.software, req.user)
+        self._lock.release()
         self.loginfo("%s['%s']"%(response.success, response.error_message))
         self.pub_instance_status()
         return response
@@ -115,6 +119,7 @@ class SoftwareFarmer(object):
           :param user str: user who requested deallocation
         '''
         self.loginfo("User[%s] requested to cancel %s"%(user, software_name))
+        self._lock.acquire()
         success = False
         message = ""
         if software_name in self._running_software.keys():
@@ -130,6 +135,7 @@ class SoftwareFarmer(object):
         else:
             success = False
             message = "%s is not running!"%str(software_name)
+        self._lock.release()
 
         return concert_srvs.AllocateSoftwareResponse(success,"",message)
 
