@@ -137,7 +137,7 @@ class SoftwareFarmer(object):
             message = "%s is not running!"%str(software_name)
         self._lock.release()
 
-        return concert_srvs.AllocateSoftwareResponse(success,"",message)
+        return concert_srvs.AllocateSoftwareResponse(success,[],"",message)
 
     def spin(self):
         '''
