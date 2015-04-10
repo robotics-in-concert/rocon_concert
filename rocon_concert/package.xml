@@ -21,6 +21,7 @@
   <run_depend>concert_service_link_graph</run_depend>
   <run_depend>concert_service_manager</run_depend>
   <run_depend>concert_service_utilities</run_depend>
+  <run_depend>concert_software_farmer</run_depend>
   <run_depend>concert_utilities</run_depend>
   <run_depend>rocon_tf_reconstructor</run_depend>
 

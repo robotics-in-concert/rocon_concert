@@ -26,6 +26,7 @@
   <run_depend>rocon_icons</run_depend>
   <run_depend>rocon_master_info</run_depend>
   <run_depend>concert_service_manager</run_depend>
+  <run_depend>concert_software_farmer</run_depend>
   <run_depend>concert_conductor</run_depend>
   <run_depend>rocon_interactions</run_depend>
   <run_depend>concert_schedulers</run_depend>
