@@ -19,6 +19,15 @@ class SoftwareFarmClient(object):
         """
         software_farm_srv_name = rocon_python_comms.find_service('concert_msgs/AllocateSoftware', timeout=rospy.rostime.Duration(5.0), unique=True)
         self._software_farm_srv = rospy.ServiceProxy(software_farm_srv_name, concert_srvs.AllocateSoftware)
+        self._allocated_software_farms = []
+        rospy.on_shutdown(self._shutdown)
+
+    def _shutdown(self):
+        """
+          Release all allcated softwares when rospy is shutdown.
+        """
+        for farm in self._allocated_software_farms:
+            self.deallocate(farm)        
 
     def allocate(self, software_name, parameters=[]):
         """
@@ -58,5 +67,10 @@ class SoftwareFarmClient(object):
         req.allocate = enable 
         req.parameters = parameters
         resp = self._software_farm_srv(req)
- 
+        if resp.success:
+            if enable and not (software_name in self._allocated_software_farms):
+                self._allocated_software_farms.append(software_name)
+            elif not enable and software_name in self._allocated_software_farms:
+                self._allocated_software_farms.pop(self._allocated_software_farms.index(software_name))
+
         return resp.success, resp.namespace, resp.parameters

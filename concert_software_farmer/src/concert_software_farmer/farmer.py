@@ -30,6 +30,15 @@ class SoftwareFarmer(object):
         self._lock = threading.Lock()
 
         roslaunch.pmon._init_signal_handlers()
+        rospy.on_shutdown(self._wait_for_shutdown)
+
+    def _wait_for_shutdown(self):
+        '''
+          Wait for releasing the allocating software
+        '''
+        while len(self._running_software):
+            print "wait for all process is released: [%s]" % str(self._running_software)
+            rospy.sleep(0.2)
 
     def _setup_ros_parameters(self):
         '''
