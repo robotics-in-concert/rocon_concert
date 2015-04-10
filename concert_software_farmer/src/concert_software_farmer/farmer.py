@@ -119,7 +119,6 @@ class SoftwareFarmer(object):
           :param user str: user who requested deallocation
         '''
         self.loginfo("User[%s] requested to cancel %s"%(user, software_name))
-        self._lock.acquire()
         success = False
         message = ""
         if software_name in self._running_software.keys():
@@ -135,7 +134,6 @@ class SoftwareFarmer(object):
         else:
             success = False
             message = "%s is not running!"%str(software_name)
-        self._lock.release()
 
         return concert_srvs.AllocateSoftwareResponse(success,[],"",message)
 
