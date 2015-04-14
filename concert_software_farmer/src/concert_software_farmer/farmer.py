@@ -4,7 +4,7 @@
 ##############################################################################
 # Imports
 ##############################################################################
-
+import time
 import rospy
 import roslaunch
 import concert_msgs.srv as concert_srvs
@@ -20,7 +20,7 @@ from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileExcepti
 
 class SoftwareFarmer(object):
     
-    __slots__ = ['_params', '_software_pool', '_running_software', '_pub', '_srv', '_lock']
+    __slots__ = ['_params', '_software_pool', '_running_software', '_pub', '_srv', '_lock', '_timeout']
 
     def __init__(self):
         self._params = self._setup_ros_parameters()
@@ -28,8 +28,21 @@ class SoftwareFarmer(object):
         self._software_pool = SoftwarePool()
         self._running_software = {}
         self._lock = threading.Lock()
+        self._timeout = rospy.get_param('~release_timeout', 15) #sec
+
 
         roslaunch.pmon._init_signal_handlers()
+        rospy.on_shutdown(self._wait_for_release_software)
+
+    def _wait_for_release_software(self):
+        '''
+          Wait for releasing the allocating software
+        '''
+        timeout_time = time.time() + self._timeout
+        while len(self._running_software) and time.time() < timeout_time:
+            rospy.sleep(0.2)
+        if len(self._running_software):
+            self.logwarn('Release timeout [%s]' % str(self._running_software.keys()))
 
     def _setup_ros_parameters(self):
         '''
