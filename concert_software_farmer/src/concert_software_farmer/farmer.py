@@ -12,7 +12,7 @@ import concert_msgs.msg as concert_msgs
 import threading
 from .pool import SoftwarePool
 from .instance import SoftwareInstance
-from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileException, SoftwareProfileException, SoftwareNotExistException, SoftwareReleaseTimeoutException
+from .exceptions import SoftwareInstanceException, InvalidSoftwareprofileException, SoftwareProfileException, SoftwareNotExistException
 
 ##############################################################################
 # Softwarefarmer 
@@ -28,7 +28,7 @@ class SoftwareFarmer(object):
         self._software_pool = SoftwarePool()
         self._running_software = {}
         self._lock = threading.Lock()
-        self._timeout = rospy.get_param('~release_timeout', 0.15) #sec
+        self._timeout = rospy.get_param('~release_timeout', 15) #sec
 
 
         roslaunch.pmon._init_signal_handlers()
