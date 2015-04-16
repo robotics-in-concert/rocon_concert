@@ -145,7 +145,7 @@ class ServicePool(object):
                                               overrides=overrides)
                 self.service_profiles[read_profile.name] = read_profile
             except rospkg.ResourceNotFound as e:
-                self._logwarn('cannot load service profile: [%s]' % service_profile_file)
+                self._logwarn('cannot load service profile: [%s][%s]' % (service_profile_file,e))
                 continue
         return default_service_config_file
 
