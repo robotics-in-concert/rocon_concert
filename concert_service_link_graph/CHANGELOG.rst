@@ -2,6 +2,9 @@
 Changelog for package concert_service_link_graph
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.7 (2015-04-06)
 ------------------
 

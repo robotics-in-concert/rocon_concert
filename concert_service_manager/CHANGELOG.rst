@@ -2,6 +2,11 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* improve log closes `#292 <https://github.com/robotics-in-concert/rocon_concert/issues/292>`_
+* Contributors: Jihoon Lee
+
 0.6.7 (2015-04-06)
 ------------------
 * updates

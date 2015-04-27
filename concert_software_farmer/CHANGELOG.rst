@@ -2,6 +2,17 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* delete timeout exception and fix wrong timeout time
+* change variable name and adjusting release timeout
+* update releasing process when it is shutdown
+* delete dependency
+* fix lock
+* add dependency
+* fix return value in deallocate software
+* Contributors: dwlee
+
 0.6.7 (2015-04-06)
 ------------------
 * lock at allocation and release

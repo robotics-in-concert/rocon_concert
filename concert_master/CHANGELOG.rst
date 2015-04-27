@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* add concert_software_farmer is missing dependency clsoses `#289 <https://github.com/robotics-in-concert/rocon_concert/issues/289>`_
+* Contributors: Jihoon Lee
+
 0.6.7 (2015-04-06)
 ------------------
 
