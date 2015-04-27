@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>concert_service_manager</name>
-  <version>0.6.7</version>
+  <version>0.6.8</version>
   <description>Component responsible for launching and managing concert services.</description>
 
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
