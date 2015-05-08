@@ -31,7 +31,7 @@
   <arg name="enable_rosbridge"  default="false" doc="start rosbridge or not"/>
   <arg name="rosbridge_address" default="localhost" doc="rosbridge address for rocon_interactions"/>
   <arg name="rosbridge_port" default="9090" doc="rosbridge port for rocon_interactions"/>
-  <arg name="webserver_address" default="localhost" doc="webserver address for webapps in rocon_interactions"/>
+  <arg name="webserver_address" default="webapp.robotconcert.org" doc="webserver address for webapps in rocon_interactions"/>
   <!--                  Schedulers
       - preemptive_compatibility_tree : concert_schedulers/preemptive_compatibility_tree_scheduler.launch
       - compatibility_tree            : concert_schedulers/compatibility_tree_scheduler.launch
