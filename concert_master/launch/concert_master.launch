@@ -18,13 +18,14 @@
   <arg name="hub_zeroconf"    if="$(arg disable_zeroconf)" value="false"/>
   <arg name="hub_zeroconf"    unless="$(arg disable_zeroconf)" value="true"/>
 
-
   <!-- Conductor -->
   <arg name="conductor_auto_invite" default="true" doc="invite clients automatically?"/>
   <arg name="conductor_local_clients_only" default="false" doc="conductor invites only local clients"/>
+
   <!-- Service Manager -->
   <arg name="services" default="" doc="service list resource location. e.g. concert_tutorial/tutorial.services" />
   <arg name="default_auto_enable_services" default="[]" doc="autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or 'all' to enable all services"/>
+  <arg name="disable_cache" default="true" doc="whether reading solution configuration and service profile from cache or default"/>
 
   <!-- Interactions -->
   <arg name="enable_rosbridge"  default="false" doc="start rosbridge or not"/>
@@ -52,6 +53,7 @@
       <arg name="concert_name" value="$(arg concert_name)"/>
       <arg name="services" value="$(arg services)" />
       <arg name="default_auto_enable_services" value="$(arg default_auto_enable_services)" />
+      <arg name="disable_cache" value="$(arg disable_cache)"/>
     </include>
 
     <!-- ***************************** Software Farmer *************************** -->
