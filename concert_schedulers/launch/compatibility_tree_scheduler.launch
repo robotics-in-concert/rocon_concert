@@ -1,5 +1,7 @@
 <launch>
+  <arg name="debug_show_compatibility_tree" default="false" />
   <node pkg="concert_schedulers" name="scheduler" type="compatibility_tree_scheduler.py">
     <param name="enable_preemptions" value="false"/>
+    <param name="debug_show_compatibility_tree" value="$(arg debug_show_compatibility_tree)"/>
   </node>
 </launch>
