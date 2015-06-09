@@ -176,7 +176,10 @@ class ConductorStateDotcodeGenerator:
             fr, to = transition
             nodes.append(fr)
             nodes.append(to)
-            edges.append(Edge(fr, to, transition_func.__name__))
+
+            label = '' if transition_func.__name__ == 'Dummy' else transition_func.__name__
+        
+            edges.append(Edge(fr, to, label))
 
         # make it as unique string list
         nodes = list(set(nodes))
