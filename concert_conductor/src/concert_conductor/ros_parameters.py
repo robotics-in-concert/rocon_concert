@@ -28,6 +28,7 @@ def setup_ros_parameters():
       * ~auto_invite (false) : don't automatically invite clients
       * ~local_clients_only (false) : don't invite clients from other pc's on the network, used for simulations.
       * ~oblivian_timeout (3600) : time before a bad, gone client is removed from the index.
+      * ~service_timeout (5.0) : waiting timeout for status, start_rapp, and stop_rapp.
 
       :returns: dictionary of parameters
       :rtype: dict { parameter name : value }
@@ -36,4 +37,5 @@ def setup_ros_parameters():
     param['auto_invite'] = rospy.get_param('~auto_invite', False)
     param['local_clients_only'] = rospy.get_param('~local_clients_only', False)
     param['oblivion_timeout'] = rospy.get_param('~oblivion_timeout', 3600)
+    param['service_timeout'] =rospy.get_param('~service_timeout', 5.0)
     return param

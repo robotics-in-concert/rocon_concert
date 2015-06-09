@@ -237,8 +237,8 @@ class ConcertClients(object):
         platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
         list_rapps_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'list_rapps'
         try:
-            rospy.wait_for_service(platform_info_service_name, 0.1)
-            rospy.wait_for_service(list_rapps_service_name, 0.1)
+            rospy.wait_for_service(platform_info_service_name, self._param['service_timeout'])
+            rospy.wait_for_service(list_rapps_service_name,self._param['service_timeout'])
         except rospy.ROSException:  # timeout
             if concert_client.time_since_last_state_change() > 10.0:
                 rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
@@ -385,8 +385,8 @@ class ConcertClients(object):
         start_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/start_rapp'
         stop_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/stop_rapp'
         try:
-            rospy.wait_for_service(start_app_service_name, 0.1)
-            rospy.wait_for_service(stop_app_service_name, 0.1)
+            rospy.wait_for_service(start_app_service_name, self._param['service_timeout'])
+            rospy.wait_for_service(stop_app_service_name, self._param['service_timeout'])
         except rospy.ROSException:  # timeout
             if concert_client.time_since_last_state_change() > 10.0:
                 rospy.logwarn("Conductor : timed out waiting for client's start_rapp and stop_rapp services to be flipped [%s]" % concert_client.concert_alias)
