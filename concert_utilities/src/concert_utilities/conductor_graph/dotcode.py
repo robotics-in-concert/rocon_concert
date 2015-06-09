@@ -157,7 +157,7 @@ class ConductorStateDotcodeGenerator:
         dotcode = self._dotcode_factory.create_dot(dotgraph)
         return dotcode
 
-    def generate_dotgraph(self, state_transition_table, rank='same',ranksep=0.2, rankdir='TB', simplify=True):
+    def generate_dotgraph(self, state_transition_table, rank='same',ranksep=0.5, rankdir='TB', simplify=True):
         nodes, edges = self.get_nodes_and_edges(state_transition_table)
         dotgraph = self._dotcode_factory.get_graph(rank=rank, ranksep=ranksep, simplify=simplify, rankdir=rankdir)
 
