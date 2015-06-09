@@ -142,3 +142,49 @@ class ConductorGraphDotcodeGenerator:
 
         dotcode = dotcode_factory.create_dot(dotgraph)
         return dotcode
+
+class ConductorStateDotcodeGenerator:
+    '''
+        Unlike Conductor graph focuses on visualising status of clients, ConductorState focuses on states and transitions.
+    '''
+
+    def __init__(self, dotcode_factory):
+        self._dotcode_factory = dotcode_factory
+        pass
+
+    def generate_dotcode(self, state_transition_table, **kargs):
+        dotgraph = self.generate_dotgraph(state_transition_table, **kargs)
+        dotcode = self._dotcode_factory.create_dot(dotgraph)
+        return dotcode
+
+    def generate_dotgraph(self, state_transition_table, rank='same',ranksep=0.2, rankdir='TB', simplify=True):
+        nodes, edges = self.get_nodes_and_edges(state_transition_table)
+        dotgraph = self._dotcode_factory.get_graph(rank=rank, ranksep=ranksep, simplify=simplify, rankdir=rankdir)
+
+        for n in nodes:
+            self._add_node(dotgraph, n)
+
+        for e in edges:
+            self._add_edge(dotgraph, e)
+        return dotgraph
+
+    def get_nodes_and_edges(self, state_transition_table):
+        nodes = []
+        edges = []
+
+        for transition, transition_func in state_transition_table.items():
+            fr, to = transition
+            nodes.append(fr)
+            nodes.append(to)
+            edges.append(Edge(fr, to, transition_func.__name__))
+
+        # make it as unique string list
+        nodes = list(set(nodes))
+
+        return nodes, edges
+
+    def _add_node(self, dotgraph, node):
+        self._dotcode_factory.add_node_to_graph(dotgraph, nodename = node, shape='ellipse')
+
+    def _add_edge(self, dotgraph, edge):
+        self._dotcode_factory.add_edge_to_graph(dotgraph, edge.start, edge.end, label=edge.label, penwidth=0.3)

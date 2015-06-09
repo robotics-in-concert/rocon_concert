@@ -7,6 +7,6 @@
 ##############################################################################
 
 from .concert_client import ConcertClient 
-from .dotcode import ConductorGraphDotcodeGenerator
+from .dotcode import ConductorGraphDotcodeGenerator, ConductorStateDotcodeGenerator
 from .conductor_graph_info import ConductorGraphInfo
 from .conductor_graph_to_string import ConductorGraphDotcodeToString
