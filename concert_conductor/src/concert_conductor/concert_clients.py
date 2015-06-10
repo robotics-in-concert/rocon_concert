@@ -305,6 +305,10 @@ class ConcertClients(object):
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
             return True
+
+        if not concert_client.is_controlled():
+            self._transition(concert_client, State.UNINVITED)()
+            return True
         return False
 
     def _update_uninvited_client(self, remote_gateway, concert_client):

@@ -120,7 +120,7 @@ StateTransitionTable = {
     (State.MISSING, State.AVAILABLE)  : Dummy,
     (State.MISSING, State.GONE)       : TransitionToGone,
 
-#    (State.BUSY, State.UNINVITED)     : Dummy,
+    (State.BUSY, State.PENDING)       : Dummy,
     (State.BUSY, State.GONE)          : TransitionToGone,
 
     (State.BLOCKING, State.GONE)      : TransitionToGone,
