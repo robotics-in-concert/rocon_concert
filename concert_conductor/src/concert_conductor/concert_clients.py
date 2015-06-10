@@ -308,7 +308,7 @@ class ConcertClients(object):
             self._transition(concert_client, State.GONE)()
             return True
 
-        if not concert_client.is_controlled():
+        if not concert_client.is_controlled:
             self._transition(concert_client, State.UNINVITED)()
             return True
         return False
