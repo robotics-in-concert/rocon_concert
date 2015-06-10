@@ -160,6 +160,7 @@ class ConductorStateDotcodeGenerator:
     def generate_dotgraph(self, state_transition_table, rank='same',ranksep=0.5, rankdir='TB', simplify=True):
         nodes, edges = self.get_nodes_and_edges(state_transition_table)
         dotgraph = self._dotcode_factory.get_graph(rank=rank, ranksep=ranksep, simplify=simplify, rankdir=rankdir)
+        self._add_not_in_network_node_and_edge(dotgraph)
 
         for n in nodes:
             self._add_node(dotgraph, n)
@@ -185,6 +186,13 @@ class ConductorStateDotcodeGenerator:
         nodes = list(set(nodes))
 
         return nodes, edges
+    
+    def _add_not_in_network_node_and_edge(self, dotgraph):
+        start_node_name = "not in network"
+        self._dotcode_factory.add_node_to_graph(dotgraph, start_node_name, shape='ellipse', color="blue")
+        self._dotcode_factory.add_edge_to_graph(dotgraph, start_node_name, concert_msgs.ConcertClientState.PENDING, penwidth=0.3)
+        self._dotcode_factory.add_edge_to_graph(dotgraph, concert_msgs.ConcertClientState.GONE, start_node_name, penwidth=0.3)
+
 
     def _add_node(self, dotgraph, node):
         self._dotcode_factory.add_node_to_graph(dotgraph, nodename = node, shape='ellipse')
