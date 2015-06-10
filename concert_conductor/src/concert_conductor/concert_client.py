@@ -77,7 +77,7 @@ class ConcertClient(object):
         # We only ever do processing on self.msg in one place to avoid threading problems
         # (the transition handlers) so that is why we store a cached copy here.
         self._cached_status_msg = None
-        self._controlled = False
+        self._remote_controller = ""
         self._lock = threading.Lock()
 
         # timestamps
@@ -219,19 +219,20 @@ class ConcertClient(object):
         # don't update every client, just the ones that we need information from
         important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.UNINVITED) or (self.state == ConcertClient.State.MISSING)
         if self._cached_status_msg is not None:
+            with self._lock:
+                status_msg = copy.deepcopy(self._cached_status_msg)
+                self._cached_status_msg = None
+
             if important_state:
-                with self._lock:
-                    status_msg = copy.deepcopy(self._cached_status_msg)
-                    self._cached_status_msg = None
                 # uri update
                 uri = rocon_uri.parse(self.msg.platform_info.uri)
                 uri.rapp = status_msg.rapp.name if status_msg.rapp_status == rapp_manager_msgs.Status.RAPP_RUNNING else ''
                 self.msg.platform_info.uri = str(uri)
                 is_changed = True
 
-            if self._remote_controller != self._cached_status_msg.remote_controller:
+            if self._remote_controller != status_msg.remote_controller:
+                self._remote_controller = status_msg.remote_controller
                 is_changed = True
-                self._remote_controller = self._cached_status_msg.remote_controller
 
         return is_changed
 
