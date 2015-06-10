@@ -108,9 +108,9 @@ StateTransitionTable = {
     (State.UNINVITED, State.JOINING)  : Dummy,
     (State.UNINVITED, State.GONE)     : TransitionToGone,
 
-    (State.JOINING, State.BAD)        : Dummy,
+#    (State.JOINING, State.BAD)        : Dummy,
     (State.JOINING, State.AVAILABLE)  : Dummy,
-    (State.JOINING, State.GONE)       : Dummy,
+    (State.JOINING, State.GONE)       : TransitionToGone,
 
 #    (State.AVAILABLE, State.BAD)      : Dummy,
     (State.AVAILABLE, State.MISSING)  : AvailableToMissing,
