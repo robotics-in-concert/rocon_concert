@@ -114,7 +114,7 @@ StateTransitionTable = {
 
 #    (State.AVAILABLE, State.BAD)      : Dummy,
     (State.AVAILABLE, State.MISSING)  : AvailableToMissing,
-#    (State.AVAILABLE, State.UNINVITED): Dummy,
+    (State.AVAILABLE, State.UNINVITED): Dummy,
     (State.AVAILABLE, State.GONE)     : TransitionToGone,
 
     (State.MISSING, State.AVAILABLE)  : Dummy,
