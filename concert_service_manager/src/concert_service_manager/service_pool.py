@@ -121,7 +121,6 @@ class ServicePool(object):
                 service_config_file = self._load_service_profiles_from_cache()
             self._solution_config_file = service_config_file
             self._solution_config_mtime = time.ctime(os.path.getmtime(service_config_file))
-
         except rospkg.ResourceNotFound as e:
             self._logwarn(str(e))
 
@@ -237,7 +236,8 @@ class ServicePool(object):
         """
         is_changed = False
         if not rocon_python_utils.ros.is_validation_file(self._solution_config_file):
-            is_changed = True
+            if self._solution_config_file:
+                is_changed = True
         else:
             mtime = time.ctime(os.path.getmtime(self._solution_config_file))
             if self._solution_config_mtime != mtime:
