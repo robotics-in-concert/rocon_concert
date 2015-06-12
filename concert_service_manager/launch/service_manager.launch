@@ -1,7 +1,7 @@
 <launch>
   <arg name="concert_name" default="Rocon concert"/> <!-- concert name, e.g. Pirate Concert, demo_concert, etc. -->
   <arg name="default_auto_enable_services" default="[]"/> <!-- autoenable services, e.g. [admin, initialisation] services which auto enabled on start up or "all" to enable all services -->
-  <arg name="services" default="[]"/>  <!-- comma separated list of service resource names (e.g. 'chatter_concert/chatter') -->
+  <arg name="services" default="" doc="service list resource location. e.g. concert_tutorial/tutorial.services"/> 
   <arg name="disable_cache" default="true"/> <!--flag whether reading solution configuration and service profile from cache or default-->
 
   <node pkg="concert_service_manager" name="services" type="service_manager">
