@@ -70,7 +70,7 @@ namespace rocon {
       // it does not exist in msg client name array. so this client has left concert.
       if(std::find(client_names.begin(),client_names.end(),key) == client_names.end())
       {
-        ROS_INFO_STREAM("Remove subscriber of : " << name);
+        ROS_INFO_STREAM("Remove subscriber of : " << key);
         this->sub_clients_pose.erase(key);
       }
     }
