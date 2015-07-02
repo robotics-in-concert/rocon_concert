@@ -1,4 +1,5 @@
 #include <rocon_tf_reconstructor/rocon_tf_reconstructor.h>
+#include <rocon_tf_reconstructor/utils.h>
 #include <concert_msgs/Strings.h>
 
 namespace rocon {
@@ -54,6 +55,7 @@ namespace rocon {
       if(this->sub_clients_pose.find(name) == this->sub_clients_pose.end())
       {
         std::string topic_name = "/" + name + "/" + this->sub_robotpose_topic;  
+        topic_name = get_ros_friendly_name(topic_name);
         ROS_INFO_STREAM("Create Subscriber for : " << name << "\tTopic : " << topic_name);
         this->sub_clients_pose[name] = new RoconPoseClient(this->nh,name,this->sub_robotpose_topic);
       }

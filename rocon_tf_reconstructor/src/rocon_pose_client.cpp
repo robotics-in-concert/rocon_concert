@@ -1,4 +1,6 @@
+
 #include<rocon_tf_reconstructor/rocon_pose_client.h>
+#include<rocon_tf_reconstructor/utils.h>
 
 namespace rocon {
 
@@ -11,6 +13,7 @@ namespace rocon {
   {
     ros::NodeHandle n;
     std::string topic_name = "/" + client_name + "/" + pose_topic;  
+    topic_name = get_ros_friendly_name(topic_name);
 
     this->initialized = false;
     this->client_name = client_name;
