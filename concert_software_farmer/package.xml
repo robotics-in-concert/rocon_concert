@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>concert_software_farmer</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>
     Concert Software farm is to manage software being utilised across services 
   </description>

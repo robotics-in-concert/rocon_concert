@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>concert_service_link_graph</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>Service type support for link graphs</description>
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
   <maintainer email="jihoonlee.in@gmail.com">Jihoon Lee</maintainer>

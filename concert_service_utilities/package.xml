@@ -1,6 +1,6 @@
 <package>
   <name>concert_service_utilities</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>
     Utilities for services.
   </description>

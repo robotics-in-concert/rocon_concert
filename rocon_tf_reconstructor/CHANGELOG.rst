@@ -2,8 +2,8 @@
 Changelog for package rocon_tf_reconstructor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.9 (2015-07-09)
+------------------
 * it should be key instead of name `#306 <https://github.com/robotics-in-concert/rocon_concert/issues/306>`_
 * convert to ros friendly name for subscriber closes `#306 <https://github.com/robotics-in-concert/rocon_concert/issues/306>`_
 * Contributors: Jihoon Lee

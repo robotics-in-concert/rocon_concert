@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.6.9 (2015-07-09)
+------------------
 * add transition available to uninvited `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
 * callable error fix
 * update transition table `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
