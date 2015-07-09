@@ -2,6 +2,9 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.8 (2015-04-27)
 ------------------
 * delete timeout exception and fix wrong timeout time

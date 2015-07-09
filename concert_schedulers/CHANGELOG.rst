@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* ros friendly name matching for releasing client closes `#307 <https://github.com/robotics-in-concert/rocon_concert/issues/307>`_
+* Contributors: Jihoon Lee
+
 0.6.8 (2015-04-27)
 ------------------
 
