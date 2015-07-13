@@ -16,6 +16,8 @@ This module defines the primary class for the concert conductor node.
 
 import rospy
 import concert_msgs.msg as concert_msgs
+from dynamic_reconfigure.server import Server as ReconfigureServer
+from concert_conductor.cfg import paramsConfig
 
 from .concert_client import ConcertClient
 from . import concert_clients
@@ -56,7 +58,9 @@ class Conductor(object):
         ##################################
         self.publishers = self._setup_publishers()  # can raise ConductorFailureException
         rospy.on_shutdown(self._shutdown)
+
         self._param = setup_ros_parameters()
+        self._reconfig_server = ReconfigureServer(paramsConfig, self._callback_dynamic_reconfigure)
 
         ##################################
         # Variables
@@ -156,3 +160,12 @@ class Conductor(object):
         else:
             publisher = self.publishers["concert_clients"]  # default
         publisher.publish(msg)
+
+    def _callback_dynamic_reconfigure(self, config, level):
+        rospy.loginfo("%s"%str(config))
+
+        self._param['auto_invite'] = config.auto_invite
+        self._param['local_clients_only'] = config.local_clients_only
+        self._param['oblivion_timeout'] = config.oblivion_timeout
+        self._param['service_timeout'] = config.service_timeout
+        return config

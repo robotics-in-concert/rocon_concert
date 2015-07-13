@@ -15,10 +15,11 @@ ros parameter server.
 
 import rospy
 
+
+
 ###############################################################################
 # Functions
 ###############################################################################
-
 
 def setup_ros_parameters():
     '''
@@ -38,4 +39,5 @@ def setup_ros_parameters():
     param['local_clients_only'] = rospy.get_param('~local_clients_only', False)
     param['oblivion_timeout'] = rospy.get_param('~oblivion_timeout', 3600)
     param['service_timeout'] =rospy.get_param('~service_timeout', 5.0)
+
     return param
