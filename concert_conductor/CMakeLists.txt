@@ -9,10 +9,11 @@ project(concert_conductor)
 # Catkin
 ##############################################################################
 
-find_package(catkin REQUIRED)
-catkin_package()
+find_package(catkin REQUIRED dynamic_reconfigure)
 
 catkin_python_setup()
+generate_dynamic_reconfigure_options(cfg/params.cfg)
+catkin_package()
 
 ##############################################################################
 # Installs
