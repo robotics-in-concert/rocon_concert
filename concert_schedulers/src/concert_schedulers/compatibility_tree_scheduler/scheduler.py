@@ -23,6 +23,7 @@ import concert_msgs.msg as concert_msgs
 import scheduler_msgs.msg as scheduler_msgs
 import concert_scheduler_requests
 import rocon_uri
+import rocon_python_utils
 
 import concert_schedulers.common as common
 from concert_schedulers.common.exceptions import FailedToAllocateException
@@ -353,8 +354,12 @@ class CompatibilityTreeScheduler(object):
                 rospy.loginfo("Scheduler : releasing resources from cancelled request [%s][%s]" % ([resource.rapp for resource in reply.msg.resources], reply.msg.reason))
             for resource in reply.msg.resources:
                 try:
-                    self._clients[rocon_uri.parse(resource.uri).name.string].abandon()
-                except KeyError:
+                    resource_name = rocon_uri.parse(resource.uri).name.string
+                    for key, value in self._clients.items():
+                        if resource_name == rocon_python_utils.ros.get_ros_friendly_name(key):
+                            value.abandon()
+                except KeyError as e:
+                    rospy.logwarn("Scheduler : Error while releasing resource[%s]"%str(e))
                     pass  # nothing was allocated to that resource yet (i.e. unique gateway_name was not yet set)
             reply.close()
             #reply.msg.status = scheduler_msgs.Request.RELEASED

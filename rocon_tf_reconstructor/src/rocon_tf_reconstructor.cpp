@@ -1,4 +1,5 @@
 #include <rocon_tf_reconstructor/rocon_tf_reconstructor.h>
+#include <rocon_tf_reconstructor/utils.h>
 #include <concert_msgs/Strings.h>
 
 namespace rocon {
@@ -54,6 +55,7 @@ namespace rocon {
       if(this->sub_clients_pose.find(name) == this->sub_clients_pose.end())
       {
         std::string topic_name = "/" + name + "/" + this->sub_robotpose_topic;  
+        topic_name = get_ros_friendly_name(topic_name);
         ROS_INFO_STREAM("Create Subscriber for : " << name << "\tTopic : " << topic_name);
         this->sub_clients_pose[name] = new RoconPoseClient(this->nh,name,this->sub_robotpose_topic);
       }
@@ -68,7 +70,7 @@ namespace rocon {
       // it does not exist in msg client name array. so this client has left concert.
       if(std::find(client_names.begin(),client_names.end(),key) == client_names.end())
       {
-        ROS_INFO_STREAM("Remove subscriber of : " << name);
+        ROS_INFO_STREAM("Remove subscriber of : " << key);
         this->sub_clients_pose.erase(key);
       }
     }

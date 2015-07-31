@@ -9,6 +9,10 @@ Each concert client participates in a state machine which tracks their lifecycle
 This state machine enables us to make quick decisions if needed or to remember the current state and
 delay the decision until the next cycle of decision making comes around.
 
+.. image:: imgs/state_graph.png
+  :alt: Conductor State Graph
+  :align: center
+
 Important Files
 ---------------
 

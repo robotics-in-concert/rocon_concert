@@ -97,8 +97,8 @@ class AvailableToMissing(object):
 
 StateTransitionTable = {
     (State.PENDING, State.BAD)       : Dummy, #@IgnorePep8 noqa
-    (State.PENDING, State.BLOCKING)  : Dummy,
-    (State.PENDING, State.BUSY)      : Dummy,
+#    (State.PENDING, State.BLOCKING)  : Dummy,
+#    (State.PENDING, State.BUSY)      : Dummy,
     (State.PENDING, State.UNINVITED) : PendingToUninvited,
     (State.PENDING, State.GONE)      : TransitionToGone,
 
@@ -108,11 +108,11 @@ StateTransitionTable = {
     (State.UNINVITED, State.JOINING)  : Dummy,
     (State.UNINVITED, State.GONE)     : TransitionToGone,
 
-    (State.JOINING, State.BAD)        : Dummy,
+#    (State.JOINING, State.BAD)        : Dummy,
     (State.JOINING, State.AVAILABLE)  : Dummy,
-    (State.JOINING, State.GONE)       : Dummy,
+    (State.JOINING, State.GONE)       : TransitionToGone,
 
-    (State.AVAILABLE, State.BAD)      : Dummy,
+#    (State.AVAILABLE, State.BAD)      : Dummy,
     (State.AVAILABLE, State.MISSING)  : AvailableToMissing,
     (State.AVAILABLE, State.UNINVITED): Dummy,
     (State.AVAILABLE, State.GONE)     : TransitionToGone,
@@ -120,7 +120,7 @@ StateTransitionTable = {
     (State.MISSING, State.AVAILABLE)  : Dummy,
     (State.MISSING, State.GONE)       : TransitionToGone,
 
-    (State.BUSY, State.UNINVITED)     : Dummy,
+    (State.BUSY, State.PENDING)       : Dummy,
     (State.BUSY, State.GONE)          : TransitionToGone,
 
     (State.BLOCKING, State.GONE)      : TransitionToGone,

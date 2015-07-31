@@ -46,6 +46,7 @@ class ConcertClient(object):
         '_timestamps',         # last observed and last state change timestamps
         '_transition_handlers',
         '_lock',               # for protecting access to the msg variable
+        '_remote_controller',  # Records the current remote controller
     ]
 
     State = concert_msgs.ConcertClientState
@@ -76,6 +77,7 @@ class ConcertClient(object):
         # We only ever do processing on self.msg in one place to avoid threading problems
         # (the transition handlers) so that is why we store a cached copy here.
         self._cached_status_msg = None
+        self._remote_controller = ""
         self._lock = threading.Lock()
 
         # timestamps
@@ -134,6 +136,11 @@ class ConcertClient(object):
     @platform_info.setter
     def platform_info(self, value):
         self.msg.platform_info = value
+
+    @property
+    def is_controlled(self):
+        """The concert client is controlled by any remote controller"""
+        return False if self._remote_controller == "" else True
 
     ##############################################################################
     # Timestamping
@@ -202,6 +209,8 @@ class ConcertClient(object):
         :returns: success or failure of the update
         :rtype: bool
         """
+        is_changed = False # something changed
+
         self.touch()
         # remember, don't flag connection stats as worthy of a change.
         self.msg.conn_stats = remote_gateway_info.conn_stats
@@ -209,16 +218,23 @@ class ConcertClient(object):
 
         # don't update every client, just the ones that we need information from
         important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.UNINVITED) or (self.state == ConcertClient.State.MISSING)
-        if self._cached_status_msg is not None and important_state:
+        if self._cached_status_msg is not None:
             with self._lock:
                 status_msg = copy.deepcopy(self._cached_status_msg)
                 self._cached_status_msg = None
-            # uri update
-            uri = rocon_uri.parse(self.msg.platform_info.uri)
-            uri.rapp = status_msg.rapp.name if status_msg.rapp_status == rapp_manager_msgs.Status.RAPP_RUNNING else ''
-            self.msg.platform_info.uri = str(uri)
-            return True  # something changed
-        return False
+
+            if important_state:
+                # uri update
+                uri = rocon_uri.parse(self.msg.platform_info.uri)
+                uri.rapp = status_msg.rapp.name if status_msg.rapp_status == rapp_manager_msgs.Status.RAPP_RUNNING else ''
+                self.msg.platform_info.uri = str(uri)
+                is_changed = True
+
+            if self._remote_controller != status_msg.remote_controller:
+                self._remote_controller = status_msg.remote_controller
+                is_changed = True
+
+        return is_changed
 
     ##############################################################################
     # Utility

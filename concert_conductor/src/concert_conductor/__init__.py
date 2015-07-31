@@ -23,3 +23,6 @@ on the network.
 from .conductor import Conductor
 from .concert_client import ConcertClient
 from .exceptions import ConductorFailureException
+
+# For state transition graph
+from .transitions import StateTransitionTable

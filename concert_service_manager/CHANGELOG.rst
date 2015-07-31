@@ -2,6 +2,11 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.9 (2015-07-09)
+------------------
+* [concert_service_manager] bugfix concert when no services are provided, fixes `#304 <https://github.com/robotics-in-concert/rocon_concert/issues/304>`_.
+* Contributors: Daniel Stonier
+
 0.6.8 (2015-04-27)
 ------------------
 * improve log closes `#292 <https://github.com/robotics-in-concert/rocon_concert/issues/292>`_

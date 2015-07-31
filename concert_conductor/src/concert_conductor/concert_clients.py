@@ -237,16 +237,18 @@ class ConcertClients(object):
         platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
         list_rapps_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'list_rapps'
         try:
-            rospy.wait_for_service(platform_info_service_name, 0.1)
-            rospy.wait_for_service(list_rapps_service_name, 0.1)
+            rospy.wait_for_service(platform_info_service_name, self._param['service_timeout'])
+            rospy.wait_for_service(list_rapps_service_name,self._param['service_timeout'])
         except rospy.ROSException:  # timeout
-            if concert_client.time_since_last_state_change() > 10.0:
-                rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
-                self._transition(concert_client, State.BAD)()
-                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
-                return True
-            else:
-                return False  # let's keep trying till the last_state_change timeout kicks in
+#            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
+#                 See github rocon_concert #302 issue.
+#            if concert_client.time_since_last_state_change() > 10.0:
+#                rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
+#                self._transition(concert_client, State.BAD)()
+#                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
+#                return True
+#            else:
+            return False  # let's keep trying till the last_state_change timeout kicks in
         except rospy.ROSInterruptException:
             return False
         # Introspect the client
@@ -304,6 +306,10 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)()
+            return True
+
+        if not concert_client.is_controlled:
+            self._transition(concert_client, State.UNINVITED)()
             return True
         return False
 
@@ -385,15 +391,18 @@ class ConcertClients(object):
         start_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/start_rapp'
         stop_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/stop_rapp'
         try:
-            rospy.wait_for_service(start_app_service_name, 0.1)
-            rospy.wait_for_service(stop_app_service_name, 0.1)
+            rospy.wait_for_service(start_app_service_name, self._param['service_timeout'])
+            rospy.wait_for_service(stop_app_service_name, self._param['service_timeout'])
         except rospy.ROSException:  # timeout
-            if concert_client.time_since_last_state_change() > 10.0:
-                rospy.logwarn("Conductor : timed out waiting for client's start_rapp and stop_rapp services to be flipped [%s]" % concert_client.concert_alias)
-                self._transition(concert_client, State.BAD)()
-                return True
-            else:
-                return False  # let's keep trying till the last_state_change timeout kicks in
+#            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
+#                 See github rocon_concert #302 issue.
+#
+#            if concert_client.time_since_last_state_change() > 10.0:
+#                rospy.logwarn("Conductor : timed out waiting for client's start_rapp and stop_rapp services to be flipped [%s]" % concert_client.concert_alias)
+#                self._transition(concert_client, State.BAD)()
+#                return True
+#            else:
+            return False  # let's keep trying till the last_state_change timeout kicks in
         except rospy.ROSInterruptException:
             return False
         # If we reach here, we've found the handles.

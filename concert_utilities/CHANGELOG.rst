@@ -2,6 +2,14 @@
 Changelog for package concert_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.9 (2015-07-09)
+------------------
+* add not in network node
+* increae gap between nodes
+* remove dummy from label
+* add conductor state transition dotgraph generator for easy introspection closes `#301 <https://github.com/robotics-in-concert/rocon_concert/issues/301>`_
+* Contributors: Jihoon Lee
+
 0.6.8 (2015-04-27)
 ------------------
 

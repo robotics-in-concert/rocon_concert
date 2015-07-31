@@ -2,6 +2,23 @@
 Changelog
 =========
 
+0.6.9 (2015-07-09)
+------------------
+* add transition available to uninvited `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
+* callable error fix
+* update transition table `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
+* comment out transition caused by wait for service timeout. closes `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
+* fixing the logic to use remote controller slot in concert_client `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
+* add state transition from busy to pending `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
+* correcting the transition table
+* add not in network node
+* increae gap between nodes
+* remove dummy from label
+* add conductor state transition dotgraph generator for easy introspection closes `#301 <https://github.com/robotics-in-concert/rocon_concert/issues/301>`_
+* add state transition graph
+* configurable ros service timeout closes `#300 <https://github.com/robotics-in-concert/rocon_concert/issues/300>`_
+* Contributors: Jihoon Lee
+
 0.6.8 (2015-04-27)
 ------------------
 

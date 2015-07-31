@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>concert_schedulers</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>Various schedulers for the concert</description>
 
   <maintainer email="d.stonier@gmail.com">Daniel Stonier</maintainer>
@@ -22,6 +22,7 @@
   <run_depend>rocon_uri</run_depend>
   <run_depend>rosgraph</run_depend>
   <run_depend>rospy</run_depend>
+  <run_depend>rocon_python_utils</run_depend>
   <run_depend>scheduler_msgs</run_depend>
   <run_depend>unique_id</run_depend>
   <run_depend>uuid_msgs</run_depend>

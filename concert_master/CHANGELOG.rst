@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.6.9 (2015-07-09)
+------------------
+* default webserver address is now webapp.robotconcert.org closes `#295 <https://github.com/robotics-in-concert/rocon_concert/issues/295>`_
+* expose disable cache arg closes `#294 <https://github.com/robotics-in-concert/rocon_concert/issues/294>`_
+* Contributors: Jihoon Lee
+
 0.6.8 (2015-04-27)
 ------------------
 * add concert_software_farmer is missing dependency clsoses `#289 <https://github.com/robotics-in-concert/rocon_concert/issues/289>`_

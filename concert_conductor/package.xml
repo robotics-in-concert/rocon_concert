@@ -1,6 +1,6 @@
 <package>
   <name>concert_conductor</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>
     Managing the concert clients - invitations, monitoring connections...
   </description>

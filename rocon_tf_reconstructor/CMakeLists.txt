@@ -27,6 +27,7 @@ include_directories(include
 add_library(${PROJECT_NAME}_lib
             src/rocon_tf_reconstructor.cpp
             src/rocon_pose_client.cpp
+            src/utils.cpp
 )
 set_target_properties(${PROJECT_NAME}_lib PROPERTIES OUTPUT_NAME rocon_tf_reconstructor)
 target_link_libraries(${PROJECT_NAME}_lib ${catkin_LIBRARIES})

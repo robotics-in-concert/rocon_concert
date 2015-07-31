@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rocon_concert</name>
-  <version>0.6.8</version>
+  <version>0.6.9</version>
   <description>
     The concert framework modules.
   </description>
