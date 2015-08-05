@@ -231,7 +231,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
 
         # Check for handles
         platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
@@ -279,7 +279,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
         return False
 
@@ -292,7 +292,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
         return False
 
@@ -305,7 +305,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
 
         if not concert_client.is_controlled:
@@ -324,7 +324,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
             return True
 
@@ -384,7 +384,7 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
 
         # Check for handles
@@ -419,7 +419,7 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             del self._flat_client_dict[concert_client.gateway_name]
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
         if not remote_gateway.conn_stats.gateway_available:  # it's dropped off it's wireless
             self._transition(concert_client, State.MISSING)()
@@ -434,7 +434,7 @@ class ConcertClients(object):
         :rtype bool:
         """
         if remote_gateway is None:
-            self._transition(concert_client, State.GONE)()
+            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
         if remote_gateway.conn_stats.gateway_available:  # it's dropped off it's wireless
             self._transition(concert_client, State.AVAILABLE)()

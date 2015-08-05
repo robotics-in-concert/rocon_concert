@@ -53,11 +53,12 @@ class TransitionToGone(object):
     def __init__(self, concert_client):
         self.concert_client = concert_client
 
-    def __call__(self):
+    def __call__(self, local_gateway):
         """
         Nothing to do here.
         """
         self.concert_client.msg.conn_stats.gateway_available = False
+        local_gateway.request_pulls(self.concert_client.msg.gateway_name, cancel=True)
 
 
 class PendingToUninvited(object):
