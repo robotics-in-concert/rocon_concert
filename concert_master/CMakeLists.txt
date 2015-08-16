@@ -12,8 +12,6 @@ project(concert_master)
 find_package(catkin REQUIRED)
 catkin_package()
 
-catkin_python_setup()
-
 ##############################################################################
 # Installs
 ##############################################################################
