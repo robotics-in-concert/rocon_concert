@@ -19,7 +19,7 @@ import concert_msgs.msg as concert_msgs
 
 from .concert_client import ConcertClient
 from . import concert_clients
-from .ros_parameters import setup_ros_parameters
+from .ros_parameters import Parameters
 from .local_gateway import LocalGateway
 
 ##############################################################################
@@ -56,7 +56,7 @@ class Conductor(object):
         ##################################
         self.publishers = self._setup_publishers()  # can raise ConductorFailureException
         rospy.on_shutdown(self._shutdown)
-        self._param = setup_ros_parameters()
+        self.parameters = Parameters()
 
         ##################################
         # Variables
@@ -65,7 +65,7 @@ class Conductor(object):
         self._concert_clients = \
             concert_clients.ConcertClients(
                 self._local_gateway,
-                self._param,
+                self.parameters,
                 self.publish_concert_clients,
                 self.publish_conductor_graph
             )

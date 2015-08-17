@@ -13,6 +13,7 @@ ros parameter server.
 # Imports
 ##############################################################################
 
+import rocon_console.console as console
 import rospy
 
 ###############################################################################
@@ -20,22 +21,30 @@ import rospy
 ###############################################################################
 
 
-def setup_ros_parameters():
-    '''
-      Returns validated parameters for this module from the ros param server.
-      Currently this looks for the following parameters:
+class Parameters:
+    """
+    The variables of this class are default constructed from parameters on the
+    ros parameter server. Each parameter is nested in the private namespace of
+    the node which instantiates this class.
 
-      * ~auto_invite (false) : don't automatically invite clients
-      * ~local_clients_only (false) : don't invite clients from other pc's on the network, used for simulations.
-      * ~oblivian_timeout (3600) : time before a bad, gone client is removed from the index.
-      * ~service_timeout (5.0) : waiting timeout for status, start_rapp, and stop_rapp.
+    :ivar oblivian_timeout: time before a bad, gone client is removed from the index. *[3600]*
+    :vartype oblivian_timeout: str
 
-      :returns: dictionary of parameters
-      :rtype: dict { parameter name : value }
-    '''
-    param = {}
-    param['auto_invite'] = rospy.get_param('~auto_invite', False)
-    param['local_clients_only'] = rospy.get_param('~local_clients_only', False)
-    param['oblivion_timeout'] = rospy.get_param('~oblivion_timeout', 3600)
-    param['service_timeout'] =rospy.get_param('~service_timeout', 5.0)
-    return param
+    .. _rocon_launch: http://wiki.ros.org/rocon_launch
+    .. _rocon_uri: http://wiki.ros.org/rocon_uri
+    .. _resource name: http://wiki.ros.org/Names#Package_Resource_Names
+    """
+    def __init__(self):
+        # see sphinx docs above for more detailed explanations of each parameter
+        self.oblivion_timeout = rospy.get_param('~oblivion_timeout', 3600)
+        # deprecate these
+        self.auto_invite = False
+        self.local_clients_only = False
+        self.service_timeout = 5.0
+
+    def __str__(self):
+        s = console.bold + "\nConductor Parameters:\n" + console.reset
+        for key in sorted(self.__dict__):
+            s += console.cyan + "    %s: " % key + console.yellow + "%s\n" % (self.__dict__[key] if self.__dict__[key] is not None else '-')
+        s += console.reset
+        return s

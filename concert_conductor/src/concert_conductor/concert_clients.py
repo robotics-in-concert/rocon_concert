@@ -237,8 +237,8 @@ class ConcertClients(object):
         platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
         list_rapps_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'list_rapps'
         try:
-            rospy.wait_for_service(platform_info_service_name, self._param['service_timeout'])
-            rospy.wait_for_service(list_rapps_service_name,self._param['service_timeout'])
+            rospy.wait_for_service(platform_info_service_name, self._param.service_timeout)
+            rospy.wait_for_service(list_rapps_service_name, self._param.service_timeout)
         except rospy.ROSException:  # timeout
 #            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
 #                 See github rocon_concert #302 issue.
@@ -328,12 +328,12 @@ class ConcertClients(object):
             self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
             return True
 
-        if self._param['local_clients_only'] and not concert_client.is_local_client:
+        if self._param.local_clients_only and not concert_client.is_local_client:
             rospy.loginfo("Conductor : shunning this (non-local) client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
             self._transition(concert_client, State.BLOCKING)()
             self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
             return True
-        elif self._param['auto_invite']:
+        elif self._param.auto_invite:
             # try an invite
             invite = rospy.ServiceProxy('/' + concert_client.gateway_name.lower().replace(' ', '_') + '/invite', rocon_app_manager_srvs.Invite)
             try:
@@ -391,8 +391,8 @@ class ConcertClients(object):
         start_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/start_rapp'
         stop_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/stop_rapp'
         try:
-            rospy.wait_for_service(start_app_service_name, self._param['service_timeout'])
-            rospy.wait_for_service(stop_app_service_name, self._param['service_timeout'])
+            rospy.wait_for_service(start_app_service_name, self._param.service_timeout)
+            rospy.wait_for_service(stop_app_service_name, self._param.service_timeout)
         except rospy.ROSException:  # timeout
 #            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
 #                 See github rocon_concert #302 issue.
@@ -448,7 +448,7 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        if concert_client.time_since_last_state_change() > self._param['oblivion_timeout']:
+        if concert_client.time_since_last_state_change() > self._param.oblivion_timeout:
             return True
         return False
 
