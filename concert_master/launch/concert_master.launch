@@ -37,8 +37,8 @@
 
     <!-- ****************************** Conductor ****************************** -->
     <include file="$(find concert_conductor)/launch/conductor.launch">
-      <arg name="auto_invite" value="$(arg conductor_auto_invite)" />
-      <arg name="local_clients_only" value="$(arg conductor_local_clients_only)" />
+      <arg name="gateway_namespace" value="gateway" />
+      <arg name="hub_namespace" value="hub" />
     </include>
 
     <!-- ****************************** Conductor Graph to String ****************************** -->

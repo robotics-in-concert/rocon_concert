@@ -209,15 +209,15 @@ class ConcertClient(object):
         :returns: success or failure of the update
         :rtype: bool
         """
-        is_changed = False # something changed
+        is_changed = False
 
         self.touch()
         # remember, don't flag connection stats as worthy of a change.
         self.msg.conn_stats = remote_gateway_info.conn_stats
-        #self.msg.last_connection_timestamp = rospy.Time.now()  # do we really need this?
+        # self.msg.last_connection_timestamp = rospy.Time.now()  # do we really need this?
 
         # don't update every client, just the ones that we need information from
-        important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.UNINVITED) or (self.state == ConcertClient.State.MISSING)
+        important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.MISSING)
         if self._cached_status_msg is not None:
             with self._lock:
                 status_msg = copy.deepcopy(self._cached_status_msg)

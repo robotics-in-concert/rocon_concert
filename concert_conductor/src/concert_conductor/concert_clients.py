@@ -17,10 +17,12 @@ This module tracks all known concert clients monitored by the conductor.
 import rocon_app_manager_msgs.msg as rocon_app_manager_msgs
 import rocon_app_manager_msgs.srv as rocon_app_manager_srvs
 import rocon_gateway_utils
+import rocon_python_comms
 import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_std_msgs.srv as rocon_std_srvs
 import rosgraph
 import rospy
+import std_msgs.msg as std_msgs
 
 from .concert_client import ConcertClient
 from .notifications import Notifications
@@ -42,7 +44,7 @@ def is_concert_client_gateway(remote_gateway):
     :rtype: bool
     """
     for rule in remote_gateway.public_interface:
-        if rule.name.endswith('platform_info'):
+        if rule.name.endswith('rocon_uri'):
             return True
     return False
 
@@ -81,7 +83,7 @@ class ConcertClients(object):
     __slots__ = [
         '_concert_name',      # concert name, used for inviting clients
         '_local_gateway',     # for interacting with the local gateway
-        '_param',             # parameter configuration from the ros parameter server
+        '_parameters',        # parameter configuration from the ros parameter server
         '_flat_client_dict',  # { gateway_name : conductor.ConcertClient }
         '_clients_by_state',  # super dictionary of all known concert clients keyed by state (see __init__)
         '_state_handlers',    # { State : handler function } for state machine handling of concert clients
@@ -102,7 +104,7 @@ class ConcertClients(object):
         """
         self._concert_name = local_gateway.name
         self._local_gateway = local_gateway
-        self._param = parameters
+        self._parameters = parameters
         self._publish_concert_clients = publish_concert_clients
         self._publish_graph = publish_graph_callback
 
@@ -123,19 +125,13 @@ class ConcertClients(object):
         for state in ConcertClient.complete_list_of_states():
             self._clients_by_state[state] = {}  # { remote gateway name : concert_client.ConcertClient }
             self._state_handlers[state] = getattr(self, "_update_" + state + "_client")
+        print("Concert cleint inited")
 
     def __contains__(self, gateway_name):
         return gateway_name in self._flat_client_dict
 
     def __getitem__(self, gateway_name):
         return self._flat_client_dict[gateway_name]
-
-    def shutdown(self):
-        """
-        Uninvites all currently connected concert clients.
-        """
-        for concert_client in self._clients_by_state[State.AVAILABLE].values():
-            self._uninvite_client(concert_client)
 
     ##############################################################################
     # Runtime
@@ -196,7 +192,7 @@ class ConcertClients(object):
         """
         rospy.loginfo("Conductor : new client discovered [%s]" % remote_gateway.name)
         concert_alias = self._generate_concert_alias(remote_gateway.name)
-        self._local_gateway.request_pulls(remote_gateway.name)
+        # self._local_gateway.request_pulls(remote_gateway.name)
         is_local_client = _is_local_client(self._local_gateway.ip, remote_gateway.ip)  # is it on the same machine as the concert
         concert_client = ConcertClient(remote_gateway, concert_alias, is_local_client)
         self._flat_client_dict[remote_gateway.name] = concert_client
@@ -234,41 +230,27 @@ class ConcertClients(object):
             self._transition(concert_client, State.GONE)(self._local_gateway)
 
         # Check for handles
-        platform_info_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
-        list_rapps_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'list_rapps'
-        try:
-            rospy.wait_for_service(platform_info_service_name, self._param.service_timeout)
-            rospy.wait_for_service(list_rapps_service_name, self._param.service_timeout)
-        except rospy.ROSException:  # timeout
-#            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
-#                 See github rocon_concert #302 issue.
-#            if concert_client.time_since_last_state_change() > 10.0:
-#                rospy.logwarn("Conductor : timed out waiting for client's platform_info and list_rapps topics to be pulled [%s]" % concert_client.concert_alias)
-#                self._transition(concert_client, State.BAD)()
-#                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
-#                return True
-#            else:
-            return False  # let's keep trying till the last_state_change timeout kicks in
-        except rospy.ROSInterruptException:
-            return False
-        # Introspect the client
-        platform_info_service = rospy.ServiceProxy(platform_info_service_name, rocon_std_srvs.GetPlatformInfo)
-        list_rapps_service = rospy.ServiceProxy(list_rapps_service_name, rocon_app_manager_srvs.GetRappList)
-        try:
-            platform_info = platform_info_service().platform_info
-            if platform_info.version != rocon_std_msgs.Strings.ROCON_VERSION:
-                rospy.logwarn("Conductor : concert client and conductor rocon versions do not match [%s][%s]" % (platform_info.version, rocon_std_msgs.Strings.ROCON_VERSION))
-                self._transition(concert_client, State.BAD)()
-                self._local_gateway.request_pulls(remote_gateway.name, cancel=True)
+        rocon_uri_publisher_name = '/concert/clients/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'rocon_uri'
+        rocon_uri_proxy = rocon_python_comms.SubscriberProxy(rocon_uri_publisher_name, std_msgs.String)
+        # This needs to be in a loop, since it must not only check for a response, but that the gateway
+        # is connected to the hub. If it isn't connected, it needs to try again.
+        start_time = rospy.get_rostime()
+        while not rospy.is_shutdown():
+            rocon_uri_msg = rocon_uri_proxy(rospy.Duration(0.1))
+            if rocon_uri_msg:
+                self._transition(concert_client, State.AVAILABLE)(rocon_uri_msg.data)
                 return True
-            available_rapps = list_rapps_service().available_rapps
-            self._transition(concert_client, State.UNINVITED)(platform_info, available_rapps)
-            # no longer needed as we have the information stored
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['platform_info', 'list_rapps'], topic_names=[])
-            return True
-        except (rospy.ServiceException, rospy.ROSInterruptException):
-            return False  # let's keep trying till the last_state_change timeout kicks in
-        return False
+            elif rospy.get_rostime() - start_time > rospy.Duration(5.0):
+                return False
+
+    def _update_uninvited_client(self, remote_gateway, concert_client):
+        pass
+
+    def _update_blocking_client(self, remote_gateway, concert_client):
+        pass
+
+    def _update_busy_client(self, remote_gateway, concert_client):
+        pass
 
     def _update_bad_client(self, remote_gateway, concert_client):
         """
@@ -283,131 +265,8 @@ class ConcertClients(object):
             return True
         return False
 
-    def _update_blocking_client(self, remote_gateway, concert_client):
-        """
-        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
-        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
-        :returns: notification of whether there was an update or not
-        :rtype bool:
-        """
-        # it disappeared
-        if remote_gateway is None:
-            self._transition(concert_client, State.GONE)(self._local_gateway)
-            return True
-        return False
-
-    def _update_busy_client(self, remote_gateway, concert_client):
-        """
-        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
-        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
-        :returns: notification of whether there was an update or not
-        :rtype bool:
-        """
-        # it disappeared
-        if remote_gateway is None:
-            self._transition(concert_client, State.GONE)(self._local_gateway)
-            return True
-
-        if not concert_client.is_controlled:
-            self._transition(concert_client, State.UNINVITED)()
-            return True
-        return False
-
-    def _update_uninvited_client(self, remote_gateway, concert_client):
-        """
-        Only handling automatic invitiations for now.
-
-        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
-        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
-        :returns: notification of whether there was an update or not
-        :rtype bool:
-        """
-        # it disappeared
-        if remote_gateway is None:
-            self._transition(concert_client, State.GONE)(self._local_gateway)
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
-            return True
-
-        if self._param.local_clients_only and not concert_client.is_local_client:
-            rospy.loginfo("Conductor : shunning this (non-local) client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
-            self._transition(concert_client, State.BLOCKING)()
-            self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
-            return True
-        elif self._param.auto_invite:
-            # try an invite
-            invite = rospy.ServiceProxy('/' + concert_client.gateway_name.lower().replace(' ', '_') + '/invite', rocon_app_manager_srvs.Invite)
-            try:
-                response = invite(remote_target_name=self._concert_name,
-                                  application_namespace=concert_client.concert_alias.lower().replace(' ', '_'),
-                                  cancel=False
-                                  )
-                if response.result:
-                    self._transition(concert_client, State.JOINING)()
-                    return True
-                else:
-                    rospy.logwarn("Conductor : failed to invite client [%s][%s]" % (response.message, concert_client.gateway_name))
-                    if (
-                        response.error_code == rocon_app_manager_msgs.ErrorCodes.LOCAL_INVITATIONS_ONLY or
-                        response.error_code == rocon_app_manager_msgs.ErrorCodes.INVITING_CONTROLLER_BLACKLISTED or
-                        response.error_code == rocon_app_manager_msgs.ErrorCodes.INVITING_CONTROLLER_NOT_WHITELISTED
-                       ):
-                        rospy.logwarn("Conductor : invitation to %s was blocked [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
-                        self._transition(concert_client, State.BLOCKING)()
-                        self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
-                    elif response.error_code == rocon_app_manager_msgs.ErrorCodes.ALREADY_REMOTE_CONTROLLED:
-                        rospy.logwarn("Conductor : invitation to %s was refused [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
-                        self._transition(concert_client, State.BUSY)()
-                    else:
-                        rospy.logwarn("Conductor : invitation to %s failed [%s][%s]" % (concert_client.gateway_name, response.message, concert_client.gateway_name))
-                        self._transition(concert_client, State.BAD)()
-                        self._clients_by_state[State.BAD][remote_gateway.name] = concert_client
-                        self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
-                    return True
-            except rospy.ServiceException:
-                rospy.logwarn("Conductor : invitation to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
-                self._transition(concert_client, State.BAD)()
-                self._local_gateway.request_pulls(remote_gateway.name, cancel=True, service_names=['invite'], topic_names=[])
-                return True
-            except rospy.ROSInterruptException:  # interrupted by conductor's rosmaster shutdown
-                return False
-        else:  # not automatically inviting it
-            # could actually check its status to see if its busy I suppose, but not worrying about that for now.
-            pass
-        return False
-
     def _update_joining_client(self, remote_gateway, concert_client):
-        """
-        :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
-        :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
-        :returns: notification of whether there was an update or not
-        :rtype bool:
-        """
-        # it disappeared
-        if remote_gateway is None:
-            self._transition(concert_client, State.GONE)(self._local_gateway)
-            return True
-
-        # Check for handles
-        start_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/start_rapp'
-        stop_app_service_name = '/' + concert_client.gateway_name.lower().replace(' ', '_') + '/stop_rapp'
-        try:
-            rospy.wait_for_service(start_app_service_name, self._param.service_timeout)
-            rospy.wait_for_service(stop_app_service_name, self._param.service_timeout)
-        except rospy.ROSException:  # timeout
-#            JL : I don't see any critical reason the client should be marked as BAD with timeout. It just makes problems if concert is running slow network
-#                 See github rocon_concert #302 issue.
-#
-#            if concert_client.time_since_last_state_change() > 10.0:
-#                rospy.logwarn("Conductor : timed out waiting for client's start_rapp and stop_rapp services to be flipped [%s]" % concert_client.concert_alias)
-#                self._transition(concert_client, State.BAD)()
-#                return True
-#            else:
-            return False  # let's keep trying till the last_state_change timeout kicks in
-        except rospy.ROSInterruptException:
-            return False
-        # If we reach here, we've found the handles.
-        self._transition(concert_client, State.AVAILABLE)()
-        return True
+        pass
 
     def _update_available_client(self, remote_gateway, concert_client):
         """
@@ -448,7 +307,7 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        if concert_client.time_since_last_state_change() > self._param.oblivion_timeout:
+        if concert_client.time_since_last_state_change() > self._parameters.oblivion_timeout:
             return True
         return False
 
@@ -467,39 +326,6 @@ class ConcertClients(object):
         self._clients_by_state[new_state][concert_client.gateway_name] = concert_client
         del self._clients_by_state[old_state][concert_client.gateway_name]
         return concert_client.transition(new_state)
-
-    def _uninvite_client(self, concert_client):
-        """
-        Uninvite a client. For now, this is only done on shutdown and so we
-        don't handle any errors yet.
-
-        :param concert_clients.ConcertClient concert_client:
-        """
-        if concert_client.state != State.AVAILABLE:
-            rospy.logwarn("Conductor : stubbornly refusing to uninvite an uninvited client [%s][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
-            return
-        invite = rospy.ServiceProxy('/' + concert_client.gateway_name.lower().replace(' ', '_') + '/invite', rocon_app_manager_srvs.Invite)
-        try:
-            response = invite(remote_target_name=self._concert_name,
-                              application_namespace=concert_client.concert_alias,
-                              cancel=True
-                              )
-            if response.result:
-                concert_client.transition(State.UNINVITED)()
-                self._clients_by_state[State.UNINVITED][concert_client.gateway_name] = concert_client
-                del self._clients_by_state[State.AVAILABLE][concert_client.gateway_name]
-            else:
-                rospy.logwarn("Conductor : failed to uninvite %s [%s][%s]" % (concert_client.concert_alias, response.message, concert_client.gateway_name))
-                concert_client.transition(State.BAD)()
-                self._clients_by_state[State.BAD][concert_client.gateway.name] = concert_client
-                del self._clients_by_state[State.AVAILABLE][concert_client.gateway.name]
-        except rospy.ServiceException:
-            rospy.logwarn("Conductor : uninvite to %s was sent, but not received [service exception][%s]" % (concert_client.concert_alias, concert_client.gateway_name))
-            concert_client.transition(State.BAD)()
-            self._clients_by_state[State.BAD][concert_client.gateway_name] = concert_client
-            del self._clients_by_state[State.AVAILABLE][concert_client.gateway_name]
-        except rospy.ROSInterruptException:  # interrupted by conductor's rosmaster shutdown
-            pass
 
     def _generate_concert_alias(self, gateway_name):
         '''

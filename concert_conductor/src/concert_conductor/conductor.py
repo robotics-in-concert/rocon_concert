@@ -80,7 +80,6 @@ class Conductor(object):
         """
         # Don't worry about forcing the spin loop to come to a closure - rospy basically puts a halt
         # on it at the rospy.rostime call once we enter the twilight zone (shutdown hook period).
-        self._concert_clients.shutdown()
         try:
             rospy.loginfo("Conductor : sending shutdown request [gateway/hub]")
             self._local_gateway.shutdown()

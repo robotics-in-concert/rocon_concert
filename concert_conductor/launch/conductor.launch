@@ -1,14 +1,10 @@
 <launch>
   <!-- ******************************* Arguments ******************************* -->
-  <arg name="auto_invite" default="true"/>
-  <arg name="local_clients_only" default="false"/>
   <arg name="gateway_namespace" default="gateway"/>
   <arg name="hub_namespace" default="hub"/>
 
   <!-- ******************************* Conductor ******************************* -->
   <node pkg="concert_conductor" type="conductor.py" name="conductor" output="screen">
-    <param name="auto_invite" value="$(arg auto_invite)"/>
-    <param name="local_clients_only" value="$(arg local_clients_only)"/>
     <remap from="conductor/flip" to="gateway/flip"/>
     <remap from="conductor/hub_shutdown" to="$(arg hub_namespace)/shutdown"/>
     <remap from="conductor/gateway_info" to="$(arg gateway_namespace)/gateway_info"/>

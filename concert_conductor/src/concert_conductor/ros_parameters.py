@@ -37,10 +37,6 @@ class Parameters:
     def __init__(self):
         # see sphinx docs above for more detailed explanations of each parameter
         self.oblivion_timeout = rospy.get_param('~oblivion_timeout', 3600)
-        # deprecate these
-        self.auto_invite = False
-        self.local_clients_only = False
-        self.service_timeout = 5.0
 
     def __str__(self):
         s = console.bold + "\nConductor Parameters:\n" + console.reset
