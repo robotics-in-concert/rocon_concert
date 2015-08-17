@@ -14,15 +14,11 @@ This module tracks all known concert clients monitored by the conductor.
 # Imports
 ##############################################################################
 
-import rocon_app_manager_msgs.msg as rocon_app_manager_msgs
-import rocon_app_manager_msgs.srv as rocon_app_manager_srvs
 import rocon_gateway_utils
 import rocon_python_comms
 import rocon_std_msgs.msg as rocon_std_msgs
-import rocon_std_msgs.srv as rocon_std_srvs
 import rosgraph
 import rospy
-import std_msgs.msg as std_msgs
 
 from .concert_client import ConcertClient
 from .notifications import Notifications
@@ -44,7 +40,7 @@ def is_concert_client_gateway(remote_gateway):
     :rtype: bool
     """
     for rule in remote_gateway.public_interface:
-        if rule.name.endswith('rocon_uri'):
+        if rule.name.endswith('platform_info'):
             return True
     return False
 
@@ -125,7 +121,6 @@ class ConcertClients(object):
         for state in ConcertClient.complete_list_of_states():
             self._clients_by_state[state] = {}  # { remote gateway name : concert_client.ConcertClient }
             self._state_handlers[state] = getattr(self, "_update_" + state + "_client")
-        print("Concert cleint inited")
 
     def __contains__(self, gateway_name):
         return gateway_name in self._flat_client_dict
@@ -213,12 +208,12 @@ class ConcertClients(object):
 
     def _update_pending_client(self, remote_gateway, concert_client):
         """
-        Does a quick check to see if platform_info and list_rapps services have landed in the concert
-        from the client. If not, it either quickly exits, or changes to a BAD state if it's been
-        too long in the pending state.
+        Does a quick check to see if platform_info has landed in the concert
+        from the client. If not, it quickly exits. We could send it to the BAD state if
+        it waits too long, but we haven't a need to do this yet.
 
-        If the services are found, it extracts the information and dumps that into the concert client
-        instance before switching state to UNINVITED.
+        If the platform info is found, it extracts the information and dumps that into the concert client
+        instance before switching state to AVAILABLE.
 
         :param concert_msgs.RemoteGateway remote_gateway: updated information from the gateway network
         :param concert_client.ConcertClient concert_client: update a client that isn't currently visible.
@@ -230,15 +225,15 @@ class ConcertClients(object):
             self._transition(concert_client, State.GONE)(self._local_gateway)
 
         # Check for handles
-        rocon_uri_publisher_name = '/concert/clients/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'rocon_uri'
-        rocon_uri_proxy = rocon_python_comms.SubscriberProxy(rocon_uri_publisher_name, std_msgs.String)
+        platform_info_publisher_name = '/concert/clients/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
+        platform_info_proxy = rocon_python_comms.SubscriberProxy(platform_info_publisher_name, rocon_std_msgs.MasterInfo)
         # This needs to be in a loop, since it must not only check for a response, but that the gateway
         # is connected to the hub. If it isn't connected, it needs to try again.
         start_time = rospy.get_rostime()
         while not rospy.is_shutdown():
-            rocon_uri_msg = rocon_uri_proxy(rospy.Duration(0.1))
-            if rocon_uri_msg:
-                self._transition(concert_client, State.AVAILABLE)(rocon_uri_msg.data)
+            platform_info_msg = platform_info_proxy(rospy.Duration(0.1))
+            if platform_info_msg:
+                self._transition(concert_client, State.AVAILABLE)(platform_info_msg)
                 return True
             elif rospy.get_rostime() - start_time > rospy.Duration(5.0):
                 return False

@@ -64,18 +64,16 @@ class TransitionToGone(object):
 
 class PendingToAvailable(object):
     """
-    Triggered when the rocon_uri for this client has been successfully found flipped over
+    Triggered when the platform_info for this client has been successfully found flipped over
     into the concert.
     """
     def __init__(self, concert_client):
         self.concert_client = concert_client
 
-    def __call__(self, rocon_uri):
+    def __call__(self, platform_info):
         """
         :param rocon_uri: retrieved information about this client
         """
-        platform_info = rocon_std_msgs.PlatformInfo()
-        platform_info.uri = rocon_uri
         self.concert_client.msg.platform_info = platform_info
 
 

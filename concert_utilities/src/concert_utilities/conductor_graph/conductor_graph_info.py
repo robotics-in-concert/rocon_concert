@@ -58,7 +58,6 @@ class ConductorGraphInfo(object):
         self.is_conductor = True
         self.namespace = namespace
 
-        print(console.yellow + "Found the conductor, setting up subscribers inside %s" % namespace + console.reset)
         # get data on all clients, even those not connected
         rospy.Subscriber(graph_topic_name, concert_msgs.ConductorGraph, self._update_clients_callback)
         # get the periodic data of connected clients
@@ -70,7 +69,7 @@ class ConductorGraphInfo(object):
         changes its state. This update happens rather infrequently with every
         message supplied by the conductor's latched graph publisher.
         '''
-        #print("[conductor_graph_info] : update clients callback")
+        # print("[conductor_graph_info] : update clients callback")
         self._graph = msg
         # sneaky way of getting all the states and the lists
         visible_concert_clients_by_name = []
