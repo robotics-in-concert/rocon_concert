@@ -16,7 +16,7 @@ import concert_conductor
 
 if __name__ == '__main__':
 
-    rospy.init_node('conductor', log_level=rospy.DEBUG)
+    rospy.init_node('conductor')
     try:
         conductor = concert_conductor.Conductor()
         conductor.spin()
