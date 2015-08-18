@@ -150,6 +150,8 @@ class ConcertClients(object):
 
         # existing client updates
         for (gateway_name, concert_client) in self._flat_client_dict.items():
+            # this debug message is spammy
+            # rospy.logdebug("Conductor : updating status of '%s' client [%s]" % (concert_client.state, concert_client.concert_alias))
             if gateway_name in remote_gateway_index.keys():
                 gateway_info = remote_gateway_index[gateway_name]  # gateway_msgs.RemoteGateway
                 # common client update tasks - update the timestamp and check if it got a status update
@@ -172,7 +174,7 @@ class ConcertClients(object):
         # Notifications if something changed
         if notifications.is_flagged():
             self._publish_graph(self._clients_by_state)
-        if notifications[State.MISSING] or notifications[State.UNINVITED] or notifications[State.AVAILABLE]:
+        if notifications[State.MISSING] or notifications[State.AVAILABLE]:
             self._publish_concert_clients(self._clients_by_state, changes_only=True)
         # Periodic publisher
         self._publish_concert_clients(self._clients_by_state, changes_only=False)
@@ -195,6 +197,7 @@ class ConcertClients(object):
 
     def _send_to_oblivion(self, gateway_name):
         self._local_gateway.request_pulls(gateway_name, cancel=True)  # cancel default pulls
+        self._flat_client_dict[gateway_name].detach()
         del self._flat_client_dict[gateway_name]
         for concert_clients in self._clients_by_state.values():
             try:
@@ -223,45 +226,15 @@ class ConcertClients(object):
         # it disappeared
         if remote_gateway is None:
             self._transition(concert_client, State.GONE)(self._local_gateway)
-
-        # Check for handles
-        platform_info_publisher_name = '/concert/clients/' + concert_client.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
-        platform_info_proxy = rocon_python_comms.SubscriberProxy(platform_info_publisher_name, rocon_std_msgs.MasterInfo)
-        # This needs to be in a loop, since it must not only check for a response, but that the gateway
-        # is connected to the hub. If it isn't connected, it needs to try again.
-        start_time = rospy.get_rostime()
-        while not rospy.is_shutdown():
-            platform_info_msg = platform_info_proxy(rospy.Duration(0.1))
-            if platform_info_msg:
-                self._transition(concert_client, State.AVAILABLE)(platform_info_msg)
-                return True
-            elif rospy.get_rostime() - start_time > rospy.Duration(5.0):
-                return False
-
-    def _update_uninvited_client(self, remote_gateway, concert_client):
-        pass
-
-    def _update_blocking_client(self, remote_gateway, concert_client):
-        pass
-
-    def _update_busy_client(self, remote_gateway, concert_client):
-        pass
-
-    def _update_bad_client(self, remote_gateway, concert_client):
-        """
-        :param remote_gateway concert_msgs.RemoteGateway: updated information from the gateway network
-        :param concert_client concert_client.ConcertClient: update a client that isn't currently visible.
-        :returns: notification of whether there was an update or not
-        :rtype bool:
-        """
-        # it disappeared
-        if remote_gateway is None:
-            self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
-        return False
 
-    def _update_joining_client(self, remote_gateway, concert_client):
-        pass
+        # check for locally flipped handles
+        platform_info_msg = concert_client.platform_info_proxy(rospy.Duration(0.01))
+        if platform_info_msg:
+            self._transition(concert_client, State.AVAILABLE)(platform_info_msg)
+            return True
+        else:
+            return False
 
     def _update_available_client(self, remote_gateway, concert_client):
         """
@@ -272,7 +245,6 @@ class ConcertClients(object):
         """
         # it disappeared
         if remote_gateway is None:
-            del self._flat_client_dict[concert_client.gateway_name]
             self._transition(concert_client, State.GONE)(self._local_gateway)
             return True
         if not remote_gateway.conn_stats.gateway_available:  # it's dropped off it's wireless
@@ -302,9 +274,8 @@ class ConcertClients(object):
         :returns: notification of whether there was an update or not
         :rtype bool:
         """
-        if concert_client.time_since_last_state_change() > self._parameters.oblivion_timeout:
-            return True
-        return False
+        del self._flat_client_dict[concert_client.gateway_name]
+        return True
 
     ##############################################################################
     # Utilities

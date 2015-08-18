@@ -14,7 +14,6 @@ This module does transition handling for the concert client state machine.
 ##############################################################################
 
 import concert_msgs.msg as concert_msgs
-import rocon_std_msgs.msg as rocon_std_msgs
 
 ##############################################################################
 # Aliases
@@ -94,12 +93,8 @@ class AvailableToMissing(object):
 ##############################################################################
 
 StateTransitionTable = {
-    (State.PENDING, State.BAD)       : Dummy,                #@IgnorePep8 noqa
     (State.PENDING, State.AVAILABLE) : PendingToAvailable,   #@IgnorePep8 noqa
     (State.PENDING, State.GONE)      : TransitionToGone,     #@IgnorePep8 noqa
-
-    (State.JOINING, State.AVAILABLE)  : Dummy,              #@IgnorePep8 noqa
-    (State.JOINING, State.GONE)       : TransitionToGone,   #@IgnorePep8 noqa
 
 #   (State.AVAILABLE, State.BAD)      : Dummy,              #@IgnorePep8 noqa
     (State.AVAILABLE, State.MISSING)  : AvailableToMissing, #@IgnorePep8 noqa 
@@ -107,8 +102,6 @@ StateTransitionTable = {
 
     (State.MISSING, State.AVAILABLE)  : Dummy,              #@IgnorePep8 noqa
     (State.MISSING, State.GONE)       : TransitionToGone,   #@IgnorePep8 noqa
-
-    (State.BLOCKING, State.GONE)      : TransitionToGone,   #@IgnorePep8 noqa
 
     (State.BAD, State.GONE)           : TransitionToGone,   #@IgnorePep8 noqa
 }

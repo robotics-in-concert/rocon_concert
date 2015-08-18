@@ -144,8 +144,8 @@ class Conductor(object):
         '''
         msg = concert_msgs.ConcertClients()
         if clients:  # don't add anything if it's empty (just initiating the latched publisher
-            for concert_client in clients[ConcertClient.State.UNINVITED].values():
-                msg.uninvited_clients.append(concert_client.msg)
+            for concert_client in clients[ConcertClient.State.PENDING].values():
+                msg.pending_clients.append(concert_client.msg)
             for concert_client in clients[ConcertClient.State.MISSING].values():
                 msg.missing_clients.append(concert_client.msg)
             for concert_client in clients[ConcertClient.State.AVAILABLE].values():

@@ -16,13 +16,6 @@ import gateway_msgs.msg as gateway_msgs
 
 class ConcertClient(object):
 
-#     __slots__ = [
-#        ' msg',        # gateway_msgs/ConcertClient
-#        'is_new',      # seen for the first time, we react to this in the gui
-#        'is_checked',  # whether the client is checked in the higher level
-#        'link_type',   # used to show on the gui what link type it is
-#     ]
-
     def __init__(self, msg):
         self.msg = msg
         self.is_new = True
@@ -55,7 +48,7 @@ class ConcertClient(object):
         context += "<p>-------------------------------------------</p>"
         context += "<p><b>concert_alias: </b>" + self.msg.name + "</p>"
         context += "<p><b>gateway_name: </b>" + self.msg.gateway_name + "</p>"
-        context += "<p><b>rocon_uri: </b>" + self.msg.platform_info.uri + "</p>"
+        context += "<p><b>rocon_uri: </b>" + self.msg.platform_info.rocon_uri + "</p>"
         context += "<p><b>state: </b>" + self.msg.state + "</p>"
         for rapp in self.msg.rapps:
             context += "<p>-------------------------------------------</p>"

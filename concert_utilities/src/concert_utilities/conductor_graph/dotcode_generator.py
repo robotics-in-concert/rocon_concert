@@ -16,15 +16,15 @@ import concert_msgs.msg as concert_msgs
 ##############################################################################
 
 
-class ConductorGraphDotcodeGenerator:
+class GraphDotcodeGenerator:
 
     def __init__(self):
         pass
 
     def _add_edge(self, edge, dotcode_factory, dotgraph):
-#         if is_topic:
-#             dotcode_factory.add_edge_to_graph(dotgraph, edge.start, edge.end, label=edge.label, url='topic:%s' % edge.label)
-#         else:
+        # if is_topic:
+        #     dotcode_factory.add_edge_to_graph(dotgraph, edge.start, edge.end, label=edge.label, url='topic:%s' % edge.label)
+        # else:
         dotcode_factory.add_edge_to_graph(dotgraph, edge.start, edge.end, label=edge.label)
 
     def _add_conductor_node(self, dotcode_factory, dotgraph):
@@ -33,11 +33,11 @@ class ConductorGraphDotcodeGenerator:
         '''
         dotcode_factory.add_node_to_graph(dotgraph,
                                           nodename="conductor",
-                                          #nodename=rocon_gateway_utils.gateway_basename(node),
-                                          #nodelabel=rocon_gateway_utils.gateway_basename(node),
+                                          # nodename=rocon_gateway_utils.gateway_basename(node),
+                                          # nodelabel=rocon_gateway_utils.gateway_basename(node),
                                           shape='ellipse',
                                           url="conductor",
-                                          #url=node
+                                          # url=node
                                           color="blue"
                                           )
 
@@ -52,29 +52,21 @@ class ConductorGraphDotcodeGenerator:
         # and http://www.w3.org/TR/SVG/types.html#ColorKeywords
         if node.state == concert_msgs.ConcertClientState.PENDING:
             node_colour = "magenta"
-        elif node.state == concert_msgs.ConcertClientState.JOINING:
-            node_colour = "magenta"
-        elif node.state == concert_msgs.ConcertClientState.UNINVITED:
-            node_colour = "midnightblue"
         elif node.state == concert_msgs.ConcertClientState.AVAILABLE:
             node_colour = "blue"
         elif node.state == concert_msgs.ConcertClientState.MISSING:
             node_colour = "powderblue"
-        elif node.state == concert_msgs.ConcertClientState.BLOCKING:
-            node_colour = "black"
-        elif node.state == concert_msgs.ConcertClientState.BUSY:
-            node_colour = "black"
         elif node.state == concert_msgs.ConcertClientState.GONE:
             node_colour = "black"
         elif node.state == concert_msgs.ConcertClientState.BAD:
             node_colour = "red"
         dotcode_factory.add_node_to_graph(dotgraph,
                                           nodename=node.concert_alias,
-                                          #nodename=rocon_gateway_utils.gateway_basename(node),
-                                          #nodelabel=rocon_gateway_utils.gateway_basename(node),
+                                          # nodename=rocon_gateway_utils.gateway_basename(node),
+                                          # nodelabel=rocon_gateway_utils.gateway_basename(node),
                                           shape='ellipse',
                                           url=rocon_gateway_utils.gateway_basename(node.gateway_name),
-                                          #url=node,
+                                          # url=node,
                                           color=node_colour
                                           )
 
@@ -88,9 +80,9 @@ class ConductorGraphDotcodeGenerator:
         nodes = conductor_graph_instance.concert_clients.values()
         edges = []
         important_states = [
-                        concert_msgs.ConcertClientState.MISSING,
-                        concert_msgs.ConcertClientState.AVAILABLE
-                       ]
+            concert_msgs.ConcertClientState.MISSING,
+            concert_msgs.ConcertClientState.AVAILABLE
+        ]
         for node in nodes:
             if node.msg.state in important_states:  # and node.msg.conn_stats.gateway_available:
                 edges.append(Edge("conductor", node.concert_alias, node.link_type))
@@ -143,7 +135,8 @@ class ConductorGraphDotcodeGenerator:
         dotcode = dotcode_factory.create_dot(dotgraph)
         return dotcode
 
-class ConductorStateDotcodeGenerator:
+
+class StateDotcodeGenerator:
     '''
         Unlike Conductor graph focuses on visualising status of clients, ConductorState focuses on states and transitions.
     '''
@@ -157,7 +150,7 @@ class ConductorStateDotcodeGenerator:
         dotcode = self._dotcode_factory.create_dot(dotgraph)
         return dotcode
 
-    def generate_dotgraph(self, state_transition_table, rank='same',ranksep=0.5, rankdir='TB', simplify=True):
+    def generate_dotgraph(self, state_transition_table, rank='same', ranksep=0.5, rankdir='TB', simplify=True):
         nodes, edges = self.get_nodes_and_edges(state_transition_table)
         dotgraph = self._dotcode_factory.get_graph(rank=rank, ranksep=ranksep, simplify=simplify, rankdir=rankdir)
         self._add_not_in_network_node_and_edge(dotgraph)
@@ -179,23 +172,22 @@ class ConductorStateDotcodeGenerator:
             nodes.append(to)
 
             label = '' if transition_func.__name__ == 'Dummy' else transition_func.__name__
-        
+
             edges.append(Edge(fr, to, label))
 
         # make it as unique string list
         nodes = list(set(nodes))
 
         return nodes, edges
-    
+
     def _add_not_in_network_node_and_edge(self, dotgraph):
         start_node_name = "not in network"
         self._dotcode_factory.add_node_to_graph(dotgraph, start_node_name, shape='ellipse', color="blue")
         self._dotcode_factory.add_edge_to_graph(dotgraph, start_node_name, concert_msgs.ConcertClientState.PENDING, penwidth=0.3)
         self._dotcode_factory.add_edge_to_graph(dotgraph, concert_msgs.ConcertClientState.GONE, start_node_name, penwidth=0.3)
 
-
     def _add_node(self, dotgraph, node):
-        self._dotcode_factory.add_node_to_graph(dotgraph, nodename = node, shape='ellipse')
+        self._dotcode_factory.add_node_to_graph(dotgraph, nodename=node, shape='ellipse')
 
     def _add_edge(self, dotgraph, edge):
         self._dotcode_factory.add_edge_to_graph(dotgraph, edge.start, edge.end, label=edge.label, penwidth=0.3)

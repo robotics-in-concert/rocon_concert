@@ -18,8 +18,9 @@ import copy
 import threading
 
 import concert_msgs.msg as concert_msgs
-import rocon_app_manager_msgs.msg as rapp_manager_msgs
 import rocon_console.console as console
+import rocon_python_comms
+import rocon_std_msgs.msg as rocon_std_msgs
 import rocon_uri
 import rospy
 
@@ -40,13 +41,13 @@ class ConcertClient(object):
     .. seealso:: :class:`.ConcertConductor`, :class:`.ConcertClients`
     """
     __slots__ = [
-        'msg',                 # concert_msgs.ConcertClient
-        '_cached_status_msg',  # rocon_app_manager_msgs.Status, details of the last status update from the client
-        'gateway_info',        # gateway_msgs.RemoteGateway
-        '_timestamps',         # last observed and last state change timestamps
+        'msg',                  # concert_msgs.ConcertClient
+        'gateway_info',         # gateway_msgs.RemoteGateway
+        '_timestamps',          # last observed and last state change timestamps
         '_transition_handlers',
-        '_lock',               # for protecting access to the msg variable
-        '_remote_controller',  # Records the current remote controller
+        '_lock',                # for protecting access to the msg variable
+        '_remote_controller',   # Records the current remote controller
+        'platform_info_proxy',  # service style proxy to the platform info latched publisher
     ]
 
     State = concert_msgs.ConcertClientState
@@ -76,7 +77,6 @@ class ConcertClient(object):
         # This will get assigned when a msg comes in and set back to none once it is processed.
         # We only ever do processing on self.msg in one place to avoid threading problems
         # (the transition handlers) so that is why we store a cached copy here.
-        self._cached_status_msg = None
         self._remote_controller = ""
         self._lock = threading.Lock()
 
@@ -85,8 +85,11 @@ class ConcertClient(object):
         self._timestamps['last_seen'] = rospy.get_rostime()
         self._timestamps['last_state_change'] = rospy.get_rostime()
 
-        # status
-        rospy.Subscriber('/' + self.gateway_name.lower().replace(' ', '_') + '/' + 'status', rapp_manager_msgs.Status, self._ros_status_cb)
+        platform_info_publisher_name = '/concert/clients/' + self.msg.gateway_name.lower().replace(' ', '_') + '/' + 'platform_info'
+        self.platform_info_proxy = rocon_python_comms.SubscriberProxy(platform_info_publisher_name, rocon_std_msgs.MasterInfo)
+
+    def stop_tracking(self):
+        self.platform_info_proxy.unregister()
 
     ##############################################################################
     # Conveniences
@@ -188,6 +191,8 @@ class ConcertClient(object):
         '''
         old_state = self.state
         if (old_state, new_state) in transitions.StateTransitionTable.keys():
+            if new_state == transitions.State.GONE:
+                self.stop_tracking()
             rospy.loginfo("Conductor : concert client transition [%s->%s][%s]" % (old_state, new_state, self.concert_alias))
             self._timestamps['last_state_change'] = rospy.get_rostime()
             self.state = new_state
@@ -209,7 +214,6 @@ class ConcertClient(object):
         :returns: success or failure of the update
         :rtype: bool
         """
-        is_changed = False
 
         self.touch()
         # remember, don't flag connection stats as worthy of a change.
@@ -218,22 +222,7 @@ class ConcertClient(object):
 
         # don't update every client, just the ones that we need information from
         important_state = (self.state == ConcertClient.State.AVAILABLE) or (self.state == ConcertClient.State.MISSING)
-        if self._cached_status_msg is not None:
-            with self._lock:
-                status_msg = copy.deepcopy(self._cached_status_msg)
-                self._cached_status_msg = None
-
-            if important_state:
-                # uri update
-                uri = rocon_uri.parse(self.msg.platform_info.uri)
-                uri.rapp = status_msg.rapp.name if status_msg.rapp_status == rapp_manager_msgs.Status.RAPP_RUNNING else ''
-                self.msg.platform_info.uri = str(uri)
-                is_changed = True
-
-            if self._remote_controller != status_msg.remote_controller:
-                self._remote_controller = status_msg.remote_controller
-                is_changed = True
-
+        is_changed = False
         return is_changed
 
     ##############################################################################
@@ -289,18 +278,3 @@ class ConcertClient(object):
         if msg.state != ConcertClient.State.PENDING and msg.state != ConcertClient.State.BAD:
             s += console.cyan + indent + "  Rocon Uri" + console.reset + "    : " + console.yellow + "%s" % msg.platform_info.uri + console.reset + '\n'  # noqa
         return s
-
-    ##############################################################################
-    # Ros Callbacks
-    ##############################################################################
-
-    def _ros_status_cb(self, msg):
-        """
-        Update the concert client msg data with fields from this updated status.
-        Just store it, ready to be processed in the update() method by the
-        conductor spin loop (via the transition handlers)
-
-        :param rocon_app_manager_msgs.Status msg:
-        """
-        with self._lock:
-            self._cached_status_msg = msg

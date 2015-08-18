@@ -1,12 +1,12 @@
 #
 # License: BSD
-#   https://raw.github.com/robotics-in-concert/rocon_qt_gui/license/LICENSE
+#   https://raw.github.com/robotics-in-concert/rocon_concert/license/LICENSE
 #
 ##############################################################################
 # Imports
 ##############################################################################
 
-from .concert_client import ConcertClient 
-from .dotcode import ConductorGraphDotcodeGenerator, ConductorStateDotcodeGenerator
+from .concert_client import ConcertClient
+from .dotcode_generator import GraphDotcodeGenerator, StateDotcodeGenerator
 from .conductor_graph_info import ConductorGraphInfo
-from .conductor_graph_to_string import ConductorGraphDotcodeToString
+from .to_dot import ConductorGraph2Dot

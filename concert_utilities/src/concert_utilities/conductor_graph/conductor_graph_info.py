@@ -31,7 +31,7 @@ class ConductorGraphInfo(object):
         self.namespace = None
         self._trigger_shutdown = False
 
-        #Rubbish to clear out once rocon_gateway_graph is integrated
+        # rubbish to clear out once rocon_gateway_graph is integrated
         self._change_callback = change_callback
         self._periodic_callback = periodic_callback
         self._thread = threading.Thread(target=self._setup_subscribers)
@@ -98,7 +98,7 @@ class ConductorGraphInfo(object):
 
         :param msg concert_msgs.ConcertClients : graph of concert connected/connectable clients.
         '''
-        #print("[conductor_graph_info]: update_connection_statistics")
+        # print("[conductor_graph_info]: update_connection_statistics")
         for state in msg.__slots__:
             concert_clients = getattr(msg, state)  # by state
             for concert_client in concert_clients:  # concert_msgs.ConcertClient
