@@ -2,6 +2,11 @@
 Changelog for package concert_service_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add python catkin pkg as build depend
+* Contributors: Jihoon Lee
+
 0.6.10 (2015-08-28)
 -------------------
 * add concert service utilities doc `#313 <https://github.com/robotics-in-concert/rocon_concert/issues/313>`_

@@ -2,6 +2,9 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+
 0.6.10 (2015-08-28)
 -------------------
 * remove pull watchlist for gone client in redis

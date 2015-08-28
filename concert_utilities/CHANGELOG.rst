@@ -2,6 +2,9 @@
 Changelog for package concert_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.10 (2015-08-28)
 -------------------
 
