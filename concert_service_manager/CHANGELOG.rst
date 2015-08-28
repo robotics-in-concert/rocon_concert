@@ -2,8 +2,8 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.10 (2015-08-28)
+-------------------
 * update overview
 * service manager document init
 * Contributors: Jihoon Lee
