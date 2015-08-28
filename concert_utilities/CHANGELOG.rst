@@ -2,6 +2,9 @@
 Changelog for package concert_utilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.9 (2015-07-09)
 ------------------
 * add not in network node

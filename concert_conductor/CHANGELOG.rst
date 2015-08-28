@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* remove pull watchlist for gone client in redis
+* cleanup
+* dynamic reconfigure applied in conductor closes `#309 <https://github.com/robotics-in-concert/rocon_concert/issues/309>`_
+* Contributors: Jihoon Lee
+
 0.6.9 (2015-07-09)
 ------------------
 * add transition available to uninvited `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_

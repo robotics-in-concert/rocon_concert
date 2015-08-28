@@ -2,6 +2,9 @@
 Changelog for package concert_software_farmer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.9 (2015-07-09)
 ------------------
 

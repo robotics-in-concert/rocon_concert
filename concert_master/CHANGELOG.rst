@@ -1,6 +1,9 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+
 0.6.9 (2015-07-09)
 ------------------
 * default webserver address is now webapp.robotconcert.org closes `#295 <https://github.com/robotics-in-concert/rocon_concert/issues/295>`_
