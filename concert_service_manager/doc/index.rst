@@ -6,12 +6,15 @@
 Concert Service Manager
 =======================
 
+Component responsible for launching and managing concert services. I
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-
+   overview
+   service_manager_apis
 
 Indices and tables
 ==================
