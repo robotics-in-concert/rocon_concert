@@ -2,8 +2,8 @@
 Changelog for package concert_service_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.11 (2015-08-28)
+-------------------
 * add python catkin pkg as build depend
 * Contributors: Jihoon Lee
 
