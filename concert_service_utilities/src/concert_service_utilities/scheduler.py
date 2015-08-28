@@ -18,13 +18,13 @@ def find_scheduler_requests_topic(timeout=rospy.rostime.Duration(5.0)):
     '''
       Do a lookup to find the scheduler requests topic.
 
-      @param timeout : raise an exception if nothing is found before this timeout occurs.
-      @type rospy.rostime.Duration
+      :param timeout: raise an exception if nothing is found before this timeout occurs.
+      :type timeout: rospy.rostime.Duration
 
-      @return the fully resolved name of the topic
-      @type str
+      :returns: the fully resolved name of the topic
+      :rtype: str
 
-      @raise rocon_python_comms.NotFoundException if no topic is found within the timeout
+      :raises rocon_python_comms.NotFoundException: if no topic is found within the timeout
     '''
     try:
         # assuming all topics here come in as /x/y/z/topicname or /x/y/z/topicname_355af31d

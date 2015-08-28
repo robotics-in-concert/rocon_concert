@@ -31,8 +31,8 @@ def get_services_info():
       resultdict stores key as resource_name and value as tuple of services info
       keyList stores list of resoure_names to be used as key's for resultdict
  
-      @return the concert service information as a tuple (keyList, resultdict)
-      @rtype (list, dictionary)
+      :returns: the concert service information as a tuple (keyList, resultdict)
+      :rtype: (list, dictionary)
     '''
     resultdict = {}
     keyList = []
@@ -86,10 +86,10 @@ def get_service_info():
       Note, this is quite simple and returning bare basics right now. Could
       expand this to a proper ServiceInfo msg later if it gets more complicated.
  
-      @return the concert service information as a tuple (name, description, key)
-      @rtype (string, string, uuid.UUID)
+      :returns: the concert service information as a tuple (name, description, key)
+      :rtype: (string, string, uuid.UUID)
  
-      @raise ServiceInfoNotFoundException : when the information could not be found.
+      :raises ServiceInfoNotFoundException: when the information could not be found.
     '''
      
  

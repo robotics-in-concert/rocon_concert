@@ -125,8 +125,8 @@ class ResourcePimp(object):
           Once they do, kick them out of the pending requests list so _ros_capture_teleop_callback
           can process and reply to the interaction.
 
-          @param request_set : the modified requests
-          @type dic { uuid.UUID : scheduler_msgs.ResourceRequest }
+          :param request_set: the modified requests
+          :type request_set: dic { uuid.UUID : scheduler_msgs.ResourceRequest }
         '''
         for request_id, request in request_set.requests.iteritems():
             #self.logwarn("DJS : request %s has status [%s]" % (request_id, request.msg.status))
