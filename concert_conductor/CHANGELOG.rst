@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.7.1 (2015-10-12)
+------------------
 * disable debug mode
 * all bugs for new shiny conductor ironed out
 * working with reduced states

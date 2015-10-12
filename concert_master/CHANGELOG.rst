@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Forthcoming
------------
+0.7.1 (2015-10-12)
+------------------
 * directly call the conductor script
 * delete cruft and scaled down launcher
 
