@@ -2,6 +2,13 @@
 Changelog for package rocon_concert
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
+0.7.0 (2015-10-12)
+------------------
+* cleaned out unused components for gopher
+
 0.6.9 (2015-07-09)
 ------------------
 

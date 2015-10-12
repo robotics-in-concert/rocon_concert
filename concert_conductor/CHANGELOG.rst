@@ -2,6 +2,18 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* disable debug mode
+* all bugs for new shiny conductor ironed out
+* working with reduced states
+* dismembered the invite process
+* use new parameters structure
+
+0.7.0 (2015-10-12)
+------------------
+* remove pull watchlist for gone clients in redis
+
 0.6.9 (2015-07-09)
 ------------------
 * add transition available to uninvited `#302 <https://github.com/robotics-in-concert/rocon_concert/issues/302>`_
