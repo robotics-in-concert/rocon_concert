@@ -4,7 +4,7 @@
   <arg name="concert_name" default="Pirate Concert" doc="concert name"/>
   <arg name="concert_icon" default="rocon_icons/rocon.png" doc="concert icon path in resource pair. e.g) rocon_icons/rocon.png"/>
   <arg name="concert_description" default="Pirates in concert." doc="Describe concert"/>
-  
+
   <!-- Hub -->
   <arg name="hub_port"                    default="6380" doc="port for rocon hub redis"/>
 
@@ -16,10 +16,6 @@
 
   <!-- Zeroconf -->
   <arg name="zeroconf" default="true" doc="Required to auto-configure both hub and gateway, use manual uri settings otherwise."/>
-
-  <!-- Conductor -->
-  <arg name="conductor_auto_invite" default="true" doc="invite clients automatically?"/>
-  <arg name="conductor_local_clients_only" default="false" doc="conductor invites only local clients"/>
 
   <!-- Rosbridge -->
   <arg name="rosbridge"         default="false" doc="enable/disable rosbridge websocket communications"/>
@@ -65,6 +61,9 @@
       <arg name="zeroconf" value="$(arg zeroconf)"/>
     </include>
 
+    <!-- ****************************** Connection Cache ************************* -->
+    <include file="$(find rocon_python_comms)/launch/connection_cache.launch"/>
+
     <!-- ******************************** Gateway ******************************** -->
     <node pkg="rocon_gateway" type="gateway.py" name="gateway">
       <rosparam command="load" file="$(find rocon_gateway)/param/default.yaml"/>
@@ -79,13 +78,16 @@
       <param name="disable_zeroconf" value="false" if="$(arg zeroconf)"/>
       <param name="disable_zeroconf" value="true" unless="$(arg zeroconf)"/>
       <param name="external_shutdown" value="true"/> <!-- let the conductor shut this node down -->
+      <param name="custom_rules_file" value=""/> <!-- no special rules on concert -->
+      <remap from="~connections_list" to="connection_cache/list"/>
+      <remap from="~connections_diff" to="connection_cache/diff"/>
     </node>
 
     <!-- ****************************** Zeroconf ******************************* -->
     <group if="$(arg zeroconf)">
       <node ns="zeroconf" pkg="zeroconf_avahi" type="zeroconf" name="zeroconf">
         <rosparam param="services" subst_value="true">
-          [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "$(arg concert_description)" } ] 
+          [ { name: "$(arg concert_name)", type: _concert-master._tcp, port: 11311, domain: local, description: "$(arg concert_description)" } ]
         </rosparam>
       </node>
     </group>
