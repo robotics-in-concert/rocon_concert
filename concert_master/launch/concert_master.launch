@@ -79,8 +79,6 @@
       <param name="disable_zeroconf" value="true" unless="$(arg zeroconf)"/>
       <param name="external_shutdown" value="true"/> <!-- let the conductor shut this node down -->
       <param name="custom_rules_file" value=""/> <!-- no special rules on concert -->
-      <remap from="~connections_list" to="connection_cache/list"/>
-      <remap from="~connections_diff" to="connection_cache/diff"/>
     </node>
 
     <!-- ****************************** Zeroconf ******************************* -->
