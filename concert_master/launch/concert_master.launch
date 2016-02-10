@@ -76,6 +76,7 @@
       <rosparam command="load" file="$(find rocon_gateway)/param/default_blacklist.yaml"/>
       <rosparam param="hub_whitelist" subst_value="True">["$(arg hub_uri)"]</rosparam>
       <param name="hub_uri" value="$(arg hub_uri)"/>
+      <param name="network_interface" value="$(arg gateway_network_interface)"/>
       <param name="name" value="$(arg concert_name)"/>
       <param name="firewall" value="false"/>
       <param name="watch_loop_period" value="$(arg gateway_watch_loop_period)"/>
