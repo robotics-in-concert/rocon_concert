@@ -27,6 +27,9 @@
   <arg name="rosbridge_port"    default="9090" doc="rosbridge port for rocon_interactions"/>
   <arg name="webserver_address" default="webapp.robotconcert.org" doc="webserver address for webapps in rocon_interactions"/>
 
+  <!-- Connection Cache -->
+  <arg name="connection_cache_spin_frequency" default="0.1"/>
+
   <group ns="concert">
     <!-- ******************************** Master ******************************* -->
     <include file="$(find rocon_master_info)/launch/rocon_master_info.launch">
@@ -68,7 +71,9 @@
     </include>
 
     <!-- ****************************** Connection Cache ************************* -->
-    <include file="$(find rocon_python_comms)/launch/connection_cache.launch"/>
+    <include file="$(find rocon_python_comms)/launch/connection_cache.launch">
+      <arg name="spin_freq" value="$(arg connection_cache_spin_frequency)"/>
+    </include>
 
     <!-- ******************************** Gateway ******************************** -->
     <node pkg="rocon_gateway" type="gateway.py" name="gateway">
