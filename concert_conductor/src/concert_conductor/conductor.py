@@ -55,7 +55,7 @@ class Conductor(object):
         # Ros
         ##################################
         self.publishers = self._setup_publishers()  # can raise ConductorFailureException
-        rospy.on_shutdown(self._shutdown)
+        # rospy.on_shutdown(self._shutdown)
         self.parameters = Parameters()
 
         ##################################
@@ -71,6 +71,9 @@ class Conductor(object):
             )
         self.publish_concert_clients()  # Publish an empty list, to latch it and start
 
+    # TODO : do not use this. Shutdown should not do anything specific, especially over the network.
+    # this is because we want to be able to recover form crash/errors,
+    # so the shutdown flow should be as close as possible to the error flow
     def _shutdown(self):
         """
             Last thing to do as a concert is shutting down - send an uninvite
