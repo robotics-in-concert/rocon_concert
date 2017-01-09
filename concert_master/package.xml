@@ -31,8 +31,6 @@
   <run_depend>rocon_interactions</run_depend>
   <run_depend>concert_schedulers</run_depend>
 
-  <!-- To handle web components -->
-  <run_depend>rosbridge_server</run_depend>
   <!-- 
     Hardcode this dependency for now since we only test it on linux 
     Ideally, I wouldn't hardcode the zeroconf implementation though.
