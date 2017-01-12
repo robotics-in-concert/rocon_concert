@@ -1,6 +1,6 @@
 <package>
   <name>concert_utilities</name>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
   <description>
     Utilities, libraries and modules for general concert support.
   </description>

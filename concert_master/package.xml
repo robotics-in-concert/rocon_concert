@@ -1,6 +1,6 @@
 <package>
   <name>concert_master</name>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
   <description>
     General concert functionality.
   </description>
